@@ -27,21 +27,14 @@ export const Bot = ({ id, goalPos }: { id: number, goalPos: THREE.Vector3 }) => 
     });
     world.addBody(body);
     bodyRef.current = body;
-
-    return () => {
-        world.removeBody(body);
-    };
+    return () => world.removeBody(body);
   }, [world, goalPos]);
 
   useFrame((state) => {
     if (isEliminated || !bodyRef.current) return;
-    
     update(ballPosition);
-
-    // Sync position
     const pos = bodyRef.current.position;
     groupRef.current.position.set(pos.x, pos.y, pos.z);
-
     if (meshRef.current) {
         meshRef.current.position.y = Math.sin(state.clock.getElapsedTime() * 2 + id) * 0.1;
     }
@@ -51,30 +44,22 @@ export const Bot = ({ id, goalPos }: { id: number, goalPos: THREE.Vector3 }) => 
 
   return (
     <group ref={groupRef}>
+      {/* Diegetic Label */}
+      <Html position={[0, 1.5, 0]} center transform scale={0.4} distanceFactor={12}>
+         <div className="px-4 py-1 border-l-4 border-red-500 bg-black/80 backdrop-blur-md text-red-500 font-mono text-[10px] tracking-widest whitespace-nowrap uppercase">
+             GA-0{id + 1}_HOSTILE
+         </div>
+      </Html>
+
       <group ref={meshRef}>
         <Box args={[1.2, 0.4, 1.2]} position={[0, 0.2, 0]} castShadow>
-            <meshPhysicalMaterial color="#0a0a0c" roughness={0.3} metalness={0.9} clearcoat={1} emissive="#ff4500" emissiveIntensity={0.1} />
+            <meshPhysicalMaterial color="#1a1c2c" roughness={0.3} metalness={0.9} clearcoat={1} />
         </Box>
         <Box args={[0.5, 0.2, 0.5]} position={[0, 0.5, 0]}>
             <meshPhysicalMaterial color="#ff4500" emissive="#ff4500" emissiveIntensity={1} />
         </Box>
-        <Box args={[0.4, 0.2, 0.6]} position={[0.7, 0.3, 0]}>
-            <meshStandardMaterial color="#1a1a1a" metalness={1} />
-        </Box>
-        <Box args={[0.4, 0.2, 0.6]} position={[-0.7, 0.3, 0]}>
-            <meshStandardMaterial color="#1a1a1a" metalness={1} />
-        </Box>
         <pointLight position={[0, -0.5, 0]} color="#ff4500" intensity={1} distance={3} />
-        <Html position={[0, 1.2, 0]} center>
-            <div className="px-2 py-0.5 border border-red-500/50 bg-black/80 font-mono text-[8px] text-red-500 whitespace-nowrap uppercase">
-                GA-0{id + 1}_UNIT
-            </div>
-        </Html>
       </group>
-      <mesh rotation-x={-Math.PI / 2} position={[0, -0.7, 0]}>
-          <ringGeometry args={[1, 1.1, 32]} />
-          <meshBasicMaterial color="#ff4500" transparent opacity={0.3} />
-      </mesh>
     </group>
   );
 };

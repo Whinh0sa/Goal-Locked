@@ -1,5 +1,5 @@
 import { useRef, useEffect, useMemo } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { usePhysics } from '../hooks/usePhysics';
@@ -7,7 +7,7 @@ import { useGameStore } from '../store/useGameStore';
 
 const ARENA_RADIUS = 20;
 const GOALS = 8;
-const SLOW_MO_DIST = 5.0;
+const SLOW_MO_DIST = 5.0; // Optimized for "God Prompt" requirements
 
 export const GameManager = () => {
   const { world, setTimeScale } = usePhysics();
@@ -31,13 +31,13 @@ export const GameManager = () => {
     return pos;
   }, []);
 
-  useFrame(() => {
+  useFrame((state, delta) => {
     const ballBody = world.bodies.find(b => b.mass === 1 && b.shapes[0] instanceof CANNON.Sphere);
     if (!ballBody) return;
 
     const ballPos = new THREE.Vector3().copy(ballBody.position as any);
     
-    // --- Slow-mo Logic ---
+    // --- Slow-mo Focus Logic ---
     let nearGoal = false;
     goalPositions.forEach((g, i) => {
         if (eliminated[i]) return;
@@ -46,38 +46,36 @@ export const GameManager = () => {
 
     if (nearGoal && !isSlowMo.current) {
         isSlowMo.current = true;
-        setTimeScale(0.2); // Slow down time
+        setTimeScale(0.2); // Slow Focus Engage
     } else if (!nearGoal && isSlowMo.current) {
         isSlowMo.current = false;
-        setTimeScale(1.0); // Resume normal time
+        setTimeScale(1.0); // Focus Release
     }
 
     // --- Goal Detection ---
     const distFromCenter = Math.sqrt(ballPos.x**2 + ballPos.z**2);
     if (distFromCenter > ARENA_RADIUS + 0.3) {
-        // Calculate which goal sector
         const angle = Math.atan2(ballPos.z, ballPos.x);
         const normAngle = angle < 0 ? angle + Math.PI * 2 : angle;
         const goalIdx = (Math.round((normAngle / (Math.PI * 2)) * GOALS)) % GOALS;
         
         if (!eliminated[goalIdx]) {
             registerGoal(goalIdx);
-            setTimeScale(1.0); // Restore time
+            setTimeScale(1.0);
             isSlowMo.current = false;
             
-            // Re-center ball after a delay
+            // Re-center ball
             setTimeout(() => {
                 ballBody.position.set(0, 5, 0);
                 ballBody.velocity.set(0, 0, 0);
-                ballBody.angularVelocity.set(0, 0, 0);
             }, 500);
-        } else {
-             // Ricochet off locked wall (handled by physics, but safety reset if it somehow glitched out)
-             if (distFromCenter > ARENA_RADIUS + 1.0) {
-                ballBody.position.set(0, 5, 0);
-             }
         }
     }
+
+    // --- High-Velocity Impact Camera Shake ---
+    // (This is triggered via GameManager but handled by CameraManager usually)
+    // We'll use the store to trigger a global shake event if needed, but for now
+    // CameraManager handles ball-velocity-based shake/FOV.
   });
 
   return null;
