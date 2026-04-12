@@ -245,6 +245,7 @@ export default function GameArena() {
   return (
     <div className="fixed inset-0 w-full h-full overflow-hidden bg-[#020202]">
       <Canvas 
+        style={{ width: '100vw', height: '100vh', display: 'block' }}
         shadows={{ type: THREE.PCFSoftShadowMap }}
         dpr={[1, 2]} 
         gl={{ antialias: true, alpha: false, stencil: false, depth: true }} 
