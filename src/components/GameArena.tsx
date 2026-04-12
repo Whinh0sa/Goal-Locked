@@ -37,23 +37,23 @@ export default function GameArena() {
   return (
     <div className="relative w-full h-screen overflow-hidden bg-[#080808] font-sans selection:bg-tactical selection:text-black">
       <Canvas shadows dpr={[1, 2]} gl={{ antialias: false }} camera={{ position: [0, 50, 50], fov: 45 }}>
-        {/* Dynamic Camera managed by CameraManager */}
-        <CameraManager />
-        
-        <Sky sunPosition={[100, 20, 100]} />
-        <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-        <ambientLight intensity={0.2} />
-        <pointLight position={[0, 10, 0]} intensity={1.5} color="#FFBF00" />
-        <directionalLight 
-            position={[10, 20, 10]} 
-            intensity={1.2} 
-            castShadow 
-            shadow-mapSize={[1024, 1024]} 
-        />
-        <Environment preset="night" />
-
         <Suspense fallback={<LoadingOverlay />}>
           <PhysicsProvider>
+            {/* Dynamic Camera managed by CameraManager (MUST BE INSIDE PhysicsProvider) */}
+            <CameraManager />
+            
+            <Sky sunPosition={[100, 20, 100]} />
+            <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+            <ambientLight intensity={0.2} />
+            <pointLight position={[0, 10, 0]} intensity={1.5} color="#FFBF00" />
+            <directionalLight 
+                position={[10, 20, 10]} 
+                intensity={1.2} 
+                castShadow 
+                shadow-mapSize={[1024, 1024]} 
+            />
+            <Environment preset="night" />
+
             <GameManager />
             <Crucible />
             <Ball />
