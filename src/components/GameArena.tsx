@@ -25,7 +25,6 @@ function LoadingOverlay() {
     return (
         <Float speed={5} rotationIntensity={2} floatIntensity={2}>
             <Text
-                font="https://fonts.gstatic.com/s/poppins/v20/pxiByp8kv8JHgFVrLCz7Z1xlFQ.woff"
                 fontSize={2}
                 color="#00ffff"
                 anchorX="center"
@@ -45,7 +44,6 @@ function DiegeticStartUI({ onStart }: { onStart: () => void }) {
         <group position={[0, 5, 10]}>
             <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
                 <Text
-                    font="https://fonts.gstatic.com/s/poppins/v20/pxiByp8kv8JHgFVrLCz7Z1xlFQ.woff"
                     fontSize={4}
                     color="white"
                     anchorX="center"
@@ -56,7 +54,6 @@ function DiegeticStartUI({ onStart }: { onStart: () => void }) {
                 </Text>
                 <Text
                     position={[0, -3, 0]}
-                    font="https://fonts.gstatic.com/s/robotomono/v22/L0tkDFwvuaCwsiZqcb99A660CcZ_O3O_S_S_S_S_S_.woff"
                     fontSize={0.5}
                     color="#00cccc"
                     anchorX="center"
@@ -72,7 +69,6 @@ function DiegeticStartUI({ onStart }: { onStart: () => void }) {
                         <meshBasicMaterial color="#008080" transparent opacity={0.2} />
                     </mesh>
                     <Text
-                        font="https://fonts.gstatic.com/s/poppins/v20/pxiByp8kv8JHgFVrLCz7Z1xlFQ.woff"
                         fontSize={0.8}
                         color="#00ffff"
                         anchorX="center"
@@ -91,7 +87,6 @@ function DiegeticVictoryUI({ onReset }: { onReset: () => void }) {
         <group position={[0, 8, 5]}>
             <Float speed={4} rotationIntensity={1} floatIntensity={2}>
                 <Text
-                    font="https://fonts.gstatic.com/s/poppins/v20/pxiByp8kv8JHgFVrLCz7Z1xlFQ.woff"
                     fontSize={3}
                     color="#00ffcc"
                     anchorX="center"

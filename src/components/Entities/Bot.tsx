@@ -47,7 +47,6 @@ export const Bot = ({ id, goalPos }: { id: number, goalPos: THREE.Vector3 }) => 
       {/* Diegetic Label */}
       <TextHUD
         position={[0, 1.5, 0]}
-        font="https://fonts.gstatic.com/s/robotomono/v22/L0tkDFwvuaCwsiZqcb99A660CcZ_O3O_S_S_S_S_S_.woff"
         fontSize={0.2}
         color="#ff3333"
         anchorX="center"
