@@ -1,0 +1,5 @@
+{
+  "name": "Battle Arena 3D",
+  "description": "A physics-based battle royale arena game where you bump a ball into goals.",
+  "requestFramePermissions": []
+}
