@@ -18,6 +18,50 @@ import * as THREE from 'three';
 const GOALS = 8;
 const ARENA_RADIUS = 20;
 
+// --- Helper Components (Defined before GameArena to avoid hoisting issues) ---
+
+function StatCard({ label, value }: { label: string, value: string }) {
+    return (
+        <div className="glass-panel px-10 py-4 flex flex-col items-end border-r-8 border-r-tactical shadow-2xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-full h-full bg-tactical/5 translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
+            <span className="text-[10px] font-mono text-[#FFBF00]/60 uppercase mb-1 tracking-[0.3em] leading-none z-10">{label}</span>
+            <span className="text-5xl font-poppins font-black text-white tabular-nums tracking-tighter leading-none z-10">{value}</span>
+        </div>
+    );
+}
+
+function ControlBadge({ label, keys }: { label: string, keys: string }) {
+    return (
+        <div className="glass-panel px-6 py-3 flex flex-col border-t-2 border-white/5 bg-white/2">
+            <span className="text-[8px] font-mono text-white/30 uppercase tracking-[0.4em] mb-1">{label}</span>
+            <span className="text-lg font-black text-white uppercase tracking-tighter font-poppins italic">{keys}</span>
+        </div>
+    )
+}
+
+function LoadingOverlay() {
+    return (
+        <div className="flex flex-col items-center justify-center">
+            <div className="w-24 h-24 border-2 border-tactical border-t-transparent rounded-full animate-spin mb-8 shadow-[0_0_30px_rgba(255,191,0,0.3)]" />
+            <div className="space-y-4 text-center">
+                <h3 className="text-2xl font-poppins font-black text-white uppercase tracking-[0.5em] italic">CRUCIBLE_BOOTING</h3>
+                <div className="flex gap-1 justify-center">
+                     {[1,2,3].map(i => (
+                         <motion.div 
+                            key={i}
+                            animate={{ opacity: [0, 1, 0] }}
+                            transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+                            className="w-2 h-2 bg-tactical" 
+                        />
+                     ))}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// --- Main Component ---
+
 export default function GameArena() {
   const { gameStarted, startGame, eliminated, lastGoal, victory, resetGame, remainingPlayers } = useGameStore();
 
@@ -269,44 +313,4 @@ export default function GameArena() {
       </AnimatePresence>
     </div>
   );
-}
-
-function StatCard({ label, value }: { label: string, value: string }) {
-    return (
-        <div className="glass-panel px-10 py-4 flex flex-col items-end border-r-8 border-r-tactical shadow-2xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-full h-full bg-tactical/5 translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
-            <span className="text-[10px] font-mono text-[#FFBF00]/60 uppercase mb-1 tracking-[0.3em] leading-none z-10">{label}</span>
-            <span className="text-5xl font-poppins font-black text-white tabular-nums tracking-tighter leading-none z-10">{value}</span>
-        </div>
-    );
-}
-
-function ControlBadge({ label, keys }: { label: string, keys: string }) {
-    return (
-        <div className="glass-panel px-6 py-3 flex flex-col border-t-2 border-white/5 bg-white/2">
-            <span className="text-[8px] font-mono text-white/30 uppercase tracking-[0.4em] mb-1">{label}</span>
-            <span className="text-lg font-black text-white uppercase tracking-tighter font-poppins italic">{keys}</span>
-        </div>
-    )
-}
-
-function LoadingOverlay() {
-    return (
-        <div className="flex flex-col items-center justify-center">
-            <div className="w-24 h-24 border-2 border-tactical border-t-transparent rounded-full animate-spin mb-8 shadow-[0_0_30px_rgba(255,191,0,0.3)]" />
-            <div className="space-y-4 text-center">
-                <h3 className="text-2xl font-poppins font-black text-white uppercase tracking-[0.5em] italic">CRUCIBLE_BOOTING</h3>
-                <div className="flex gap-1 justify-center">
-                     {[1,2,3].map(i => (
-                         <motion.div 
-                            key={i}
-                            animate={{ opacity: [0, 1, 0] }}
-                            transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
-                            className="w-2 h-2 bg-tactical" 
-                        />
-                     ))}
-                </div>
-            </div>
-        </div>
-    );
 }
