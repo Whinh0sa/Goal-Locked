@@ -1,14 +1,47 @@
-@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Poppins:ital,wght@0,900;1,900&family=Roboto+Mono:wght@400;700&display=swap');
 
-@layer base {
-  html, body, #root {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background-color: black;
-    touch-action: none;
-    user-select: none;
-  }
+:root {
+  --tactical-amber: #FFBF00;
+  --tactical-black: #080808;
+  --tactical-slate: #1a1a1a;
+  --tactical-white: #ffffff;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--tactical-black);
+  color: var(--tactical-white);
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
+  user-select: none;
+}
+
+.font-poppins {
+  font-family: 'Poppins', sans-serif;
+}
+
+.font-mono {
+  font-family: 'Roboto Mono', monospace;
+}
+
+/* Glassmorphism Utilities */
+.glass-panel {
+  background: rgba(8, 8, 8, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 191, 0, 0.2);
+  border-radius: 4px;
+}
+
+.amber-glow {
+  box-shadow: 0 0 15px rgba(255, 191, 0, 0.4);
+}
+
+.text-tactical {
+  color: var(--tactical-amber);
+  text-shadow: 0 0 10px rgba(255, 191, 0, 0.5);
+}
+
+canvas {
+  touch-action: none;
 }
