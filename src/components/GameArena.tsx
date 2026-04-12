@@ -11,6 +11,7 @@ import { Bot } from './Entities/Bot';
 import { GameManager } from './GameManager';
 import { CameraManager } from './CameraManager';
 import { GoalJuice } from './VFX/GoalJuice';
+import { CollisionParticles } from './VFX/CollisionParticles';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, RotateCcw, ShieldAlert, Cpu } from 'lucide-react';
 import * as THREE from 'three';
@@ -103,6 +104,7 @@ export default function GameArena() {
                 <Ball />
                 <Player />
                 <GoalJuice />
+                <CollisionParticles />
                 
                 {/* AI Bots 1-7 */}
                 {botGoalPositions.map((pos, i) => (
