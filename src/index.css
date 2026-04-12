@@ -9,13 +9,15 @@
   --tactical-red: #ff3e00;
 }
 
-body {
+html, body {
   margin: 0;
   padding: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
   background-color: var(--tactical-black);
   color: var(--tactical-white);
   font-family: 'Inter', sans-serif;
-  overflow: hidden;
   user-select: none;
 }
 

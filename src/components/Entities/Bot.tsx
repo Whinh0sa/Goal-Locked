@@ -2,7 +2,7 @@ import { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
-import { Box, Html } from '@react-three/drei';
+import { Box, Text as TextHUD } from '@react-three/drei';
 import { usePhysics } from '../../hooks/usePhysics';
 import { useGameStore } from '../../store/useGameStore';
 import { useAI } from '../../hooks/useAI';
@@ -45,11 +45,16 @@ export const Bot = ({ id, goalPos }: { id: number, goalPos: THREE.Vector3 }) => 
   return (
     <group ref={groupRef}>
       {/* Diegetic Label */}
-      <Html position={[0, 1.5, 0]} center transform scale={0.4} distanceFactor={12}>
-         <div className="px-4 py-1 border-l-4 border-red-500 bg-black/80 backdrop-blur-md text-red-500 font-mono text-[10px] tracking-widest whitespace-nowrap uppercase">
-             GA-0{id + 1}_HOSTILE
-         </div>
-      </Html>
+      <TextHUD
+        position={[0, 1.5, 0]}
+        font="https://fonts.gstatic.com/s/robotomono/v22/L0tkDFwvuaCwsiZqcb99A660CcZ_O3O_S_S_S_S_S_.woff"
+        fontSize={0.2}
+        color="#ff3333"
+        anchorX="center"
+        anchorY="middle"
+      >
+        GA-0{id + 1}_HOSTILE
+      </TextHUD>
 
       <group ref={meshRef}>
         <Box args={[1.2, 0.4, 1.2]} position={[0, 0.2, 0]} castShadow>

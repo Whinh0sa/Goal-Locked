@@ -14,14 +14,14 @@ export const Crucible = () => {
                     blur={[300, 100]}
                     resolution={1024}
                     mixBlur={1}
-                    mixStrength={60}
-                    roughness={1}
+                    mixStrength={80}
+                    roughness={0.05}
                     depthScale={1.2}
                     minDepthThreshold={0.4}
                     maxDepthThreshold={1.4}
-                    color="#050505"
-                    metalness={0.5}
-                    mirror={0}
+                    color="#080808"
+                    metalness={0.9}
+                    mirror={1}
                 />
             </mesh>
 
