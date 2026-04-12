@@ -148,7 +148,9 @@ function WorldSpaceHUD() {
 
 // --- Main Arena ---
 
-export default function GameArena() {
+// --- Crucible Scene (Inner R3F Context) ---
+
+function CrucibleScene() {
   const { gameStarted, startGame, victory, resetGame } = useGameStore();
   const timer = useMemo(() => new THREE.Timer(), []);
 
@@ -171,13 +173,7 @@ export default function GameArena() {
   }, []);
 
   return (
-    <div className="fixed inset-0 w-full h-full overflow-hidden bg-[#020202]">
-      <Canvas 
-        shadows={{ type: THREE.PCFSoftShadowMap }}
-        dpr={[1, 2]} 
-        gl={{ antialias: true, alpha: false, stencil: false, depth: true }} 
-        camera={{ position: [0, 50, 50], fov: 50 }}
-      >
+    <>
         <scene fog={new THREE.FogExp2('#000000', 0.02)} />
         <Suspense fallback={<LoadingOverlay />}>
             <PresentationControls
@@ -244,9 +240,25 @@ export default function GameArena() {
                 </EffectComposer>
             </PresentationControls>
         </Suspense>
+    </>
+  );
+}
+
+// --- Main Arena Container ---
+
+export default function GameArena() {
+  return (
+    <div className="fixed inset-0 w-full h-full overflow-hidden bg-[#020202]">
+      <Canvas 
+        shadows={{ type: THREE.PCFSoftShadowMap }}
+        dpr={[1, 2]} 
+        gl={{ antialias: true, alpha: false, stencil: false, depth: true }} 
+        camera={{ position: [0, 50, 50], fov: 50 }}
+      >
+        <color attach="background" args={["#000"]} />
+        <CrucibleScene />
       </Canvas>
 
-      {/* Minimum HTML layer for Start/Victory Screens (Still using Framer Motion for high-end feel) */}
       <div className="absolute bottom-12 left-12 font-mono text-[10px] text-teal-500/60 tracking-[0.4em] uppercase select-none pointer-events-none drop-shadow-[0_0_10px_rgba(0,128,128,0.5)]">
            Crucible_OS // Sector_Control_System // v5.0.0_ULTRA
       </div>
