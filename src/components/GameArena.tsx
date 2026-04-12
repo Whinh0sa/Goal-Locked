@@ -1,4 +1,4 @@
-import React, { Suspense, useMemo } from 'react';
+import React, { Suspense, useMemo, useEffect, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Sky, Stars, Environment, ContactShadows, Html } from '@react-three/drei';
 import { EffectComposer, Bloom, ChromaticAberration, Noise } from '@react-three/postprocessing';
@@ -10,6 +10,7 @@ import { Player } from './Entities/Player';
 import { Bot } from './Entities/Bot';
 import { GameManager } from './GameManager';
 import { CameraManager } from './CameraManager';
+import { GoalJuice } from './VFX/GoalJuice';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, RotateCcw, ShieldAlert, Cpu } from 'lucide-react';
 import * as THREE from 'three';
@@ -35,31 +36,14 @@ export default function GameArena() {
   }, []);
 
   return (
-<<<<<<< HEAD
-    <div className="relative w-full h-screen overflow-hidden bg-[#080808] font-sans selection:bg-tactical selection:text-black">
-      <Suspense fallback={<LoadingOverlay />}>
-        <Canvas shadows dpr={[1, 2]} gl={{ antialias: false }} camera={{ position: [0, 50, 50], fov: 45 }}>
-            <PhysicsProvider>
-                {/* Dynamic Camera managed by CameraManager (MUST BE INSIDE PhysicsProvider) */}
-=======
     <div className="fixed inset-0 w-full h-full overflow-hidden bg-[#050505] font-sans selection:bg-tactical selection:text-black scanlines">
       <Canvas shadows dpr={[1, 2]} gl={{ antialias: true, alpha: false }} camera={{ position: [0, 50, 50], fov: 45 }}>
         <Suspense fallback={<Html center fullscreen><LoadingOverlay /></Html>}>
             <PhysicsProvider>
->>>>>>> 816b9a1 (Premium Overhaul: High-fidelity shaders, Reflector floor, Force fields, and HUD update)
                 <CameraManager />
                 
                 <Sky sunPosition={[100, 20, 100]} />
                 <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-<<<<<<< HEAD
-                <ambientLight intensity={0.2} />
-                <pointLight position={[0, 10, 0]} intensity={1.5} color="#FFBF00" />
-                <directionalLight 
-                    position={[10, 20, 10]} 
-                    intensity={1.2} 
-                    castShadow 
-                    shadow-mapSize={[1024, 1024]} 
-=======
                 <ambientLight intensity={0.1} />
                 <pointLight position={[0, 10, 0]} intensity={1.5} color="#FFBF00" />
                 <directionalLight 
@@ -67,7 +51,6 @@ export default function GameArena() {
                     intensity={1.5} 
                     castShadow 
                     shadow-mapSize={[2048, 2048]} 
->>>>>>> 816b9a1 (Premium Overhaul: High-fidelity shaders, Reflector floor, Force fields, and HUD update)
                 />
                 <Environment preset="night" />
 
@@ -75,6 +58,7 @@ export default function GameArena() {
                 <Crucible />
                 <Ball />
                 <Player />
+                <GoalJuice />
                 
                 {/* AI Bots 1-7 */}
                 {botGoalPositions.map((pos, i) => (
@@ -90,21 +74,7 @@ export default function GameArena() {
                 />
             </PhysicsProvider>
 
-<<<<<<< HEAD
             <EffectComposer>
-                <Bloom 
-                    luminanceThreshold={0.5} 
-                    mipmapBlur 
-                    intensity={1.2} 
-                    radius={0.4}
-                />
-                <ChromaticAberration offset={new THREE.Vector2(0.001, 0.001)} />
-                <Noise opacity={0.05} />
-            </EffectComposer>
-        </Canvas>
-      </Suspense>
-=======
-            <EffectComposer disableNormalPass>
                 <Bloom 
                     luminanceThreshold={0.5} 
                     mipmapBlur 
@@ -116,7 +86,6 @@ export default function GameArena() {
             </EffectComposer>
         </Suspense>
       </Canvas>
->>>>>>> 816b9a1 (Premium Overhaul: High-fidelity shaders, Reflector floor, Force fields, and HUD update)
 
       {/* Diegetic UI Overlay */}
       <div className="absolute inset-0 p-8 pointer-events-none flex flex-col justify-between select-none z-10">
@@ -304,28 +273,14 @@ export default function GameArena() {
 
 function StatCard({ label, value }: { label: string, value: string }) {
     return (
-<<<<<<< HEAD
-        <div className="glass-panel px-8 py-3 flex flex-col items-end border-r-4 border-r-tactical shadow-lg">
-            <span className="text-[9px] font-mono text-[#FFBF00]/70 uppercase mb-1 tracking-widest leading-none">{label}</span>
-            <span className="text-4xl font-poppins font-black text-white tabular-nums tracking-tighter leading-none">{value}</span>
-=======
         <div className="glass-panel px-10 py-4 flex flex-col items-end border-r-8 border-r-tactical shadow-2xl relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-full h-full bg-tactical/5 translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
             <span className="text-[10px] font-mono text-[#FFBF00]/60 uppercase mb-1 tracking-[0.3em] leading-none z-10">{label}</span>
             <span className="text-5xl font-poppins font-black text-white tabular-nums tracking-tighter leading-none z-10">{value}</span>
->>>>>>> 816b9a1 (Premium Overhaul: High-fidelity shaders, Reflector floor, Force fields, and HUD update)
         </div>
     );
 }
 
-<<<<<<< HEAD
-function LoadingOverlay() {
-    return (
-        <div className="absolute inset-0 flex items-center justify-center bg-black z-50">
-            <div className="text-center">
-                <div className="w-16 h-16 border-4 border-tactical border-t-transparent rounded-full animate-spin mb-4 mx-auto" />
-                <p className="font-mono text-tactical tracking-widest uppercase text-xs">Initializing_Crucible...</p>
-=======
 function ControlBadge({ label, keys }: { label: string, keys: string }) {
     return (
         <div className="glass-panel px-6 py-3 flex flex-col border-t-2 border-white/5 bg-white/2">
@@ -351,7 +306,6 @@ function LoadingOverlay() {
                         />
                      ))}
                 </div>
->>>>>>> 816b9a1 (Premium Overhaul: High-fidelity shaders, Reflector floor, Force fields, and HUD update)
             </div>
         </div>
     );
