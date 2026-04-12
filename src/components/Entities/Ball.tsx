@@ -1,28 +1,52 @@
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { useSphere } from '@react-three/cannon';
 import * as THREE from 'three';
+import * as CANNON from 'cannon-es';
 import { Trail } from '@react-three/drei';
+import { usePhysics } from '../../hooks/usePhysics';
 import { useGameStore } from '../../store/useGameStore';
 
 export const Ball = () => {
-  const [ref, api] = useSphere(() => ({
-    mass: 1,
-    position: [0, 5, 0],
-    args: [0.6],
-    material: { restitution: 0.8, friction: 0.1 }
-  }));
-
+  const { world } = usePhysics();
+  const groupRef = useRef<THREE.Group>(null!);
   const ballMesh = useRef<THREE.Mesh>(null!);
   const glowRef = useRef<THREE.PointLight>(null!);
   const updateBallPosition = useGameStore(state => state.updateBallPosition);
 
+  // Native Cannon-es Setup
+  const bodyRef = useRef<CANNON.Body>(null!);
+
+  useEffect(() => {
+    const radius = 0.6;
+    const body = new CANNON.Body({
+        mass: 1,
+        shape: new CANNON.Sphere(radius),
+        position: new CANNON.Vec3(0, 5, 0),
+        linearDamping: 0.1,
+        angularDamping: 0.1,
+    });
+    
+    world.addBody(body);
+    bodyRef.current = body;
+
+    return () => {
+        world.removeBody(body);
+    };
+  }, [world]);
+
   useFrame((state) => {
-    // Sync position to store for bots
-    if (ref.current) {
-        const pos = ref.current.position;
-        updateBallPosition([pos.x, pos.y, pos.z]);
-    }
+    if (!bodyRef.current) return;
+    
+    // Sync position
+    const pos = bodyRef.current.position;
+    groupRef.current.position.set(pos.x, pos.y, pos.z);
+    
+    // Sync rotation
+    const quat = bodyRef.current.quaternion;
+    groupRef.current.quaternion.set(quat.x, quat.y, quat.z, quat.w);
+
+    // Sync to store
+    updateBallPosition([pos.x, pos.y, pos.z]);
     
     const time = state.clock.getElapsedTime();
     
@@ -38,7 +62,7 @@ export const Ball = () => {
   });
 
   return (
-    <group ref={ref as any}>
+    <group ref={groupRef}>
       <Trail
         width={1.5}
         length={4}
@@ -48,15 +72,12 @@ export const Ball = () => {
         <mesh ref={ballMesh} castShadow>
             <icosahedronGeometry args={[0.6, 3]} />
             <meshPhysicalMaterial 
-                color="#050505"
+                color="#111"
                 emissive="#FFBF00"
                 emissiveIntensity={2}
                 roughness={0.1}
                 metalness={1}
                 clearcoat={1}
-                clearcoatRoughness={0}
-                transmission={0.2}
-                thickness={1}
             />
             <pointLight ref={glowRef} color="#FFBF00" intensity={2} distance={10} />
         </mesh>
