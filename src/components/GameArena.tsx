@@ -102,6 +102,8 @@ export default function GameArena() {
   const [gameStarted, setGameStarted] = useState(false);
   const [lastGoal, setLastGoal] = useState<number | null>(null);
   const [isBraking, setIsBraking] = useState(false);
+  const [cameraShake, setCameraShake] = useState(0);
+  const [victory, setVictory] = useState(false);
 
   // Refs for Three.js and Cannon.js objects
   const worldRef = useRef<CANNON.World | null>(null);
@@ -343,6 +345,20 @@ export default function GameArena() {
         playSound('bump', 1);
       } else if (impact > 2) {
         playSound('bump', Math.min(impact / 10, 1));
+      }
+
+      // Wall flash
+      if (e.body.type === CANNON.Body.STATIC) {
+        const wallMesh = sceneRef.current?.children.find(c => c instanceof THREE.Mesh && c.position.equals(e.body.position));
+        if (wallMesh instanceof THREE.Mesh && wallMesh.material instanceof THREE.MeshStandardMaterial) {
+          const originalEmissive = wallMesh.material.emissive.clone();
+          wallMesh.material.emissive.set(0xffffff);
+          setTimeout(() => {
+            if (wallMesh.material instanceof THREE.MeshStandardMaterial) {
+              wallMesh.material.emissive.copy(originalEmissive);
+            }
+          }, 100);
+        }
       }
     });
     world.addBody(ballBody);
@@ -703,6 +719,13 @@ export default function GameArena() {
           playerBodyRef.current.position.y + 15,
           playerBodyRef.current.position.z + 20
         );
+        
+        // Add shake
+        if (cameraShake > 0) {
+          targetCamPos.x += (Math.random() - 0.5) * cameraShake;
+          targetCamPos.y += (Math.random() - 0.5) * cameraShake;
+        }
+
         cameraRef.current?.position.lerp(targetCamPos, 0.1);
         cameraRef.current?.lookAt(playerMeshRef.current?.position || new THREE.Vector3());
 
@@ -731,6 +754,12 @@ export default function GameArena() {
               worldRef.current?.removeBody(bot.body);
             }
             playSound('goal');
+            setCameraShake(2);
+            setTimeout(() => setCameraShake(0), 500);
+
+            if (eliminated.filter(e => !e).length === 1) {
+              setVictory(true);
+            }
           }
 
           // Reset Ball
@@ -838,6 +867,13 @@ export default function GameArena() {
               <div className="text-xs md:text-xl font-black text-white leading-tight">{isOut ? 'OUT' : 'OK'}</div>
             </div>
           ))}
+        </div>
+        
+        {/* Players Remaining */}
+        <div className="absolute top-4 right-4 bg-white/10 backdrop-blur-md border border-white/20 px-4 py-2 rounded-full">
+          <span className="text-xs font-bold text-white uppercase tracking-widest">
+            Players Remaining: {eliminated.filter(e => !e).length}
+          </span>
         </div>
       </div>
 
@@ -948,9 +984,30 @@ export default function GameArena() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -50, opacity: 0 }}
             onAnimationComplete={() => setTimeout(() => setLastGoal(null), 2000)}
-            className="absolute bottom-24 left-1/2 -translate-x-1/2 bg-red-600 px-8 py-3 rounded-full shadow-2xl"
+            className="absolute bottom-24 left-1/2 -translate-x-1/2 bg-red-600 px-8 py-3 rounded-full shadow-2xl z-40"
           >
             <span className="text-white font-black uppercase tracking-widest italic">Player #{lastGoal + 1} ELIMINATED!</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Victory Screen */}
+      <AnimatePresence>
+        {victory && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="absolute inset-0 flex items-center justify-center pointer-events-auto bg-black/80 backdrop-blur-md z-50"
+          >
+            <div className="text-center space-y-6">
+              <h2 className="text-8xl font-black text-white uppercase italic tracking-tighter animate-pulse">VICTORY</h2>
+              <button 
+                onClick={resetGame}
+                className="px-12 py-4 bg-white text-black font-black uppercase tracking-widest rounded-full transition-all transform hover:scale-105 active:scale-95"
+              >
+                Play Again
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
