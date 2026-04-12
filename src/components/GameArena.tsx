@@ -239,18 +239,22 @@ export default function GameArena() {
   );
 }
 
-const StatCard = ({ label, value }: { label: string, value: string }) => (
-    <div className="glass-panel px-8 py-3 flex flex-col items-end border-r-4 border-r-tactical shadow-lg">
-        <span className="text-[9px] font-mono text-[#FFBF00]/70 uppercase mb-1 tracking-widest leading-none">{label}</span>
-        <span className="text-4xl font-poppins font-black text-white tabular-nums tracking-tighter leading-none">{value}</span>
-    </div>
-);
-
-const LoadingOverlay = () => (
-    <div className="absolute inset-0 flex items-center justify-center bg-black z-50">
-        <div className="text-center">
-            <div className="w-16 h-16 border-4 border-tactical border-t-transparent rounded-full animate-spin mb-4 mx-auto" />
-            <p className="font-mono text-tactical tracking-widest uppercase text-xs">Initializing_Crucible...</p>
+function StatCard({ label, value }: { label: string, value: string }) {
+    return (
+        <div className="glass-panel px-8 py-3 flex flex-col items-end border-r-4 border-r-tactical shadow-lg">
+            <span className="text-[9px] font-mono text-[#FFBF00]/70 uppercase mb-1 tracking-widest leading-none">{label}</span>
+            <span className="text-4xl font-poppins font-black text-white tabular-nums tracking-tighter leading-none">{value}</span>
         </div>
-    </div>
-);
+    );
+}
+
+function LoadingOverlay() {
+    return (
+        <div className="absolute inset-0 flex items-center justify-center bg-black z-50">
+            <div className="text-center">
+                <div className="w-16 h-16 border-4 border-tactical border-t-transparent rounded-full animate-spin mb-4 mx-auto" />
+                <p className="font-mono text-tactical tracking-widest uppercase text-xs">Initializing_Crucible...</p>
+            </div>
+        </div>
+    );
+}
