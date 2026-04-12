@@ -35,14 +35,26 @@ export const Player = () => {
     };
   }, [world]);
 
-  useFrame(() => {
+  const { gameStarted, moveDirection, pulseTrigger } = useGameStore();
+  
+  // ... (keep refs)
+
+  useFrame((state) => {
     if (!bodyRef.current || !gameStarted) return;
     const moveVelocity = 28;
     const force = new THREE.Vector3(0, 0, 0);
+    
+    // Keyboard Input
     if (keys['w'] || keys['ArrowUp']) force.z -= 1;
     if (keys['s'] || keys['ArrowDown']) force.z += 1;
     if (keys['a'] || keys['ArrowLeft']) force.x -= 1;
     if (keys['d'] || keys['ArrowRight']) force.x += 1;
+
+    // Mobile Joystick Input
+    if (moveDirection[0] !== 0 || moveDirection[1] !== 0) {
+        force.x = moveDirection[0];
+        force.z = moveDirection[1];
+    }
 
     if (force.length() > 0) {
         force.normalize().multiplyScalar(moveVelocity);
@@ -60,8 +72,31 @@ export const Player = () => {
             meshRef.current.rotation.z = THREE.MathUtils.lerp(meshRef.current.rotation.z, 0, 0.1);
         }
     }
+
+    // --- PULSE EFFECT ---
+    if (pulseTrigger) {
+        // Kick the ball if nearby (simple radial pulse)
+        const ballBody = world.bodies.find(b => b.mass === 1 && b.shapes[0] instanceof CANNON.Sphere);
+        if (ballBody) {
+            const playerPos = bodyRef.current.position;
+            const ballPos = ballBody.position;
+            const dx = ballPos.x - playerPos.x;
+            const dz = ballPos.z - playerPos.z;
+            const dist = Math.sqrt(dx*dx + dz*dz);
+            if (dist < 4) {
+                const dir = new CANNON.Vec3(dx/dist, 0.5, dz/dist);
+                ballBody.applyImpulse(dir.scale(80), ballBody.position);
+            }
+        }
+    }
+
     const pos = bodyRef.current.position;
     groupRef.current.position.set(pos.x, pos.y, pos.z);
+    
+    // Aesthetic Hover
+    if (meshRef.current) {
+        meshRef.current.position.y = Math.sin(state.clock.getElapsedTime() * 4) * 0.1;
+    }
   });
 
   return (

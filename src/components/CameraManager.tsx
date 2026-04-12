@@ -24,8 +24,15 @@ export const CameraManager = () => {
     const lookAtPos = new THREE.Vector3().lerpVectors(playerPos, ballPos, 0.4);
     cameraTarget.current.lerp(lookAtPos, 0.1);
     
+    const aspect = state.size.width / state.size.height;
+    const mobileFactor = aspect < 1.6 ? 1.4 : 1.0; 
+
     // Position: Stay behind player but dynamic
-    const idealOffset = new THREE.Vector3(0, 25 + ballVel * 0.2, 30 + ballVel * 0.3);
+    const idealOffset = new THREE.Vector3(
+        0, 
+        (25 + ballVel * 0.2) * mobileFactor, 
+        (30 + ballVel * 0.3) * mobileFactor
+    );
     const idealPosition = playerPos.clone().add(idealOffset);
     
     cameraPosition.current.lerp(idealPosition, 0.05);

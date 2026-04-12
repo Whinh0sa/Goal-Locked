@@ -5,6 +5,27 @@ import * as CANNON from 'cannon-es';
 import { usePhysics } from '../hooks/usePhysics';
 
 export const Crucible = () => {
+    const { world } = usePhysics();
+
+    // Floor Physics Collider (Cylinder with thickness to prevent fall-through)
+    useEffect(() => {
+        const shape = new CANNON.Cylinder(25, 25, 1, 32);
+        const body = new CANNON.Body({
+            mass: 0,
+            position: new CANNON.Vec3(0, -0.5, 0), // Positioned so top surface is at y:0
+            shape
+        });
+        
+        // Cannon Cylinders are oriented along the local Z-axis by default, 
+        // we need to rotate it to align with the Y-axis.
+        const quat = new CANNON.Quaternion();
+        quat.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
+        body.quaternion.copy(quat);
+
+        world.addBody(body);
+        return () => world.removeBody(body);
+    }, [world]);
+
     return (
         <group>
             {/* Arena Floor: Rain-Slicked Concrete */}

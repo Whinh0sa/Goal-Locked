@@ -15,9 +15,13 @@ import { CollisionParticles } from './VFX/CollisionParticles';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, RefreshCw, AlertTriangle } from 'lucide-react';
 import * as THREE from 'three';
+import { OrientationLock } from './UI/OrientationLock';
+import { MobileControls } from './UI/MobileControls';
 
 const GOALS = 8;
 const ARENA_RADIUS = 20;
+
+// ... (skipping unchanged code for brevity in thought, but tool will use full content)
 
 // --- Diegetic 3D HUD Components ---
 
@@ -254,6 +258,10 @@ export default function GameArena() {
         <color attach="background" args={["#000"]} />
         <CrucibleScene />
       </Canvas>
+
+      {/* Mobile Systems */}
+      <OrientationLock />
+      <MobileControls />
 
       <div className="absolute bottom-12 left-12 font-mono text-[10px] text-teal-500/60 tracking-[0.4em] uppercase select-none pointer-events-none drop-shadow-[0_0_10px_rgba(0,128,128,0.5)]">
            Crucible_OS // Sector_Control_System // v5.0.0_ULTRA

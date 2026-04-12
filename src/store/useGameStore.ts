@@ -8,12 +8,16 @@ interface GameState {
   victory: boolean;
   remainingPlayers: number;
   ballPosition: [number, number, number];
+  moveDirection: [number, number]; 
+  pulseTrigger: boolean;
   
   // Actions
   startGame: () => void;
   registerGoal: (playerIndex: number) => void;
   resetGame: () => void;
   updateBallPosition: (pos: [number, number, number]) => void;
+  setMoveDirection: (dir: [number, number]) => void;
+  triggerPulse: () => void;
 }
 
 const GOAL_COUNT = 8;
@@ -26,6 +30,8 @@ export const useGameStore = create<GameState>((set) => ({
   victory: false,
   remainingPlayers: GOAL_COUNT,
   ballPosition: [0, 5, 0],
+  moveDirection: [0, 0],
+  pulseTrigger: false,
 
   startGame: () => set({ gameStarted: true }),
 
@@ -52,7 +58,14 @@ export const useGameStore = create<GameState>((set) => ({
     victory: false,
     remainingPlayers: GOAL_COUNT,
     ballPosition: [0, 5, 0],
+    moveDirection: [0, 0],
+    pulseTrigger: false,
   }),
 
   updateBallPosition: (pos) => set({ ballPosition: pos }),
+  setMoveDirection: (dir) => set({ moveDirection: dir }),
+  triggerPulse: () => {
+    set({ pulseTrigger: true });
+    setTimeout(() => set({ pulseTrigger: false }), 100);
+  },
 }));
