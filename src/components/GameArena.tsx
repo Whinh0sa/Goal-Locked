@@ -36,55 +36,55 @@ export default function GameArena() {
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-[#080808] font-sans selection:bg-tactical selection:text-black">
-      <Canvas shadows dpr={[1, 2]} gl={{ antialias: false }} camera={{ position: [0, 50, 50], fov: 45 }}>
-        <Suspense fallback={<LoadingOverlay />}>
-          <PhysicsProvider>
-            {/* Dynamic Camera managed by CameraManager (MUST BE INSIDE PhysicsProvider) */}
-            <CameraManager />
-            
-            <Sky sunPosition={[100, 20, 100]} />
-            <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-            <ambientLight intensity={0.2} />
-            <pointLight position={[0, 10, 0]} intensity={1.5} color="#FFBF00" />
-            <directionalLight 
-                position={[10, 20, 10]} 
-                intensity={1.2} 
-                castShadow 
-                shadow-mapSize={[1024, 1024]} 
-            />
-            <Environment preset="night" />
+      <Suspense fallback={<LoadingOverlay />}>
+        <Canvas shadows dpr={[1, 2]} gl={{ antialias: false }} camera={{ position: [0, 50, 50], fov: 45 }}>
+            <PhysicsProvider>
+                {/* Dynamic Camera managed by CameraManager (MUST BE INSIDE PhysicsProvider) */}
+                <CameraManager />
+                
+                <Sky sunPosition={[100, 20, 100]} />
+                <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+                <ambientLight intensity={0.2} />
+                <pointLight position={[0, 10, 0]} intensity={1.5} color="#FFBF00" />
+                <directionalLight 
+                    position={[10, 20, 10]} 
+                    intensity={1.2} 
+                    castShadow 
+                    shadow-mapSize={[1024, 1024]} 
+                />
+                <Environment preset="night" />
 
-            <GameManager />
-            <Crucible />
-            <Ball />
-            <Player />
-            
-            {/* AI Bots 1-7 */}
-            {botGoalPositions.map((pos, i) => (
-                i !== 0 && <Bot key={i} id={i} goalPos={pos} />
-            ))}
-            
-            <ContactShadows 
-                position={[0, 0.01, 0]} 
-                opacity={0.6} 
-                scale={ARENA_RADIUS * 2.5} 
-                blur={2.4} 
-                far={4.5} 
-            />
-          </PhysicsProvider>
-        </Suspense>
+                <GameManager />
+                <Crucible />
+                <Ball />
+                <Player />
+                
+                {/* AI Bots 1-7 */}
+                {botGoalPositions.map((pos, i) => (
+                    i !== 0 && <Bot key={i} id={i} goalPos={pos} />
+                ))}
+                
+                <ContactShadows 
+                    position={[0, 0.01, 0]} 
+                    opacity={0.6} 
+                    scale={ARENA_RADIUS * 2.5} 
+                    blur={2.4} 
+                    far={4.5} 
+                />
+            </PhysicsProvider>
 
-        <EffectComposer>
-            <Bloom 
-                luminanceThreshold={0.5} 
-                mipmapBlur 
-                intensity={1.2} 
-                radius={0.4}
-            />
-            <ChromaticAberration offset={new THREE.Vector2(0.001, 0.001)} />
-            <Noise opacity={0.05} />
-        </EffectComposer>
-      </Canvas>
+            <EffectComposer>
+                <Bloom 
+                    luminanceThreshold={0.5} 
+                    mipmapBlur 
+                    intensity={1.2} 
+                    radius={0.4}
+                />
+                <ChromaticAberration offset={new THREE.Vector2(0.001, 0.001)} />
+                <Noise opacity={0.05} />
+            </EffectComposer>
+        </Canvas>
+      </Suspense>
 
       {/* UI Overlay */}
       <div className="absolute inset-0 p-6 pointer-events-none flex flex-col justify-between select-none">
