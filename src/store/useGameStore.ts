@@ -7,11 +7,13 @@ interface GameState {
   lastGoal: number | null;
   victory: boolean;
   remainingPlayers: number;
+  ballPosition: [number, number, number];
   
   // Actions
   startGame: () => void;
   registerGoal: (playerIndex: number) => void;
   resetGame: () => void;
+  updateBallPosition: (pos: [number, number, number]) => void;
 }
 
 const GOAL_COUNT = 8;
@@ -23,6 +25,7 @@ export const useGameStore = create<GameState>((set) => ({
   lastGoal: null,
   victory: false,
   remainingPlayers: GOAL_COUNT,
+  ballPosition: [0, 5, 0],
 
   startGame: () => set({ gameStarted: true }),
 
@@ -48,5 +51,8 @@ export const useGameStore = create<GameState>((set) => ({
     lastGoal: null,
     victory: false,
     remainingPlayers: GOAL_COUNT,
+    ballPosition: [0, 5, 0],
   }),
+
+  updateBallPosition: (pos) => set({ ballPosition: pos }),
 }));

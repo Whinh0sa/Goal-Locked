@@ -1,101 +1,75 @@
-import { useRef, useEffect, useMemo } from 'react';
+import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { useSphere } from '@react-three/cannon';
 import * as THREE from 'three';
-import * as CANNON from 'cannon-es';
-import { usePhysics } from '../../hooks/usePhysics';
-
-const BALL_RADIUS = 0.8;
-
-// Tactical Amber Shaders
-const BallShader = {
-  uniforms: {
-    uTime: { value: 0 },
-    uVelocity: { value: 0 },
-  },
-  vertexShader: `
-    varying vec3 vNormal;
-    varying vec3 vPosition;
-    void main() {
-      vNormal = normalize(normalMatrix * normal);
-      vPosition = position;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-    }
-  `,
-  fragmentShader: `
-    uniform float uTime;
-    uniform float uVelocity;
-    varying vec3 vNormal;
-    varying vec3 vPosition;
-    
-    void main() {
-      float fresnel = pow(1.0 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
-      vec3 baseColor = vec3(1.0, 0.75, 0.0); // Amber
-      
-      // Dynamic core pulse based on velocity
-      float pulse = 0.7 + 0.3 * sin(uTime * (10.0 + uVelocity));
-      vec3 finalColor = mix(baseColor * pulse, vec3(1.0), fresnel * 0.5);
-      
-      // Speed glow
-      finalColor += vec3(1.0, 0.5, 0.0) * (uVelocity * 0.05);
-      
-      gl_FragColor = vec4(finalColor, 1.0);
-    }
-  `
-};
+import { Trail } from '@react-three/drei';
+import { useGameStore } from '../../store/useGameStore';
 
 export const Ball = () => {
-  const { world } = usePhysics();
-  const meshRef = useRef<THREE.Mesh>(null);
-  const shaderRef = useRef<THREE.ShaderMaterial>(null);
-  
-  const body = useMemo(() => {
-    const b = new CANNON.Body({
-      mass: 1,
-      shape: new CANNON.Sphere(BALL_RADIUS),
-      linearDamping: 0.1,
-      angularDamping: 0.1,
-    });
-    b.position.set(0, 5, 0);
-    return b;
-  }, []);
+  const [ref, api] = useSphere(() => ({
+    mass: 1,
+    position: [0, 5, 0],
+    args: [0.6],
+    material: { restitution: 0.8, friction: 0.1 }
+  }));
 
-  useEffect(() => {
-    world.addBody(body);
-    return () => { world.removeBody(body); };
-  }, [world, body]);
+  const ballMesh = useRef<THREE.Mesh>(null!);
+  const glowRef = useRef<THREE.PointLight>(null!);
+  const updateBallPosition = useGameStore(state => state.updateBallPosition);
 
-  useFrame(({ clock }) => {
-    if (!meshRef.current || !body) return;
-    
-    // Sync mesh to physics body
-    meshRef.current.position.copy(body.position as any);
-    meshRef.current.quaternion.copy(body.quaternion as any);
-    
-    // Update shader
-    if (shaderRef.current) {
-      shaderRef.current.uniforms.uTime.value = clock.getElapsedTime();
-      shaderRef.current.uniforms.uVelocity.value = body.velocity.length();
+  useFrame((state) => {
+    // Sync position to store for bots
+    if (ref.current) {
+        const pos = ref.current.position;
+        updateBallPosition([pos.x, pos.y, pos.z]);
     }
     
-    // Bounce decay or velocity cap logic can go here
+    const time = state.clock.getElapsedTime();
+    
+    if (ballMesh.current) {
+        const pulse = Math.sin(time * 10) * 0.1 + 1;
+        ballMesh.current.scale.set(pulse, pulse, pulse);
+        (ballMesh.current.material as THREE.MeshPhysicalMaterial).emissiveIntensity = 2 + Math.sin(time * 20) * 1.5;
+    }
+
+    if (glowRef.current) {
+        glowRef.current.intensity = 1.5 + Math.sin(time * 15) * 0.5;
+    }
   });
 
   return (
-    <group>
-      <mesh ref={meshRef} castShadow>
-        <sphereGeometry args={[BALL_RADIUS, 32, 32]} />
-        <shaderMaterial 
-          ref={shaderRef}
-          vertexShader={BallShader.vertexShader}
-          fragmentShader={BallShader.fragmentShader}
-          uniforms={BallShader.uniforms}
-        />
+    <group ref={ref as any}>
+      <Trail
+        width={1.5}
+        length={4}
+        color={new THREE.Color('#FFBF00')}
+        attenuation={(t) => t * t}
+      >
+        <mesh ref={ballMesh} castShadow>
+            <icosahedronGeometry args={[0.6, 3]} />
+            <meshPhysicalMaterial 
+                color="#050505"
+                emissive="#FFBF00"
+                emissiveIntensity={2}
+                roughness={0.1}
+                metalness={1}
+                clearcoat={1}
+                clearcoatRoughness={0}
+                transmission={0.2}
+                thickness={1}
+            />
+            <pointLight ref={glowRef} color="#FFBF00" intensity={2} distance={10} />
+        </mesh>
+      </Trail>
+
+      <mesh>
+          <icosahedronGeometry args={[0.3, 2]} />
+          <meshBasicMaterial color="#FFBF00" />
       </mesh>
-      
-      {/* Outer Wireframe Shell */}
-      <mesh position={meshRef.current?.position} quaternion={meshRef.current?.quaternion}>
-        <sphereGeometry args={[BALL_RADIUS + 0.05, 12, 12]} />
-        <meshBasicMaterial color="#FFBF00" wireframe transparent opacity={0.2} />
+
+      <mesh rotation-x={Math.PI / 2}>
+          <ringGeometry args={[0.8, 0.85, 32]} />
+          <meshBasicMaterial color="#FFBF00" transparent opacity={0.2} side={THREE.DoubleSide} />
       </mesh>
     </group>
   );

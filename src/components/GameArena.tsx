@@ -1,6 +1,6 @@
 import React, { Suspense, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { Sky, Stars, OrbitControls, Environment, ContactShadows } from '@react-three/drei';
+import { Sky, Stars, Environment, ContactShadows, Html } from '@react-three/drei';
 import { EffectComposer, Bloom, ChromaticAberration, Noise } from '@react-three/postprocessing';
 import { PhysicsProvider } from '../hooks/usePhysics';
 import { useGameStore } from '../store/useGameStore';
@@ -35,15 +35,23 @@ export default function GameArena() {
   }, []);
 
   return (
+<<<<<<< HEAD
     <div className="relative w-full h-screen overflow-hidden bg-[#080808] font-sans selection:bg-tactical selection:text-black">
       <Suspense fallback={<LoadingOverlay />}>
         <Canvas shadows dpr={[1, 2]} gl={{ antialias: false }} camera={{ position: [0, 50, 50], fov: 45 }}>
             <PhysicsProvider>
                 {/* Dynamic Camera managed by CameraManager (MUST BE INSIDE PhysicsProvider) */}
+=======
+    <div className="fixed inset-0 w-full h-full overflow-hidden bg-[#050505] font-sans selection:bg-tactical selection:text-black scanlines">
+      <Canvas shadows dpr={[1, 2]} gl={{ antialias: true, alpha: false }} camera={{ position: [0, 50, 50], fov: 45 }}>
+        <Suspense fallback={<Html center fullscreen><LoadingOverlay /></Html>}>
+            <PhysicsProvider>
+>>>>>>> 816b9a1 (Premium Overhaul: High-fidelity shaders, Reflector floor, Force fields, and HUD update)
                 <CameraManager />
                 
                 <Sky sunPosition={[100, 20, 100]} />
                 <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+<<<<<<< HEAD
                 <ambientLight intensity={0.2} />
                 <pointLight position={[0, 10, 0]} intensity={1.5} color="#FFBF00" />
                 <directionalLight 
@@ -51,6 +59,15 @@ export default function GameArena() {
                     intensity={1.2} 
                     castShadow 
                     shadow-mapSize={[1024, 1024]} 
+=======
+                <ambientLight intensity={0.1} />
+                <pointLight position={[0, 10, 0]} intensity={1.5} color="#FFBF00" />
+                <directionalLight 
+                    position={[20, 40, 20]} 
+                    intensity={1.5} 
+                    castShadow 
+                    shadow-mapSize={[2048, 2048]} 
+>>>>>>> 816b9a1 (Premium Overhaul: High-fidelity shaders, Reflector floor, Force fields, and HUD update)
                 />
                 <Environment preset="night" />
 
@@ -73,6 +90,7 @@ export default function GameArena() {
                 />
             </PhysicsProvider>
 
+<<<<<<< HEAD
             <EffectComposer>
                 <Bloom 
                     luminanceThreshold={0.5} 
@@ -85,67 +103,112 @@ export default function GameArena() {
             </EffectComposer>
         </Canvas>
       </Suspense>
+=======
+            <EffectComposer disableNormalPass>
+                <Bloom 
+                    luminanceThreshold={0.5} 
+                    mipmapBlur 
+                    intensity={1.5} 
+                    radius={0.3}
+                />
+                <ChromaticAberration offset={new THREE.Vector2(0.0015, 0.0015)} />
+                <Noise opacity={0.08} />
+            </EffectComposer>
+        </Suspense>
+      </Canvas>
+>>>>>>> 816b9a1 (Premium Overhaul: High-fidelity shaders, Reflector floor, Force fields, and HUD update)
 
-      {/* UI Overlay */}
-      <div className="absolute inset-0 p-6 pointer-events-none flex flex-col justify-between select-none">
-        {/* Header Stats */}
+      {/* Diegetic UI Overlay */}
+      <div className="absolute inset-0 p-8 pointer-events-none flex flex-col justify-between select-none z-10">
+        
+        {/* Top Bar: Tactical Status */}
         <div className="flex justify-between items-start w-full">
-          <div className="glass-panel px-6 py-4 flex flex-col border-l-4 border-l-tactical shadow-2xl">
-            <h1 className="text-4xl font-poppins font-black text-white italic tracking-tighter uppercase leading-none">
-                Goal <span className="text-tactical">Locked</span>
-            </h1>
-            <p className="text-[10px] font-mono tracking-[0.3em] text-[#FFBF00]/80 mt-2 uppercase flex items-center gap-2">
-                <Cpu className="w-3 h-3" /> Tactical Survival Arena // V2.9
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-2 items-end">
-            <StatCard label="PLAYERS ACTIVE" value={`${remainingPlayers}`} />
-            <div className="glass-panel px-3 py-1 flex items-center gap-2 border-[#FFBF00]/10">
-                 <ShieldAlert className="w-3 h-3 text-red-500 animate-pulse" />
-                 <span className="text-[9px] font-mono text-white/50 uppercase">Protocol: SURVIVE</span>
+          <motion.div 
+            initial={{ x: -100, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            className="flex flex-col gap-1"
+          >
+            <div className="flex items-center gap-4">
+                 <div className="w-1.5 h-12 bg-tactical amber-glow" />
+                 <div className="flex flex-col">
+                    <h1 className="text-5xl font-poppins font-black text-white italic tracking-tighter uppercase leading-none drop-shadow-2xl">
+                        GOAL <span className="text-tactical">LOCKED</span>
+                    </h1>
+                    <div className="flex items-center gap-2 mt-1">
+                        <Cpu className="w-3 h-3 text-tactical" />
+                        <span className="text-[10px] font-mono tracking-[0.4em] text-white/40 uppercase">Crucible_OS // v2.9.4</span>
+                    </div>
+                 </div>
             </div>
-          </div>
+          </motion.div>
+
+          <motion.div 
+            initial={{ x: 100, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            className="flex flex-col gap-3 items-end"
+          >
+            <StatCard label="PLAYERS_ACTIVE" value={`0${remainingPlayers}`} />
+            <div className="flex items-center gap-3">
+                 <span className="text-[9px] font-mono text-white/30 uppercase tracking-widest">System_Link: Stable</span>
+                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
+            </div>
+          </motion.div>
         </div>
 
         {/* Elimination Alert */}
-        <div className="flex justify-center w-full mb-12">
-            <AnimatePresence>
+        <div className="flex justify-center w-full">
+            <AnimatePresence mode="wait">
                 {lastGoal !== null && (
                     <motion.div 
-                        initial={{ y: 50, opacity: 0, scale: 0.8 }}
-                        animate={{ y: 0, opacity: 1, scale: 1 }}
-                        exit={{ y: -50, opacity: 0, scale: 1.5 }}
-                        className="glass-panel px-12 py-4 amber-glow border-tactical border-t-2 border-b-2 bg-black/90"
+                        key={lastGoal}
+                        initial={{ scale: 0.5, opacity: 0, filter: 'blur(10px)' }}
+                        animate={{ scale: 1, opacity: 1, filter: 'blur(0px)' }}
+                        exit={{ scale: 1.5, opacity: 0, filter: 'blur(20px)' }}
+                        className="glass-panel px-16 py-6 amber-glow border-2 border-tactical/50 bg-black/80 backdrop-blur-xl flex flex-col items-center"
                     >
-                        <h2 className="text-3xl font-poppins text-[#FFBF00] italic uppercase font-black tracking-[0.15em] flex items-center gap-4">
-                            <span className="w-2 h-2 bg-tactical rounded-full animate-ping" />
-                            {lastGoal === 0 ? "UNIT TERMINATED" : `GA-0${lastGoal + 1} OFFLINE`}
+                        <ShieldAlert className="w-8 h-8 text-red-500 mb-2 animate-bounce" />
+                        <h2 className="text-4xl font-poppins text-white italic uppercase font-black tracking-[0.2em]">
+                            {lastGoal === 0 ? "UNIT_ELIMINATED" : `GA-0${lastGoal + 1}_OFFLINE`}
                         </h2>
+                        <div className="w-full h-1 bg-white/5 mt-4 overflow-hidden">
+                            <motion.div 
+                                initial={{ width: "0%" }}
+                                animate={{ width: "100%" }}
+                                transition={{ duration: 1.5 }}
+                                className="h-full bg-tactical"
+                            />
+                        </div>
                     </motion.div>
                 )}
             </AnimatePresence>
         </div>
 
-        {/* Bottom HUD */}
+        {/* Bottom HUD: Telemetry */}
         <div className="flex justify-between items-end w-full">
-            <div className="glass-panel px-6 py-4 flex gap-10 border-b-4 border-b-tactical/30">
-                <div className="flex flex-col">
-                    <span className="text-[9px] font-mono text-[#FFBF00]/50 uppercase mb-1 tracking-widest">NAV_SYSTEM</span>
-                    <span className="text-sm font-black text-white uppercase tracking-tighter">WASD</span>
-                </div>
-                <div className="flex flex-col border-l border-white/10 pl-10">
-                    <span className="text-[9px] font-mono text-[#FFBF00]/50 uppercase mb-1 tracking-widest">PULSE_CHARGE</span>
-                    <span className="text-sm font-black text-white uppercase tracking-tighter">SPACE</span>
-                </div>
-            </div>
-
-            <button 
-                onClick={resetGame}
-                className="pointer-events-auto p-5 glass-panel hover:bg-tactical/20 transition-all group amber-glow"
+            <motion.div 
+                initial={{ y: 50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                className="flex gap-1"
             >
-                <RotateCcw className="w-8 h-8 text-white group-hover:rotate-180 transition-transform duration-700 ease-in-out" />
-            </button>
+                <ControlBadge label="MOVE" keys="WASD" />
+                <ControlBadge label="PULSE" keys="SPACE" />
+            </motion.div>
+
+            <motion.div 
+                initial={{ y: 50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                className="flex items-center gap-6"
+            >
+                <div className="flex flex-col items-end">
+                    <span className="text-[9px] font-mono text-white/40 uppercase tracking-widest">Reboot_Protocol</span>
+                    <button 
+                        onClick={resetGame}
+                        className="pointer-events-auto p-4 glass-panel border-tactical/20 hover:border-tactical transition-all group amber-glow mt-1"
+                    >
+                        <RotateCcw className="w-6 h-6 text-white group-hover:rotate-180 transition-transform duration-500" />
+                    </button>
+                </div>
+            </motion.div>
         </div>
 
         {/* Mobile Controls (Visible only on touch devices) */}
@@ -188,7 +251,7 @@ export default function GameArena() {
               </div>
               
               <div className="space-y-4">
-                <h2 className="text-8xl font-poppins font-black text-white italic tracking-tighter uppercase leading-tight">
+                <h2 className="text-8xl font-poppins font-black text-white italic tracking-tighter uppercase leading-tight text-center">
                     Defend <br/> <span className="text-tactical">OR</span> Delete
                 </h2>
                 <div className="h-0.5 w-24 bg-tactical mx-auto mb-4" />
@@ -241,19 +304,54 @@ export default function GameArena() {
 
 function StatCard({ label, value }: { label: string, value: string }) {
     return (
+<<<<<<< HEAD
         <div className="glass-panel px-8 py-3 flex flex-col items-end border-r-4 border-r-tactical shadow-lg">
             <span className="text-[9px] font-mono text-[#FFBF00]/70 uppercase mb-1 tracking-widest leading-none">{label}</span>
             <span className="text-4xl font-poppins font-black text-white tabular-nums tracking-tighter leading-none">{value}</span>
+=======
+        <div className="glass-panel px-10 py-4 flex flex-col items-end border-r-8 border-r-tactical shadow-2xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-full h-full bg-tactical/5 translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
+            <span className="text-[10px] font-mono text-[#FFBF00]/60 uppercase mb-1 tracking-[0.3em] leading-none z-10">{label}</span>
+            <span className="text-5xl font-poppins font-black text-white tabular-nums tracking-tighter leading-none z-10">{value}</span>
+>>>>>>> 816b9a1 (Premium Overhaul: High-fidelity shaders, Reflector floor, Force fields, and HUD update)
         </div>
     );
 }
 
+<<<<<<< HEAD
 function LoadingOverlay() {
     return (
         <div className="absolute inset-0 flex items-center justify-center bg-black z-50">
             <div className="text-center">
                 <div className="w-16 h-16 border-4 border-tactical border-t-transparent rounded-full animate-spin mb-4 mx-auto" />
                 <p className="font-mono text-tactical tracking-widest uppercase text-xs">Initializing_Crucible...</p>
+=======
+function ControlBadge({ label, keys }: { label: string, keys: string }) {
+    return (
+        <div className="glass-panel px-6 py-3 flex flex-col border-t-2 border-white/5 bg-white/2">
+            <span className="text-[8px] font-mono text-white/30 uppercase tracking-[0.4em] mb-1">{label}</span>
+            <span className="text-lg font-black text-white uppercase tracking-tighter font-poppins italic">{keys}</span>
+        </div>
+    )
+}
+
+function LoadingOverlay() {
+    return (
+        <div className="flex flex-col items-center justify-center">
+            <div className="w-24 h-24 border-2 border-tactical border-t-transparent rounded-full animate-spin mb-8 shadow-[0_0_30px_rgba(255,191,0,0.3)]" />
+            <div className="space-y-4 text-center">
+                <h3 className="text-2xl font-poppins font-black text-white uppercase tracking-[0.5em] italic">CRUCIBLE_BOOTING</h3>
+                <div className="flex gap-1 justify-center">
+                     {[1,2,3].map(i => (
+                         <motion.div 
+                            key={i}
+                            animate={{ opacity: [0, 1, 0] }}
+                            transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+                            className="w-2 h-2 bg-tactical" 
+                        />
+                     ))}
+                </div>
+>>>>>>> 816b9a1 (Premium Overhaul: High-fidelity shaders, Reflector floor, Force fields, and HUD update)
             </div>
         </div>
     );

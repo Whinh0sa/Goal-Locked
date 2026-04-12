@@ -1,113 +1,76 @@
 import { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { useSphere } from '@react-three/cannon';
 import * as THREE from 'three';
-import * as CANNON from 'cannon-es';
-import { usePhysics } from '../../hooks/usePhysics';
+import { useAI } from '../../hooks/useAI';
 import { useGameStore } from '../../store/useGameStore';
+import { Box, Html } from '@react-three/drei';
 
-const BOT_RADIUS = 1;
-const ARENA_RADIUS = 20;
-
-interface BotProps {
-  id: number;
-  goalPos: THREE.Vector3;
-}
-
-export const Bot = ({ id, goalPos }: BotProps) => {
-  const { world } = usePhysics();
-  const eliminated = useGameStore(state => state.eliminated);
-  const isOut = eliminated[id];
+export const Bot = ({ id, goalPos }: { id: number, goalPos: THREE.Vector3 }) => {
+  const isEliminated = useGameStore(state => state.eliminated[id]);
+  const ballPosition = useGameStore(state => state.ballPosition);
   
-  const meshRef = useRef<THREE.Group>(null);
-  const moveSpeed = 9 + Math.random() * 2;
-  
-  const body = useMemo(() => {
-    const b = new CANNON.Body({
-      mass: 5,
-      shape: new CANNON.Sphere(BOT_RADIUS),
-      fixedRotation: true,
-      linearDamping: 0.9,
-    });
-    // Position near their goal
-    b.position.set(goalPos.x * 0.8, 1, goalPos.z * 0.8);
-    return b;
-  }, [goalPos]);
+  const [ref, api] = useSphere(() => ({
+    mass: 10,
+    position: [goalPos.x, 1, goalPos.z],
+    args: [0.8],
+    fixedRotation: true,
+    material: { friction: 0.1, restitution: 0 }
+  }));
 
-  useEffect(() => {
-    if (!isOut) {
-      world.addBody(body);
-      return () => { world.removeBody(body); };
-    }
-  }, [world, body, isOut]);
+  const meshRef = useRef<THREE.Group>(null!);
+  const { update } = useAI(id, goalPos, api);
 
-  useFrame((state, delta) => {
-    if (isOut || !body) return;
+  useFrame((state) => {
+    if (isEliminated) return;
+    update(ballPosition);
 
-    // --- Weighted Behavior Tree ---
-    const ballBody = world.bodies.find(b => b.mass === 1 && b.shapes[0] instanceof CANNON.Sphere);
-    if (!ballBody) return;
-
-    const ballPos = new THREE.Vector3().copy(ballBody.position as any);
-    const myPos = new THREE.Vector3().copy(body.position as any);
-    const distToBall = myPos.distanceTo(ballPos);
-    const distBallToGoal = ballPos.distanceTo(goalPos);
-    
-    let target = new THREE.Vector3();
-    let weightDefense = 0;
-    let weightAttack = 0;
-
-    // 1. Defense Weight: High if ball is close to my goal
-    if (distBallToGoal < 10) {
-        weightDefense = 1.0;
-    } else if (distBallToGoal < 15) {
-        weightDefense = 0.5;
-    }
-
-    // 2. Attack Weight: High if I am close to the ball and not in immediate danger
-    if (distToBall < 8 && weightDefense < 0.8) {
-        weightAttack = 0.7;
-    }
-
-    // Decision Making
-    if (weightDefense > weightAttack) {
-        // Defensive target: intercept ball path to goal
-        const interceptPoint = new THREE.Vector3().lerpVectors(goalPos, ballPos, 0.3);
-        target.copy(interceptPoint);
-    } else if (weightAttack > 0) {
-        // Attack target: stay behind the ball relative to a random opponent's goal
-        // (Actually, just move towards the ball to push it)
-        target.copy(ballPos);
-    } else {
-        // Idle: stay near goal quadrant
-        target.copy(goalPos.clone().multiplyScalar(0.7));
-    }
-
-    const moveDir = new THREE.Vector3().subVectors(target, myPos).normalize();
-    if (myPos.distanceTo(target) > 0.5) {
-        body.applyForce(new CANNON.Vec3(moveDir.x * moveSpeed * 40, 0, moveDir.z * moveSpeed * 40), body.position);
-    }
-
-    // Facing
+    // Tilt animation based on velocity
     if (meshRef.current) {
-        meshRef.current.position.copy(body.position as any);
-        if (moveDir.length() > 0) {
-            const targetRot = Math.atan2(moveDir.x, moveDir.z);
-            meshRef.current.rotation.y = THREE.MathUtils.lerp(meshRef.current.rotation.y, targetRot, 0.1);
-        }
+        // We'd need to track velocity, but as a shortcut we can use the position delta
+        // For now, let's add a subtle hover animation
+        meshRef.current.position.y = Math.sin(state.clock.getElapsedTime() * 2 + id) * 0.1;
     }
   });
 
-  if (isOut) return null;
+  if (isEliminated) return null;
 
   return (
-    <group ref={meshRef}>
-      <mesh castShadow>
-        <cylinderGeometry args={[0.7, 0.8, 2, 6]} />
-        <meshStandardMaterial color="#444" roughness={0.1} metalness={0.8} />
-      </mesh>
-      <mesh position={[0, 0.5, 0.5]}>
-        <boxGeometry args={[0.5, 0.1, 0.1]} />
-        <meshBasicMaterial color={isOut ? "#500" : "#999"} />
+    <group ref={ref as any}>
+      <group ref={meshRef}>
+        {/* Tactical Bot Body (Red Accent for Hostiles) */}
+        <Box args={[1.2, 0.4, 1.2]} position={[0, 0.2, 0]} castShadow>
+            <meshPhysicalMaterial color="#0a0a0c" roughness={0.3} metalness={0.9} clearcoat={1} emissive="#ff4500" emissiveIntensity={0.1} />
+        </Box>
+        
+        {/* Sensor Unit */}
+        <Box args={[0.5, 0.2, 0.5]} position={[0, 0.5, 0]}>
+            <meshPhysicalMaterial color="#ff4500" emissive="#ff4500" emissiveIntensity={1} />
+        </Box>
+
+        {/* Side Sponsons */}
+        <Box args={[0.4, 0.2, 0.6]} position={[0.7, 0.3, 0]}>
+            <meshStandardMaterial color="#1a1a1a" metalness={1} />
+        </Box>
+        <Box args={[0.4, 0.2, 0.6]} position={[-0.7, 0.3, 0]}>
+            <meshStandardMaterial color="#1a1a1a" metalness={1} />
+        </Box>
+
+        {/* Bottom Thrust Glow */}
+        <pointLight position={[0, -0.5, 0]} color="#ff4500" intensity={1} distance={3} />
+        
+        {/* Bot ID Badge */}
+        <Html position={[0, 1.2, 0]} center>
+            <div className="px-2 py-0.5 border border-red-500/50 bg-black/80 font-mono text-[8px] text-red-500 whitespace-nowrap">
+                GA-0{id + 1}_UNIT
+            </div>
+        </Html>
+      </group>
+
+      {/* Target Ring */}
+      <mesh rotation-x={-Math.PI / 2} position={[0, -0.7, 0]}>
+          <ringGeometry args={[1, 1.1, 32]} />
+          <meshBasicMaterial color="#ff4500" transparent opacity={0.3} />
       </mesh>
     </group>
   );

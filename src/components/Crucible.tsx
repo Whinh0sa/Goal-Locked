@@ -1,4 +1,5 @@
 import { useRef, useMemo, useEffect } from 'react';
+import { MeshReflectorMaterial, MeshTransmissionMaterial, Box } from '@react-three/drei';
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { usePhysics } from '../hooks/usePhysics';
@@ -38,16 +39,34 @@ export const Crucible = () => {
 
   return (
     <group>
-      {/* Floor */}
-      <mesh rotation-x={-Math.PI / 2} receiveShadow>
-        <circleGeometry args={[ARENA_RADIUS + 2, 64]} />
-        <meshStandardMaterial color="#080808" roughness={0.9} />
-        {/* Floor Grid */}
-        <gridHelper 
-          args={[ARENA_RADIUS * 2, 20, '#FFBF00', '#1a1a1a']} 
-          rotation-x={Math.PI / 2} 
-          position-z={0.01}
+      {/* Floor with High-End Reflections */}
+      <mesh rotation-x={-Math.PI / 2} receiveShadow position={[0, -0.01, 0]}>
+        <circleGeometry args={[ARENA_RADIUS + 5, 128]} />
+        <MeshReflectorMaterial
+          blur={[300, 100]}
+          resolution={1024}
+          mixBlur={1}
+          mixStrength={40}
+          roughness={1}
+          depthScale={1.2}
+          minDepthThreshold={0.4}
+          maxDepthThreshold={1.4}
+          color="#101010"
+          metalness={0.5}
+          mirror={1}
         />
+      </mesh>
+
+      {/* Floor Grid (Subtle Diegetic Overlay) */}
+      <gridHelper 
+          args={[ARENA_RADIUS * 2.5, 40, '#FFBF00', '#1a1a1a']} 
+          position={[0, 0.01, 0]}
+      />
+
+      {/* Neon Perimeter Ring */}
+      <mesh rotation-x={-Math.PI / 2} position={[0, 0.02, 0]}>
+          <ringGeometry args={[ARENA_RADIUS - 0.2, ARENA_RADIUS, 128]} />
+          <meshBasicMaterial color="#FFBF00" transparent opacity={0.3} />
       </mesh>
 
       {/* Boundary Walls & Gates */}
@@ -64,12 +83,12 @@ export const Crucible = () => {
 
 const BoundarySegment = ({ x, z, angle, isGoal, goalIndex, isEliminated }: any) => {
   const { world } = usePhysics();
-  const meshRef = useRef<THREE.Mesh>(null);
+  const meshRef = useRef<THREE.Group>(null);
   
   const body = useMemo(() => {
     if (isGoal && !isEliminated) return null; // Opening in arena
     
-    const shape = new CANNON.Box(new CANNON.Vec3(1, WALL_HEIGHT / 2, 0.5));
+    const shape = new CANNON.Box(new CANNON.Vec3(1.25, WALL_HEIGHT / 2, 0.25));
     const b = new CANNON.Body({ type: CANNON.Body.STATIC, shape });
     b.position.set(x, WALL_HEIGHT / 2, z);
     b.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), -angle);
@@ -83,25 +102,55 @@ const BoundarySegment = ({ x, z, angle, isGoal, goalIndex, isEliminated }: any) 
     }
   }, [world, body]);
 
+  const color = isEliminated ? '#ff0000' : '#FFBF00';
+
   return (
-    <mesh 
-      ref={meshRef} 
-      position={[x, isGoal && !isEliminated ? 0.1 : WALL_HEIGHT / 2, z]} 
-      rotation={[0, -angle, 0]}
-      visible={!isGoal || isEliminated}
-    >
-      <boxGeometry args={[2.5, WALL_HEIGHT, 0.5]} />
-      <meshStandardMaterial 
-        color={isEliminated ? '#400' : '#111'} 
-        roughness={0.2} 
-        metalness={0.5}
-      />
-      {isEliminated && (
-          <mesh position-z={0.3}>
-              <boxGeometry args={[2.6, 0.2, 0.2]} />
-              <meshBasicMaterial color="#f00" />
+    <group position={[x, WALL_HEIGHT / 2, z]} rotation={[0, -angle, 0]}>
+      {(!isGoal || isEliminated) && (
+        <>
+          {/* Main Barrier Section */}
+          <mesh>
+            <boxGeometry args={[2.5, WALL_HEIGHT, 0.2]} />
+            {!isEliminated ? (
+              <MeshTransmissionMaterial
+                  thickness={0.5}
+                  anisotropy={1}
+                  chromaticAberration={0.05}
+                  distortion={0.5}
+                  distortionScale={0.5}
+                  temporalDistortion={0.1}
+                  color={color}
+                  emissive={color}
+                  emissiveIntensity={0.5}
+                  attenuationColor={color}
+                  transparent
+                  opacity={0.3}
+              />
+            ) : (
+              <meshStandardMaterial 
+                  color="#440000" 
+                  emissive="#ff0000" 
+                  emissiveIntensity={2} 
+                  roughness={0} 
+                  metalness={1}
+              />
+            )}
           </mesh>
+
+          {/* Support Pillars */}
+          <Box args={[0.2, WALL_HEIGHT + 1, 0.4]} position={[1.25, 0, 0]}>
+               <meshStandardMaterial color="#1a1a1a" metalness={1} />
+          </Box>
+          <Box args={[0.2, WALL_HEIGHT + 1, 0.4]} position={[-1.25, 0, 0]}>
+               <meshStandardMaterial color="#1a1a1a" metalness={1} />
+          </Box>
+
+          {/* Glowing Cap */}
+          <Box args={[2.7, 0.1, 0.4]} position={[0, (WALL_HEIGHT / 2) + 0.5, 0]}>
+               <meshBasicMaterial color={color} />
+          </Box>
+        </>
       )}
-    </mesh>
+    </group>
   );
 };

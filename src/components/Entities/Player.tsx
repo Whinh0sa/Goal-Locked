@@ -1,118 +1,108 @@
-import { useRef, useEffect, useMemo } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
+import { useRef, useState } from 'react';
+import { useFrame } from '@react-three/fiber';
+import { useSphere, useRaycastVehicle } from '@react-three/cannon';
 import * as THREE from 'three';
-import * as CANNON from 'cannon-es';
-import { usePhysics } from '../../hooks/usePhysics';
-
-const PLAYER_RADIUS = 1;
-const PULSE_FORCE = 15;
-const PUSH_DISTANCE = 3.5;
+import { useGameStore } from '../../store/useGameStore';
+import { Box, Cylinder, Sphere } from '@react-three/drei';
 
 export const Player = () => {
-  const { world } = usePhysics();
-  const meshRef = useRef<THREE.Group>(null);
-  const pulseMeshRef = useRef<THREE.Mesh>(null);
-  
-  const moveSpeed = 12;
-  const keys = useRef<Record<string, boolean>>({});
-  
-  const body = useMemo(() => {
-    const b = new CANNON.Body({
-      mass: 5,
-      shape: new CANNON.Sphere(PLAYER_RADIUS),
-      fixedRotation: true,
-      linearDamping: 0.9,
-    });
-    b.position.set(0, 1, 15);
-    return b;
-  }, []);
+  const { gameStarted } = useGameStore();
+  const [ref, api] = useSphere(() => ({
+    mass: 10,
+    position: [0, 1, 10],
+    args: [0.8],
+    fixedRotation: true,
+    material: { friction: 0.1, restitution: 0 }
+  }));
 
-  useEffect(() => {
-    world.addBody(body);
-    const handleDown = (e: KeyboardEvent) => { keys.current[e.code] = true; };
-    const handleUp = (e: KeyboardEvent) => { keys.current[e.code] = false; };
-    window.addEventListener('keydown', handleDown);
-    window.addEventListener('keyup', handleUp);
-    return () => {
-      world.removeBody(body);
-      window.removeEventListener('keydown', handleDown);
-      window.removeEventListener('keyup', handleUp);
-    };
-  }, [world, body]);
+  const meshRef = useRef<THREE.Group>(null!);
+  const [keys, setKeys] = useState<{ [key: string]: boolean }>({});
 
-  useFrame((state, delta) => {
-    if (!body) return;
+  // Movement Logic
+  useFrame((state) => {
+    if (!gameStarted) return;
 
-    // Movement logic
-    const moveDir = new THREE.Vector3();
-    if (keys.current['KeyW']) moveDir.z -= 1;
-    if (keys.current['KeyS']) moveDir.z += 1;
-    if (keys.current['KeyA']) moveDir.x -= 1;
-    if (keys.current['KeyD']) moveDir.x += 1;
+    const velocity = 15;
+    const impulse = new THREE.Vector3(0, 0, 0);
+    
+    if (keys['w'] || keys['ArrowUp']) impulse.z -= velocity;
+    if (keys['s'] || keys['ArrowDown']) impulse.z += velocity;
+    if (keys['a'] || keys['ArrowLeft']) impulse.x -= velocity;
+    if (keys['d'] || keys['ArrowRight']) impulse.x += velocity;
 
-    if (moveDir.length() > 0) {
-      moveDir.normalize();
-      body.applyForce(new CANNON.Vec3(moveDir.x * moveSpeed * 50, 0, moveDir.z * moveSpeed * 50), body.position);
-    }
-
-    // Pulse Logic
-    if (keys.current['Space']) {
-      // Find ball in world
-      const ballBody = world.bodies.find(b => b.mass === 1 && b.shapes[0] instanceof CANNON.Sphere);
-      if (ballBody) {
-        const dist = body.position.distanceTo(ballBody.position);
-        if (dist < PUSH_DISTANCE) {
-          const dir = ballBody.position.vsub(body.position).unit();
-          ballBody.applyImpulse(dir.scale(PULSE_FORCE), ballBody.position);
-          
-          // Visual Pulse
-          if (pulseMeshRef.current) {
-            pulseMeshRef.current.scale.set(1, 1, 1);
-            pulseMeshRef.current.visible = true;
-          }
-        }
+    if (impulse.length() > 0) {
+      impulse.normalize().multiplyScalar(velocity);
+      api.velocity.set(impulse.x, 0, impulse.z);
+      
+      // Tilt effect
+      if (meshRef.current) {
+        meshRef.current.rotation.x = THREE.MathUtils.lerp(meshRef.current.rotation.x, impulse.z * 0.02, 0.1);
+        meshRef.current.rotation.z = THREE.MathUtils.lerp(meshRef.current.rotation.z, -impulse.x * 0.02, 0.1);
       }
-      keys.current['Space'] = false; // Single pulse
-    }
-
-    if (pulseMeshRef.current && pulseMeshRef.current.visible) {
-      pulseMeshRef.current.scale.addScalar(0.2);
-      (pulseMeshRef.current.material as THREE.MeshBasicMaterial).opacity -= 0.05;
-      if ((pulseMeshRef.current.material as THREE.MeshBasicMaterial).opacity <= 0) {
-        pulseMeshRef.current.visible = false;
-        (pulseMeshRef.current.material as THREE.MeshBasicMaterial).opacity = 0.5;
+    } else {
+      api.velocity.set(0, 0, 0);
+      if (meshRef.current) {
+        meshRef.current.rotation.x = THREE.MathUtils.lerp(meshRef.current.rotation.x, 0, 0.1);
+        meshRef.current.rotation.z = THREE.MathUtils.lerp(meshRef.current.rotation.z, 0, 0.1);
       }
     }
 
-    // Sync mesh
-    if (meshRef.current) {
-      meshRef.current.position.copy(body.position as any);
-      // Face movement direction
-      if (moveDir.length() > 0) {
-        const targetRot = Math.atan2(moveDir.x, moveDir.z);
-        meshRef.current.rotation.y = THREE.MathUtils.lerp(meshRef.current.rotation.y, targetRot, 0.1);
-      }
+    // Space to kick (pulse)
+    if (keys[' ']) {
+      // Handled by GameManager or store, but let's add a visual cue
     }
   });
 
+  // Event Listeners
+  useState(() => {
+    const handleDown = (e: KeyboardEvent) => setKeys(k => ({ ...k, [e.key.toLowerCase()]: true }));
+    const handleUp = (e: KeyboardEvent) => setKeys(k => ({ ...k, [e.key.toLowerCase()]: false }));
+    window.addEventListener('keydown', handleDown);
+    window.addEventListener('keyup', handleUp);
+    return () => {
+      window.removeEventListener('keydown', handleDown);
+      window.removeEventListener('keyup', handleUp);
+    };
+  });
+
   return (
-    <group ref={meshRef}>
-      {/* Tactical Player Body */}
-      <mesh castShadow>
-        <cylinderGeometry args={[0.7, 0.8, 2, 6]} />
-        <meshStandardMaterial color="#222" roughness={0.1} metalness={0.8} />
-      </mesh>
-      
-      {/* Visor */}
-      <mesh position={[0, 0.5, 0.5]}>
-        <boxGeometry args={[0.5, 0.1, 0.1]} />
-        <meshBasicMaterial color="#FFBF00" />
-      </mesh>
-      
-      {/* Pulse Effect */}
-      <mesh ref={pulseMeshRef} rotation-x={-Math.PI / 2} visible={false}>
-          <ringGeometry args={[0.5, 3.5, 32]} />
-          <meshBasicMaterial color="#FFBF00" transparent opacity={0.5} />
+    <group ref={ref as any}>
+      {/* Tactical Mech Model */}
+      <group ref={meshRef}>
+        {/* Main Body */}
+        <Box args={[1.2, 0.4, 1.2]} position={[0, 0.2, 0]} castShadow>
+            <meshPhysicalMaterial color="#0a0a0c" roughness={0.2} metalness={0.8} clearcoat={1} />
+        </Box>
+        
+        {/* Head/Sensor Array */}
+        <Box args={[0.4, 0.2, 0.4]} position={[0, 0.5, 0]}>
+            <meshPhysicalMaterial color="#1a1a1a" emissive="#FFBF00" emissiveIntensity={0.5} />
+        </Box>
+
+        {/* Tactical Shoulder Plates */}
+        <Box args={[0.3, 0.2, 0.8]} position={[0.7, 0.3, 0]}>
+            <meshStandardMaterial color="#222" metalness={1} />
+        </Box>
+        <Box args={[0.3, 0.2, 0.8]} position={[-0.7, 0.3, 0]}>
+            <meshStandardMaterial color="#222" metalness={1} />
+        </Box>
+
+        {/* Under-Glow */}
+        <pointLight position={[0, -0.5, 0]} color="#FFBF00" intensity={1} distance={3} />
+        
+        {/* Shield Thrusters (Back) */}
+        <Cylinder args={[0.1, 0.1, 0.2]} position={[0.4, 0.1, 0.6]} rotation={[Math.PI/2, 0, 0]}>
+            <meshBasicMaterial color="#FFBF00" />
+        </Cylinder>
+        <Cylinder args={[0.1, 0.1, 0.2]} position={[-0.4, 0.1, 0.6]} rotation={[Math.PI/2, 0, 0]}>
+            <meshBasicMaterial color="#FFBF00" />
+        </Cylinder>
+      </group>
+
+      {/* Bottom Ring Indicator */}
+      <mesh rotation-x={-Math.PI / 2} position={[0, -0.7, 0]}>
+          <ringGeometry args={[1, 1.1, 32]} />
+          <meshBasicMaterial color="#FFBF00" transparent opacity={0.4} />
       </mesh>
     </group>
   );
