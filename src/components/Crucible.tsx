@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { MeshReflectorMaterial, MeshTransmissionMaterial } from '@react-three/drei';
 import * as THREE from 'three';
-import { useSphere } from '@react-three/cannon'; // Keep cannon-es bodies for walls but visual logic is premium
+import * as CANNON from 'cannon-es';
+import { usePhysics } from '../hooks/usePhysics';
 
 export const Crucible = () => {
     return (
@@ -39,9 +40,30 @@ export const Crucible = () => {
 };
 
 const BoundarySegment = ({ index }: { index: number }) => {
+    const { world } = usePhysics();
     const angle = (index / 8) * Math.PI * 2;
     const x = Math.cos(angle) * 20;
     const z = Math.sin(angle) * 20;
+
+    // Add static physics body for the wall
+    useEffect(() => {
+        const shape = new CANNON.Box(new CANNON.Vec3(0.1, 2, 6)); // Matching visual size
+        const body = new CANNON.Body({
+            mass: 0, // Static
+            position: new CANNON.Vec3(x, 2, z),
+            shape
+        });
+        
+        // Rotate body to match visual rotation
+        const quat = new CANNON.Quaternion();
+        quat.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), -angle);
+        body.quaternion.copy(quat);
+
+        world.addBody(body);
+        return () => {
+            world.removeBody(body);
+        };
+    }, [world, x, z, angle]);
 
     return (
         <group position={[x, 2, z]} rotation-y={-angle}>
@@ -67,14 +89,6 @@ const BoundarySegment = ({ index }: { index: number }) => {
                     color="#008080"
                 />
             </mesh>
-
-            {/* Goal Number Decal / Label */}
-            <group position={[0.2, 1, 0]} rotation-y={Math.PI / 2}>
-                 <mesh>
-                    <planeGeometry args={[2, 0.8]} />
-                    <meshBasicMaterial color="#000" transparent opacity={0.7} />
-                 </mesh>
-            </group>
         </group>
     );
 };
