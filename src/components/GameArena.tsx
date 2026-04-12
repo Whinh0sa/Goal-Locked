@@ -806,7 +806,7 @@ export default function GameArena() {
   };
 
   return (
-    <div ref={containerRef} className="relative w-full h-screen overflow-hidden bg-black">
+    <div ref={containerRef} className="relative w-full h-screen overflow-hidden bg-black touch-none">
       {/* UI Overlay */}
       <div className="absolute top-0 left-0 w-full p-4 md:p-6 pointer-events-none flex flex-col md:flex-row justify-between items-start gap-4">
         <div className="space-y-2">
