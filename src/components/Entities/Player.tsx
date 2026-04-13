@@ -2,13 +2,13 @@ import { useRef, useEffect, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
-import { Box, Cylinder, Text, Html } from '@react-three/drei';
+import { Box, Html } from '@react-three/drei';
 import { usePhysics } from '../../hooks/usePhysics';
 import { useGameStore } from '../../store/useGameStore';
 
 export const Player = () => {
   const { world } = usePhysics();
-  const { gameStarted } = useGameStore();
+  const { gameStarted, moveDirection, pulseTrigger } = useGameStore();
   const groupRef = useRef<THREE.Group>(null!);
   const meshRef = useRef<THREE.Group>(null!);
   const bodyRef = useRef<CANNON.Body>(null!);
@@ -34,10 +34,6 @@ export const Player = () => {
         window.removeEventListener('keyup', handleUp);
     };
   }, [world]);
-
-  const { gameStarted, moveDirection, pulseTrigger } = useGameStore();
-  
-  // ... (keep refs)
 
   useFrame((state) => {
     if (!bodyRef.current || !gameStarted) return;
@@ -75,7 +71,6 @@ export const Player = () => {
 
     // --- PULSE EFFECT ---
     if (pulseTrigger) {
-        // Kick the ball if nearby (simple radial pulse)
         const ballBody = world.bodies.find(b => b.mass === 1 && b.shapes[0] instanceof CANNON.Sphere);
         if (ballBody) {
             const playerPos = bodyRef.current.position;
@@ -93,7 +88,6 @@ export const Player = () => {
     const pos = bodyRef.current.position;
     groupRef.current.position.set(pos.x, pos.y, pos.z);
     
-    // Aesthetic Hover
     if (meshRef.current) {
         meshRef.current.position.y = Math.sin(state.clock.getElapsedTime() * 4) * 0.1;
     }
@@ -101,7 +95,6 @@ export const Player = () => {
 
   return (
     <group ref={groupRef}>
-      {/* Diegetic Label */}
       <Html position={[0, 1.5, 0]} center transform scale={0.5} distanceFactor={10}>
          <div className="px-4 py-1 border-l-4 border-teal-500 bg-black/80 backdrop-blur-md text-teal-400 font-mono text-[10px] tracking-widest whitespace-nowrap uppercase">
              UNIT_PLAYER // ACTIVE
@@ -109,7 +102,6 @@ export const Player = () => {
       </Html>
 
       <group ref={meshRef}>
-        {/* Gunmetal PBR Body */}
         <Box args={[1.2, 0.4, 1.2]} position={[0, 0.2, 0]} castShadow>
             <meshPhysicalMaterial color="#1a1c2c" roughness={0.2} metalness={0.8} clearcoat={1} />
         </Box>
