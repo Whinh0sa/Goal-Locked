@@ -18,9 +18,9 @@ export const Ball = () => {
     const body = new CANNON.Body({
         mass: 1,
         shape: new CANNON.Sphere(0.6),
-        position: new CANNON.Vec3(0, 5, 0),
-        linearDamping: 0.05,
-        angularDamping: 0.05,
+        position: new CANNON.Vec3(0, 8, 0),
+        linearDamping: 0.1,
+        angularDamping: 0.1,
     });
     world.addBody(body);
     bodyRef.current = body;
@@ -29,13 +29,19 @@ export const Ball = () => {
 
   useFrame((state) => {
     if (!bodyRef.current) return;
-    const pos = bodyRef.current.position;
+    const body = bodyRef.current;
+    const pos = body.position;
+
+    // ── Ceiling Guard: ball must stay on the pitch ──────────────────
+    if (pos.y > 10) {
+      body.applyImpulse(new CANNON.Vec3(0, -30, 0), body.position);
+    }
+
     groupRef.current.position.set(pos.x, pos.y, pos.z);
     updateBallPosition([pos.x, pos.y, pos.z]);
 
     const time = state.clock.getElapsedTime();
     if (ballMesh.current) {
-        // Hazard Orange PBR
         (ballMesh.current.material as THREE.MeshPhysicalMaterial).emissiveIntensity = 4 + Math.sin(time * 25) * 2;
     }
   });

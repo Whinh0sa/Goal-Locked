@@ -4,19 +4,18 @@ import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { usePhysics } from '../hooks/usePhysics';
 import { useGameStore } from '../store/useGameStore';
-
-const ARENA_RADIUS = 20;
-const GOALS = 8;
-const SLOW_MO_DIST = 5.0; // Optimized for "God Prompt" requirements
+import { ARENA_RADIUS, GOALS, SLOW_MO_DIST } from '../constants';
 
 export const GameManager = () => {
   const { world, setTimeScale } = usePhysics();
   const registerGoal = useGameStore(state => state.registerGoal);
   const eliminated = useGameStore(state => state.eliminated);
-  
-  const isSlowMo = useRef(false);
+  const setImpactPosition = useGameStore(state => state.setImpactPosition);
 
-  // Goal locations
+  const isSlowMo = useRef(false);
+  const lastImpactTime = useRef(0);
+
+  // Goal locations — computed once from shared constants
   const goalPositions = useMemo(() => {
     const pos = [];
     const angleStep = (Math.PI * 2) / GOALS;
@@ -31,12 +30,61 @@ export const GameManager = () => {
     return pos;
   }, []);
 
-  useFrame((state, delta) => {
+  // Wire up collision particles: fire whenever the ball hits any physics body
+  // We attach the listener once after the physics world is available
+  useEffect(() => {
+    const handleCollision = (event: any) => {
+      const ballBody = world.bodies.find(b => b.mass === 1 && b.shapes[0] instanceof CANNON.Sphere);
+      if (!ballBody) return;
+      // Only trigger if the ball is involved in this collision
+      const body = event.target as CANNON.Body;
+      if (body !== ballBody) return;
+
+      const now = performance.now();
+      // Throttle to at most one burst every 250ms to avoid spam
+      if (now - lastImpactTime.current < 250) return;
+      lastImpactTime.current = now;
+
+      const vel = ballBody.velocity.length();
+      if (vel < 4) return; // Only fire on meaningful impacts
+
+      const pos = ballBody.position;
+      setImpactPosition([pos.x, pos.y, pos.z]);
+    };
+
+    // Listen on every body added to the world (ball body added asynchronously)
+    const addBodyListener = () => {
+      world.bodies.forEach(b => {
+        b.removeEventListener('collide', handleCollision);
+        b.addEventListener('collide', handleCollision);
+      });
+    };
+
+    world.addEventListener('addBody', addBodyListener);
+    addBodyListener(); // Catch bodies already present
+
+    return () => {
+      world.removeEventListener('addBody', addBodyListener);
+      world.bodies.forEach(b => b.removeEventListener('collide', handleCollision));
+    };
+  }, [world, setImpactPosition]);
+
+  useFrame(() => {
     const ballBody = world.bodies.find(b => b.mass === 1 && b.shapes[0] instanceof CANNON.Sphere);
     if (!ballBody) return;
 
     const ballPos = new THREE.Vector3().copy(ballBody.position as any);
-    
+    const { currentRadius } = useGameStore.getState();
+
+    // --- Containment Field: hard border impulse ---
+    const distFromCenter = Math.sqrt(ballPos.x ** 2 + ballPos.z ** 2);
+    if (distFromCenter > currentRadius + 1) {
+      ballBody.applyImpulse(
+        new CANNON.Vec3(-ballPos.x * 2, 0, -ballPos.z * 2),
+        ballBody.position,
+      );
+    }
+
     // --- Slow-mo Focus Logic ---
     let nearGoal = false;
     goalPositions.forEach((g, i) => {
@@ -46,36 +94,31 @@ export const GameManager = () => {
 
     if (nearGoal && !isSlowMo.current) {
         isSlowMo.current = true;
-        setTimeScale(0.2); // Slow Focus Engage
+        setTimeScale(0.2);
     } else if (!nearGoal && isSlowMo.current) {
         isSlowMo.current = false;
-        setTimeScale(1.0); // Focus Release
+        setTimeScale(1.0);
     }
 
-    // --- Goal Detection ---
-    const distFromCenter = Math.sqrt(ballPos.x**2 + ballPos.z**2);
-    if (distFromCenter > ARENA_RADIUS + 0.3) {
+    // --- Goal Detection (uses dynamic currentRadius) ---
+    if (distFromCenter > currentRadius + 0.3) {
         const angle = Math.atan2(ballPos.z, ballPos.x);
-        const normAngle = angle < 0 ? angle + Math.PI * 2 : angle;
-        const goalIdx = (Math.round((normAngle / (Math.PI * 2)) * GOALS)) % GOALS;
-        
+        const normAngle = ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+        const rawIdx = normAngle / (Math.PI * 2) * GOALS;
+        const goalIdx = Math.round(rawIdx) % GOALS;
+
         if (!eliminated[goalIdx]) {
             registerGoal(goalIdx);
             setTimeScale(1.0);
             isSlowMo.current = false;
-            
-            // Re-center ball
+
+            // Re-centre ball
             setTimeout(() => {
                 ballBody.position.set(0, 5, 0);
                 ballBody.velocity.set(0, 0, 0);
             }, 500);
         }
     }
-
-    // --- High-Velocity Impact Camera Shake ---
-    // (This is triggered via GameManager but handled by CameraManager usually)
-    // We'll use the store to trigger a global shake event if needed, but for now
-    // CameraManager handles ball-velocity-based shake/FOV.
   });
 
   return null;

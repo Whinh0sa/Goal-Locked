@@ -6,8 +6,10 @@ import * as THREE from 'three';
 export function GoalJuice() {
   const lastGoal = useGameStore(state => state.lastGoal);
   const particles = useRef<THREE.Points>(null!);
+  const pulseActive = useRef(false);
+  const pulseTimer = useRef(0);
   const count = 500;
-  
+
   const positions = React.useMemo(() => {
     const pos = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
@@ -28,28 +30,41 @@ export function GoalJuice() {
     return v;
   }, []);
 
-  useFrame((state) => {
+  // FIX: when a new goal fires, enable a 1.5s pulse window then stop
+  useEffect(() => {
+    if (lastGoal !== null) {
+      pulseActive.current = true;
+      pulseTimer.current = 0;
+    }
+  }, [lastGoal]);
+
+  useFrame((state, delta) => {
     if (!particles.current) return;
-    
+
     const posAttr = particles.current.geometry.attributes.position as THREE.BufferAttribute;
-    
+
     for (let i = 0; i < count; i++) {
         posAttr.array[i * 3] += velocities[i * 3];
         posAttr.array[i * 3 + 1] += velocities[i * 3 + 1];
         posAttr.array[i * 3 + 2] += velocities[i * 3 + 2];
-        
+
         // Wrap around
         if (Math.abs(posAttr.array[i * 3]) > 40) posAttr.array[i * 3] *= -0.9;
         if (Math.abs(posAttr.array[i * 3 + 1]) > 40) posAttr.array[i * 3 + 1] *= -0.9;
         if (Math.abs(posAttr.array[i * 3 + 2]) > 40) posAttr.array[i * 3 + 2] *= -0.9;
     }
-    
+
     posAttr.needsUpdate = true;
-    
-    if (lastGoal !== null) {
-        // Pulse intensity on goal
-        const time = state.clock.getElapsedTime();
-        particles.current.scale.setScalar(1 + Math.sin(time * 20) * 0.2);
+
+    // Pulse scale for a fixed duration (1.5s) after each goal, then reset to 1
+    if (pulseActive.current) {
+      pulseTimer.current += delta;
+      const time = state.clock.getElapsedTime();
+      particles.current.scale.setScalar(1 + Math.sin(time * 20) * 0.2);
+      if (pulseTimer.current > 1.5) {
+        pulseActive.current = false;
+        particles.current.scale.setScalar(1);
+      }
     }
   });
 
