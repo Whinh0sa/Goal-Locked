@@ -5,6 +5,7 @@ import * as CANNON from 'cannon-es';
 import { usePhysics } from '../hooks/usePhysics';
 import { useGameStore } from '../store/useGameStore';
 import { ARENA_RADIUS, GOALS, SLOW_MO_DIST } from '../constants';
+import { triggerShake } from '../hooks/useCameraShake';
 
 export const GameManager = () => {
   const { world, setTimeScale } = usePhysics();
@@ -49,7 +50,8 @@ export const GameManager = () => {
       if (vel < 4) return; // Only fire on meaningful impacts
 
       const pos = ballBody.position;
-      setImpactPosition([pos.x, pos.y, pos.z]);
+      // S = √(vx² + vy² + vz²) — AudioManager scales volume/pitch to this
+      setImpactPosition([pos.x, pos.y, pos.z], vel);
     };
 
     // Listen on every body added to the world (ball body added asynchronously)
@@ -100,23 +102,48 @@ export const GameManager = () => {
         setTimeScale(1.0);
     }
 
-    // --- Goal Detection (uses dynamic currentRadius) ---
-    if (distFromCenter > currentRadius + 0.3) {
-        const angle = Math.atan2(ballPos.z, ballPos.x);
-        const normAngle = ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-        const rawIdx = normAngle / (Math.PI * 2) * GOALS;
-        const goalIdx = Math.round(rawIdx) % GOALS;
+    // --- Goal Detection (dynamic radius + 30° arc + height check) ---
+    // Height guard: ball must be below post height (y < 2.5) to count
+    if (distFromCenter > currentRadius && ballPos.y < 2.5) {
+        const ballAngle = Math.atan2(ballPos.z, ballPos.x);
+        const ARC_HALF = Math.PI / 6; // ±15° = 30° total arc per goal sector
+        const angleStep = (Math.PI * 2) / GOALS;
 
-        if (!eliminated[goalIdx]) {
-            registerGoal(goalIdx);
-            setTimeScale(1.0);
+        let hitGoalIdx = -1;
+        for (let i = 0; i < GOALS; i++) {
+            if (eliminated[i]) continue;
+
+            const goalAngle = i * angleStep;
+            // Shortest angular distance, robust to ±π wrap
+            const diff = Math.abs(
+                ((ballAngle - goalAngle + Math.PI * 3) % (Math.PI * 2)) - Math.PI
+            );
+
+            if (diff <= ARC_HALF) {
+                hitGoalIdx = i;
+                break;
+            }
+        }
+
+        if (hitGoalIdx !== -1) {
+            registerGoal(hitGoalIdx);
+
+            // ── Hit-Stop: 150ms anime-impact freeze ─────────────────
+            setTimeScale(0.01);
             isSlowMo.current = false;
-
-            // Re-centre ball
+            triggerShake(1.5);  // Heavy camera trauma
             setTimeout(() => {
-                ballBody.position.set(0, 5, 0);
+                setTimeScale(1.0);
+            }, 150);
+
+            // Re-centre ball after freeze — random offset within 5u radius
+            setTimeout(() => {
+                const angle = Math.random() * Math.PI * 2;
+                const r     = Math.random() * 4;
+                ballBody.position.set(Math.cos(angle) * r, 5, Math.sin(angle) * r);
                 ballBody.velocity.set(0, 0, 0);
-            }, 500);
+                ballBody.angularVelocity.set(0, 0, 0);
+            }, 650);
         }
     }
   });

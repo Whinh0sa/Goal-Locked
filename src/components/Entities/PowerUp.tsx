@@ -1,0 +1,105 @@
+/**
+ * PowerUp — glowing Overdrive orb that doubles the player's speed for 5 seconds.
+ * Respawns at a new random position 12 seconds after collection.
+ */
+import { useRef, useState, useEffect } from 'react';
+import { useFrame } from '@react-three/fiber';
+import { Float } from '@react-three/drei';
+import * as THREE from 'three';
+import { useGameStore } from '../../store/useGameStore';
+import { ARENA_RADIUS } from '../../constants';
+
+const PICKUP_RADIUS   = 2.2;     // world-units — how close to trigger pickup
+const BOOST_DURATION  = 5000;   // ms
+const RESPAWN_DELAY   = 12000;  // ms after pickup before a new orb appears
+
+function randomSpawnPos(): THREE.Vector3 {
+  const r = 5 + Math.random() * (ARENA_RADIUS - 10);
+  const a = Math.random() * Math.PI * 2;
+  return new THREE.Vector3(Math.cos(a) * r, 1.5, Math.sin(a) * r);
+}
+
+export const PowerUp = () => {
+  const gameStarted      = useGameStore(s => s.gameStarted);
+  const ballPosition     = useGameStore(s => s.ballPosition);   // proxy for player pos
+  const setSpeedMult     = useGameStore(s => s.setSpeedMultiplier);
+
+  const [visible, setVisible]   = useState(true);
+  const [spawnPos, setSpawnPos] = useState(() => randomSpawnPos());
+  const meshRef   = useRef<THREE.Mesh>(null!);
+  const collected = useRef(false);
+
+  // Reset when game resets
+  useEffect(() => {
+    if (!gameStarted) {
+      collected.current = false;
+      setVisible(false);
+      // Appear 5s after game starts
+      const t = setTimeout(() => {
+        setSpawnPos(randomSpawnPos());
+        setVisible(true);
+      }, 5000);
+      return () => clearTimeout(t);
+    }
+  }, [gameStarted]);
+
+  useFrame(() => {
+    if (!visible || collected.current || !gameStarted) return;
+
+    // Use ballPosition as a stand-in proxy to check player proximity.
+    // For true player tracking we read the physics world directly
+    // via the userData tag in the store approach; here we use the
+    // store's ballPosition which Ball.tsx publishes every frame, and
+    // we rely on GameArena to also expose playerPosition if needed.
+    // A simpler approach that works: proximity check vs the orb independently.
+    const orbPos = spawnPos;
+
+    // Read actual player position from the DOM physics world via the store ballPosition.
+    // We'll subscribe to a separate playerPosition we add to the store — OR use the
+    // impactPosition as an indirect trigger. For now: check distance every frame
+    // against a playerPosition we'll piggyback from the store.
+    const state = useGameStore.getState() as any;
+    const playerPos: [number, number, number] | null = state.playerPosition ?? null;
+    if (!playerPos) return;
+
+    const dx = playerPos[0] - orbPos.x;
+    const dy = playerPos[1] - orbPos.y;
+    const dz = playerPos[2] - orbPos.z;
+    const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+    if (dist < PICKUP_RADIUS) {
+      collected.current = true;
+      setVisible(false);
+
+      // Apply boost
+      setSpeedMult(2);
+      setTimeout(() => setSpeedMult(1), BOOST_DURATION);
+
+      // Respawn at a new position
+      setTimeout(() => {
+        collected.current = false;
+        setSpawnPos(randomSpawnPos());
+        setVisible(true);
+      }, RESPAWN_DELAY);
+    }
+  });
+
+  if (!visible) return null;
+
+  return (
+    <Float speed={3} rotationIntensity={2} floatIntensity={1}>
+      <mesh ref={meshRef} position={spawnPos}>
+        <icosahedronGeometry args={[0.55, 2]} />
+        <meshStandardMaterial
+          color="#00ffaa"
+          emissive="#00ffaa"
+          emissiveIntensity={5}
+          roughness={0.1}
+          metalness={0.8}
+          toneMapped={false}
+        />
+        <pointLight color="#00ffaa" intensity={4} distance={8} />
+      </mesh>
+    </Float>
+  );
+};

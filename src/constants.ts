@@ -1,5 +1,5 @@
 // Global game constants — single source of truth used by all systems
-export const ARENA_RADIUS = 20;
+export const ARENA_RADIUS = 45;
 export const GOALS = 8;
 export const SLOW_MO_DIST = 5.0;
 

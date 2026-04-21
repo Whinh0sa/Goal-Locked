@@ -56,25 +56,49 @@ export function EliminationFeed() {
             exit={{ opacity: 0, x: 80, scale: 0.85 }}
             transition={{ type: 'spring', stiffness: 380, damping: 28 }}
             style={{
-              background: entry.id === 0
-                ? 'linear-gradient(135deg, rgba(145,38,239,0.9), rgba(80,0,140,0.95))'
-                : 'linear-gradient(135deg, rgba(30,30,30,0.92), rgba(50,10,10,0.95))',
-              border: `1px solid ${entry.id === 0 ? '#9126ef88' : '#FF440055'}`,
-              borderLeft: `4px solid ${entry.id === 0 ? '#9126EF' : '#FF4400'}`,
+              background:
+                entry.id === 0
+                  ? 'linear-gradient(135deg, rgba(180,0,0,0.92), rgba(80,0,0,0.95))'
+                  : entry.id === -1
+                  ? 'linear-gradient(135deg, rgba(90,30,160,0.9), rgba(50,0,120,0.95))'
+                  : 'linear-gradient(135deg, rgba(10,40,10,0.92), rgba(5,30,5,0.95))',
+              border: `1px solid ${
+                entry.id === 0 ? '#ff000055'
+                : entry.id === -1 ? '#9126ef88'
+                : '#32CD3255'
+              }`,
+              borderLeft: `4px solid ${
+                entry.id === 0 ? '#FF3B3B'
+                : entry.id === -1 ? '#9126EF'
+                : '#32CD32'
+              }`,
               borderRadius: 10,
               padding: '10px 18px',
               fontFamily: '"Poppins", sans-serif',
               fontSize: '0.85rem',
-              fontWeight: 600,
+              fontWeight: 700,
               color: '#fff',
               backdropFilter: 'blur(12px)',
-              boxShadow: `0 4px 24px ${entry.id === 0 ? 'rgba(145,38,239,0.4)' : 'rgba(255,68,0,0.25)'}`,
+              boxShadow: `0 4px 24px ${
+                entry.id === 0 ? 'rgba(255,59,59,0.35)'
+                : entry.id === -1 ? 'rgba(145,38,239,0.3)'
+                : 'rgba(50,205,50,0.25)'
+              }`,
               minWidth: 220,
               whiteSpace: 'nowrap',
               userSelect: 'none',
             }}
           >
-            {entry.message}
+            {/* Bold the first word (GOAL! / GAME / 🛡) */}
+            {(() => {
+              const [first, ...rest] = entry.message.split(' ');
+              const accent = entry.id === 0 ? '#FF3B3B' : entry.id === -1 ? '#c084fc' : '#32CD32';
+              return (
+                <>
+                  <span style={{ color: accent }}>{first}</span>{' '}{rest.join(' ')}
+                </>
+              );
+            })()}
           </motion.div>
         ))}
       </AnimatePresence>

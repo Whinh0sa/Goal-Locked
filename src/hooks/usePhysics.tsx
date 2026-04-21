@@ -15,12 +15,12 @@ const playerMaterial = new CANNON.Material('player');
 const floorMaterial  = new CANNON.Material('floor');
 
 const ballFloorContact = new CANNON.ContactMaterial(ballMaterial, floorMaterial, {
-  friction: 0.1,
-  restitution: 0.7,
+  friction: 0.5,
+  restitution: 0.4,
 });
 const playerBallContact = new CANNON.ContactMaterial(playerMaterial, ballMaterial, {
   friction: 0.1,
-  restitution: 0.9,
+  restitution: 0.6,
 });
 
 export const PhysicsProvider = ({ children }: { children: React.ReactNode }) => {
@@ -38,7 +38,7 @@ export const PhysicsProvider = ({ children }: { children: React.ReactNode }) => 
   useFrame((_, delta) => {
     const scaledDelta = delta * timeScale;
     const step = Math.min(scaledDelta, 0.1);
-    worldRef.current!.step(1 / 60, step, 3);
+    worldRef.current!.step(1 / 60, step, 10);
   });
 
   return (

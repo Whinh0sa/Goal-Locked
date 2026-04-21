@@ -12,6 +12,7 @@ import { GameManager } from './GameManager';
 import { CameraManager } from './CameraManager';
 import { GoalJuice } from './VFX/GoalJuice';
 import { CollisionParticles } from './VFX/CollisionParticles';
+import { ScorchMarks } from './VFX/ScorchMarks';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, RefreshCw, AlertTriangle } from 'lucide-react';
 import * as THREE from 'three';
@@ -20,6 +21,12 @@ import { MobileControls } from './UI/MobileControls';
 import { FadingText } from './UI/FadingText';
 import { GOALS, ARENA_RADIUS } from '../constants';
 import { EliminationFeed } from './UI/EliminationFeed';
+import { AudioController } from './UI/AudioController';
+import { DecoyBalls } from './Entities/DecoyBalls';
+import { FloorBumper } from './Hazards/FloorBumper';
+import { PowerUp } from './Entities/PowerUp';
+import { ConfettiExplosion } from './VFX/ConfettiExplosion';
+import { Stats } from '../hooks/useStats';
 
 // ... (skipping unchanged code for brevity in thought, but tool will use full content)
 
@@ -91,28 +98,102 @@ function DiegeticStartUI({ onStart }: { onStart: () => void }) {
 function DiegeticVictoryUI({ onReset }: { onReset: () => void }) {
     return (
         <group position={[0, 8, 5]}>
-            <Float speed={4} rotationIntensity={1} floatIntensity={2}>
+            <Float speed={3} rotationIntensity={0.5} floatIntensity={1.5}>
+                {/* Glow backlight */}
+                <pointLight color="#32CD32" intensity={6} distance={20} />
+
                 <Text
-                    fontSize={3}
-                    color="#00ffcc"
+                    fontSize={4}
+                    color="#32CD32"
                     anchorX="center"
                     anchorY="middle"
-                    fontStyle="italic"
+                    fontWeight={900}
+                    outlineWidth={0.05}
+                    outlineColor="#000"
                 >
-                    SECTOR_CLEARED
+                    YOU WIN!
                 </Text>
-                <group position={[0, -4, 0]} onClick={onReset}>
-                     <mesh>
-                        <planeGeometry args={[8, 2]} />
-                        <meshBasicMaterial color="white" transparent opacity={0.1} />
+
+                <Text
+                    position={[0, -3.5, 0]}
+                    fontSize={0.9}
+                    color="#aaffaa"
+                    anchorX="center"
+                    anchorY="middle"
+                    letterSpacing={0.15}
+                >
+                    Last Sector Standing
+                </Text>
+
+                {/* PLAY AGAIN button */}
+                <group position={[0, -6, 0]} onClick={onReset}>
+                    <mesh>
+                        <planeGeometry args={[10, 2.2]} />
+                        <meshBasicMaterial color="#32CD32" transparent opacity={0.18} />
                     </mesh>
+                    <lineSegments>
+                        <edgesGeometry args={[new THREE.PlaneGeometry(10, 2.2)]} />
+                        <lineBasicMaterial color="#32CD32" />
+                    </lineSegments>
                     <Text
-                        fontSize={0.6}
-                        color="white"
+                        fontSize={0.75}
+                        color="#32CD32"
                         anchorX="center"
                         anchorY="middle"
+                        fontWeight={700}
                     >
-                        RE-DEPLOY
+                        PLAY AGAIN
+                    </Text>
+                </group>
+            </Float>
+        </group>
+    );
+}
+
+function DiegeticDefeatUI({ onReset }: { onReset: () => void }) {
+    return (
+        <group position={[0, 8, 5]}>
+            <Float speed={2} rotationIntensity={0.3} floatIntensity={1}>
+                {/* Red glow backlight */}
+                <pointLight color="#FF3B3B" intensity={5} distance={18} />
+
+                <Text
+                    fontSize={4}
+                    color="#FF3B3B"
+                    anchorX="center"
+                    anchorY="middle"
+                    fontWeight={900}
+                    outlineWidth={0.05}
+                    outlineColor="#000"
+                >
+                    YOU LOST
+                </Text>
+
+                <Text
+                    position={[0, -3.5, 0]}
+                    fontSize={0.9}
+                    color="#ff9999"
+                    anchorX="center"
+                    anchorY="middle"
+                    letterSpacing={0.15}
+                >
+                    Your Sector was eliminated
+                </Text>
+
+                {/* PLAY AGAIN button */}
+                <group position={[0, -6, 0]} onClick={onReset}>
+                    <mesh>
+                        <planeGeometry args={[10, 2.2]} />
+                        <meshBasicMaterial color="#FF3B3B" transparent opacity={0.18} />
+                    </mesh>
+                    <Text
+                        fontSize={0.75}
+                        color="#FF3B3B"
+                        anchorX="center"
+                        anchorY="middle"
+                        fontWeight={700}
+                    >
+                        TRY AGAIN
                     </Text>
                 </group>
             </Float>
@@ -153,7 +234,7 @@ function WorldSpaceHUD() {
 // --- Crucible Scene (Inner R3F Context) ---
 
 function CrucibleScene() {
-  const { gameStarted, startGame, victory, resetGame } = useGameStore();
+  const { gameStarted, startGame, victory, gameOver, resetGame } = useGameStore();
   const timer = useMemo(() => new THREE.Timer(), []);
 
   useFrame(() => {
@@ -206,10 +287,18 @@ function CrucibleScene() {
                 <Player />
                 <GoalJuice />
                 <CollisionParticles />
+                <ScorchMarks />
                 
                 <WorldSpaceHUD />
 
-                {victory && <DiegeticVictoryUI onReset={resetGame} />}
+                {/* Chaos Systems */}
+                <DecoyBalls />
+                <FloorBumper />
+                <PowerUp />
+                <ConfettiExplosion />
+
+                {gameOver && victory && <DiegeticVictoryUI onReset={resetGame} />}
+                {gameOver && !victory && <DiegeticDefeatUI onReset={resetGame} />}
 
                 {botGoalPositions.map((pos, i) => (
                     i !== 0 && <Bot key={i} id={i} goalPos={pos} />
@@ -269,6 +358,10 @@ function KeyboardBridge() {
         e.preventDefault();
         useGameStore.getState().triggerPulse();
       }
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+        e.preventDefault();
+        useGameStore.getState().triggerDash();
+      }
     };
 
     const onUp = (e: KeyboardEvent) => {
@@ -288,10 +381,83 @@ function KeyboardBridge() {
   return null;
 }
 
+// Dash cooldown ring HUD — lives outside the Canvas, updates via rAF
+function DashCooldownHUD() {
+  const gameStarted = useGameStore(s => s.gameStarted);
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  const rafRef    = React.useRef<number>(0);
+  const COOLDOWN  = 3000;
+  const SIZE      = 52;
+  const R         = 20;
+
+  useEffect(() => {
+    if (!gameStarted) return;
+    const draw = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d')!;
+      const { dashCooldownUntil } = useGameStore.getState();
+      const now = Date.now();
+      const remaining = Math.max(dashCooldownUntil - now, 0);
+      const progress  = 1 - remaining / COOLDOWN; // 0=empty 1=full
+      const ready     = remaining <= 0;
+
+      ctx.clearRect(0, 0, SIZE, SIZE);
+
+      // Background track
+      ctx.beginPath();
+      ctx.arc(SIZE / 2, SIZE / 2, R, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      // Progress arc
+      const start = -Math.PI / 2;
+      const end   = start + Math.PI * 2 * progress;
+      ctx.beginPath();
+      ctx.arc(SIZE / 2, SIZE / 2, R, start, end);
+      ctx.strokeStyle = ready ? '#32CD32' : '#06b6d4';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      // Centre icon
+      ctx.font = 'bold 14px sans-serif';
+      ctx.fillStyle = ready ? '#32CD32' : '#94a3b8';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('⚡', SIZE / 2, SIZE / 2 + 1);
+
+      rafRef.current = requestAnimationFrame(draw);
+    };
+    rafRef.current = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [gameStarted]);
+
+  if (!gameStarted) return null;
+
+  return (
+    <div style={{
+      position: 'absolute',
+      bottom: 24,
+      left: '50%',
+      transform: 'translateX(-50%)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 4,
+      zIndex: 50,
+      pointerEvents: 'none',
+    }}>
+      <canvas ref={canvasRef} width={SIZE} height={SIZE} />
+      <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.1em', fontFamily: '"Poppins", sans-serif' }}>SHIFT — DASH</div>
+    </div>
+  );
+}
+
 // --- Main Arena Container ---
 
 export default function GameArena() {
-  const { gameStarted, startGame, resetGame, victory } = useGameStore();
+  const { gameStarted, startGame, resetGame, victory, tier } = useGameStore();
 
   return (
     <div
@@ -321,53 +487,100 @@ export default function GameArena() {
       </Canvas>
 
       {/* HTML Start Screen */}
-      {!gameStarted && (
-        <div
-          style={{
-            position: 'absolute', inset: 0,
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center',
-            background: 'radial-gradient(ellipse at center, rgba(0,100,255,0.12) 0%, transparent 70%)',
-            zIndex: 100,
-            fontFamily: '"Poppins", sans-serif',
-          }}
-        >
-          <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap" />
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '5rem', fontWeight: 900, color: '#fff', lineHeight: 1, textShadow: '0 0 60px rgba(100,180,255,0.6)' }}>
-              ⚽ Goal-Locked
-            </div>
-            <div style={{ fontSize: '1.1rem', color: '#7dd3fc', marginTop: 12, fontWeight: 600, letterSpacing: '0.1em' }}>
-              Football Battle Royale
-            </div>
-            <button
-              onClick={startGame}
-              style={{
-                marginTop: 36,
-                padding: '16px 56px',
-                background: 'linear-gradient(135deg, #3b82f6, #06b6d4)',
-                border: 'none',
-                borderRadius: 12,
-                color: '#fff',
-                fontFamily: '"Poppins", sans-serif',
-                fontWeight: 700,
-                fontSize: '1.1rem',
-                letterSpacing: '0.05em',
-                cursor: 'pointer',
-                boxShadow: '0 0 40px rgba(59,130,246,0.5)',
-                transition: 'transform 0.1s, box-shadow 0.2s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = '0 0 60px rgba(59,130,246,0.8)'; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 0 40px rgba(59,130,246,0.5)'; }}
-            >
-              Play Now
-            </button>
-            <div style={{ marginTop: 20, fontSize: '0.8rem', color: 'rgba(180,220,255,0.5)', letterSpacing: '0.08em' }}>
-              WASD / Arrow Keys to move &nbsp;·&nbsp; Space to shoot
+      {!gameStarted && (() => {
+        const stats = Stats.load();
+        return (
+          <div
+            style={{
+              position: 'absolute', inset: 0,
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center',
+              background: 'radial-gradient(ellipse at center, rgba(0,100,255,0.12) 0%, transparent 70%)',
+              zIndex: 100,
+              fontFamily: '"Poppins", sans-serif',
+            }}
+          >
+            <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap" />
+            <div style={{ textAlign: 'center' }}>
+              {/* Tier badge */}
+              {tier > 1 && (
+                <div style={{
+                  display: 'inline-block',
+                  background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+                  color: '#000',
+                  fontWeight: 900,
+                  fontSize: '0.75rem',
+                  letterSpacing: '0.15em',
+                  padding: '4px 16px',
+                  borderRadius: 999,
+                  marginBottom: 12,
+                  boxShadow: '0 0 20px rgba(251,191,36,0.6)',
+                }}>⚔️ TIER {tier} — ESCALATED DIFFICULTY</div>
+              )}
+
+              <div style={{ fontSize: '5rem', fontWeight: 900, color: '#fff', lineHeight: 1, textShadow: '0 0 60px rgba(100,180,255,0.6)' }}>
+                ⚽ Goal-Locked
+              </div>
+              <div style={{ fontSize: '1.1rem', color: '#7dd3fc', marginTop: 12, fontWeight: 600, letterSpacing: '0.1em' }}>
+                Football Battle Royale
+              </div>
+
+              {/* Stats panel */}
+              <div style={{
+                display: 'flex', gap: 24, justifyContent: 'center',
+                marginTop: 24,
+              }}>
+                {[
+                  { label: 'FASTEST WIN', value: stats.fastestSurvival !== null ? Stats.formatTime(stats.fastestSurvival) : '—' },
+                  { label: 'BOTS DELETED', value: stats.totalBotsDeleted.toString() },
+                  { label: 'BEST TIER', value: `T${stats.highestTier}` },
+                ].map(s => (
+                  <div key={s.label} style={{
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 10,
+                    padding: '10px 20px',
+                    minWidth: 90,
+                  }}>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>{s.value}</div>
+                    <div style={{ fontSize: '0.55rem', color: 'rgba(180,220,255,0.5)', letterSpacing: '0.12em', marginTop: 2 }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={startGame}
+                style={{
+                  marginTop: 28,
+                  padding: '16px 56px',
+                  background: tier > 1
+                    ? 'linear-gradient(135deg, #f59e0b, #ef4444)'
+                    : 'linear-gradient(135deg, #3b82f6, #06b6d4)',
+                  border: 'none',
+                  borderRadius: 12,
+                  color: '#fff',
+                  fontFamily: '"Poppins", sans-serif',
+                  fontWeight: 700,
+                  fontSize: '1.1rem',
+                  letterSpacing: '0.05em',
+                  cursor: 'pointer',
+                  boxShadow: tier > 1
+                    ? '0 0 40px rgba(245,158,11,0.5)'
+                    : '0 0 40px rgba(59,130,246,0.5)',
+                  transition: 'transform 0.1s, box-shadow 0.2s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+              >
+                {tier > 1 ? `⚔️ Enter Tier ${tier}` : 'Play Now'}
+              </button>
+              <div style={{ marginTop: 20, fontSize: '0.8rem', color: 'rgba(180,220,255,0.5)', letterSpacing: '0.08em' }}>
+                WASD to move &nbsp;·&nbsp; Space to shoot &nbsp;·&nbsp; Shift to DASH
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* HTML Victory Screen */}
       {victory && (
@@ -408,7 +621,9 @@ export default function GameArena() {
       )}
 
       {/* Overlays */}
+      <AudioController />
       <EliminationFeed />
+      <DashCooldownHUD />
       <MobileControls />
       <OrientationLock />
     </div>

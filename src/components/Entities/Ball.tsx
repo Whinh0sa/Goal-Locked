@@ -12,6 +12,7 @@ export const Ball = () => {
   const ballMesh = useRef<THREE.Mesh>(null!);
   const glowRef = useRef<THREE.PointLight>(null!);
   const updateBallPosition = useGameStore(state => state.updateBallPosition);
+  const tier               = useGameStore(state => state.tier);
   const bodyRef = useRef<CANNON.Body>(null!);
 
   useEffect(() => {
@@ -19,8 +20,8 @@ export const Ball = () => {
         mass: 1,
         shape: new CANNON.Sphere(0.6),
         position: new CANNON.Vec3(0, 8, 0),
-        linearDamping: 0.1,
-        angularDamping: 0.1,
+        linearDamping: 0.3,
+        angularDamping: 0.5,
     });
     world.addBody(body);
     bodyRef.current = body;
@@ -36,6 +37,11 @@ export const Ball = () => {
     if (pos.y > 10) {
       body.applyImpulse(new CANNON.Vec3(0, -30, 0), body.position);
     }
+
+    // ── Tier scaling: each tier reduces damping 5% (ball gets slicker) ───
+    const tierDamping = Math.max(0.1 - (tier - 1) * 0.005, 0.04);
+    body.linearDamping  = tierDamping;
+    body.angularDamping = tierDamping;
 
     groupRef.current.position.set(pos.x, pos.y, pos.z);
     updateBallPosition([pos.x, pos.y, pos.z]);
