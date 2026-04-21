@@ -29,6 +29,8 @@ interface GameState {
   dashCooldownUntil: number;
   tier: number;           // Escalating difficulty tier — survives resets
   gameStartTime: number;  // Date.now() when game started, for survival timing
+  playerKills: number;    // Number of bots eliminated while player is alive
+  botNames: string[];     // Runtime assigned bot names for kill feed
 
   // Actions
   startGame: () => void;
@@ -41,6 +43,7 @@ interface GameState {
   setImpactPosition: (pos: [number, number, number] | null, strength?: number) => void;
   setSpeedMultiplier: (m: number) => void;
   triggerDash: () => void;
+  setBotName: (index: number, name: string) => void;
 }
 
 const GOAL_COUNT = 8;
@@ -72,6 +75,8 @@ export const useGameStore = create<GameState>((set) => ({
   dashCooldownUntil: 0,
   tier: 1,
   gameStartTime: 0,
+  playerKills: 0,
+  botNames: new Array(GOAL_COUNT).fill(''),
 
   startGame: () => set({ gameStarted: true, gameStartTime: Date.now() }),
 
@@ -98,9 +103,16 @@ export const useGameStore = create<GameState>((set) => ({
     const remainingCount = newEliminated.filter(e => !e).length;
 
     const isPlayer = playerIndex === 0;
+    const name = state.botNames[playerIndex] || `Sector ${playerIndex + 1}`;
+    
+    // We only explicitly say the player eliminated them if the player is still alive, else they just die
     const message = isPlayer
       ? 'GAME OVER — You\'ve been eliminated'
-      : `GOAL! — Sector ${playerIndex + 1} eliminated`;
+      : state.eliminated[0] ? `${name} was eliminated` : `Player eliminated ${name}`;
+
+    const newPlayerKills = (!isPlayer && !state.eliminated[0]) 
+      ? state.playerKills + 1 
+      : state.playerKills;
 
     const newEntry: EliminationEntry = {
       id: playerIndex,
@@ -142,6 +154,7 @@ export const useGameStore = create<GameState>((set) => ({
       tier: isVictory ? state.tier + 1 : state.tier,
       eliminationLog: [...state.eliminationLog, newEntry],
       currentRadius: state.currentRadius * 0.9,
+      playerKills: newPlayerKills,
     };
   }),
 
@@ -165,6 +178,8 @@ export const useGameStore = create<GameState>((set) => ({
     playerSpeedMultiplier: 1,
     dashCooldownUntil: 0,
     gameStartTime: 0,
+    playerKills: 0,
+    // Note: botNames are NOT reset here so they persist for rendering until next mount
     // tier intentionally preserved — carries escalating difficulty forward
     tier: state.tier,
   })),
@@ -183,4 +198,9 @@ export const useGameStore = create<GameState>((set) => ({
     if (now < state.dashCooldownUntil) return state; // still on cooldown
     return { dashCooldownUntil: now + 3000 };
   }),
+  setBotName: (index, name) => set(state => {
+    const newNames = [...state.botNames];
+    newNames[index] = name;
+    return { botNames: newNames };
+  })
 }));

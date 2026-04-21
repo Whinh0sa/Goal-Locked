@@ -16,12 +16,17 @@ export const Ball = () => {
   const bodyRef = useRef<CANNON.Body>(null!);
 
   useEffect(() => {
+    const randomAngle = Math.random() * Math.PI * 2;
+    const spawnRadius = Math.random() * 15;
+    const spawnX = Math.cos(randomAngle) * spawnRadius;
+    const spawnZ = Math.sin(randomAngle) * spawnRadius;
+
     const body = new CANNON.Body({
-        mass: 1,
+        mass: 5,
         shape: new CANNON.Sphere(0.6),
-        position: new CANNON.Vec3(0, 8, 0),
-        linearDamping: 0.3,
-        angularDamping: 0.5,
+        position: new CANNON.Vec3(spawnX, 20, spawnZ),
+        linearDamping: 0.4,
+        angularDamping: 0.4,
     });
     world.addBody(body);
     bodyRef.current = body;
@@ -42,6 +47,15 @@ export const Ball = () => {
     const tierDamping = Math.max(0.1 - (tier - 1) * 0.005, 0.04);
     body.linearDamping  = tierDamping;
     body.angularDamping = tierDamping;
+
+    // ── Velocity Clamp ──
+    const v = body.velocity;
+    const speed = Math.sqrt(v.x**2 + v.y**2 + v.z**2);
+    const MAX_SPEED = 35;
+    if (speed > MAX_SPEED) {
+      const factor = MAX_SPEED / speed;
+      body.velocity.set(v.x * factor, v.y * factor, v.z * factor);
+    }
 
     groupRef.current.position.set(pos.x, pos.y, pos.z);
     updateBallPosition([pos.x, pos.y, pos.z]);

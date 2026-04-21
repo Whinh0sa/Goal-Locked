@@ -16,7 +16,7 @@ const floorMaterial  = new CANNON.Material('floor');
 
 const ballFloorContact = new CANNON.ContactMaterial(ballMaterial, floorMaterial, {
   friction: 0.5,
-  restitution: 0.4,
+  restitution: 0.2,
 });
 const playerBallContact = new CANNON.ContactMaterial(playerMaterial, ballMaterial, {
   friction: 0.1,

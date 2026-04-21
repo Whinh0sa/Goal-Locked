@@ -24,10 +24,14 @@ export const Player = () => {
   // Track previous cooldown to detect the exact frame a dash was triggered
   const prevDashCooldown = useRef(0);
   // Snapshot last known position for the ghost
-  const lastPos = useRef(new THREE.Vector3(ARENA_RADIUS - 2, 1, 0));
+  const lastPos = useRef(new THREE.Vector3(ARENA_RADIUS - 6, 1, 0));
 
   useEffect(() => {
-    const spawnPos = new CANNON.Vec3(ARENA_RADIUS - 2, 1, 0);
+    const randomAngle = Math.random() * Math.PI * 2;
+    const spawnRadius = 10 + Math.random() * 10;
+    const spawnX = Math.cos(randomAngle) * spawnRadius;
+    const spawnZ = Math.sin(randomAngle) * spawnRadius;
+    const spawnPos = new CANNON.Vec3(spawnX, 1, spawnZ);
     const body = new CANNON.Body({
       mass: 5,
       shape: new CANNON.Sphere(0.8),
@@ -86,7 +90,7 @@ export const Player = () => {
     updatePlayerPos([pos.x, pos.y, pos.z]);
 
     // ── BALL SPIN ─────────────────────────────────────────────────────
-    const ballBody = world.bodies.find(b => b.mass === 1 && b.shapes[0] instanceof CANNON.Sphere);
+    const ballBody = world.bodies.find(b => b.mass === 5 && b.shapes[0] instanceof CANNON.Sphere);
     if (ballBody) {
       const dx2 = ballBody.position.x - pos.x;
       const dz2 = ballBody.position.z - pos.z;
@@ -112,12 +116,12 @@ export const Player = () => {
 
     // ── PULSE ─────────────────────────────────────────────────────────
     if (pulseTrigger) {
-      const ballBodyP = world.bodies.find(b => b.mass === 1 && b.shapes[0] instanceof CANNON.Sphere);
+      const ballBodyP = world.bodies.find(b => b.mass === 5 && b.shapes[0] instanceof CANNON.Sphere);
       if (ballBodyP) {
         const dp   = ballBodyP.position.vsub(body.position);
         const dist = dp.length();
         if (dist < 5) {
-          ballBodyP.applyImpulse(dp.scale(80 / Math.max(dist, 0.1)), ballBodyP.position);
+          ballBodyP.applyImpulse(dp.scale(250 / Math.max(dist, 0.1)), ballBodyP.position);
         }
       }
     }

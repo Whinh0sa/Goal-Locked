@@ -16,12 +16,12 @@ import { ScorchMarks } from './VFX/ScorchMarks';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, RefreshCw, AlertTriangle } from 'lucide-react';
 import * as THREE from 'three';
-import { OrientationLock } from './UI/OrientationLock';
 import { MobileControls } from './UI/MobileControls';
 import { FadingText } from './UI/FadingText';
 import { GOALS, ARENA_RADIUS } from '../constants';
 import { EliminationFeed } from './UI/EliminationFeed';
 import { AudioController } from './UI/AudioController';
+import { LeaderboardUI } from './UI/LeaderboardUI';
 import { DecoyBalls } from './Entities/DecoyBalls';
 import { FloorBumper } from './Hazards/FloorBumper';
 import { PowerUp } from './Entities/PowerUp';
@@ -126,24 +126,27 @@ function DiegeticVictoryUI({ onReset }: { onReset: () => void }) {
                 </Text>
 
                 {/* PLAY AGAIN button */}
-                <group position={[0, -6, 0]} onClick={onReset}>
-                    <mesh>
-                        <planeGeometry args={[10, 2.2]} />
-                        <meshBasicMaterial color="#32CD32" transparent opacity={0.18} />
-                    </mesh>
-                    <lineSegments>
-                        <edgesGeometry args={[new THREE.PlaneGeometry(10, 2.2)]} />
-                        <lineBasicMaterial color="#32CD32" />
-                    </lineSegments>
-                    <Text
-                        fontSize={0.75}
-                        color="#32CD32"
-                        anchorX="center"
-                        anchorY="middle"
-                        fontWeight={700}
-                    >
-                        PLAY AGAIN
-                    </Text>
+                <group position={[0, -6, 0]}>
+                    <Html transform distanceFactor={25} zIndexRange={[100, 0]}>
+                        <button 
+                            onClick={onReset}
+                            style={{ 
+                                pointerEvents: 'auto',
+                                background: 'rgba(50,205,50,0.18)',
+                                border: '2px solid #32CD32',
+                                color: '#32CD32',
+                                fontSize: '18px',
+                                fontWeight: 700,
+                                padding: '12px 32px',
+                                cursor: 'pointer',
+                                textShadow: '0 0 10px #32CD32',
+                                textTransform: 'uppercase',
+                                outline: 'none'
+                            }}
+                        >
+                            Play Again
+                        </button>
+                    </Html>
                 </group>
             </Float>
         </group>
@@ -181,20 +184,27 @@ function DiegeticDefeatUI({ onReset }: { onReset: () => void }) {
                 </Text>
 
                 {/* PLAY AGAIN button */}
-                <group position={[0, -6, 0]} onClick={onReset}>
-                    <mesh>
-                        <planeGeometry args={[10, 2.2]} />
-                        <meshBasicMaterial color="#FF3B3B" transparent opacity={0.18} />
-                    </mesh>
-                    <Text
-                        fontSize={0.75}
-                        color="#FF3B3B"
-                        anchorX="center"
-                        anchorY="middle"
-                        fontWeight={700}
-                    >
-                        TRY AGAIN
-                    </Text>
+                <group position={[0, -6, 0]}>
+                    <Html transform distanceFactor={25} zIndexRange={[100, 0]}>
+                        <button 
+                            onClick={onReset}
+                            style={{ 
+                                pointerEvents: 'auto',
+                                background: 'rgba(255,59,59,0.18)',
+                                border: '2px solid #FF3B3B',
+                                color: '#FF3B3B',
+                                fontSize: '18px',
+                                fontWeight: 700,
+                                padding: '12px 32px',
+                                cursor: 'pointer',
+                                textShadow: '0 0 10px #FF3B3B',
+                                textTransform: 'uppercase',
+                                outline: 'none'
+                            }}
+                        >
+                            Try Again
+                        </button>
+                    </Html>
                 </group>
             </Float>
         </group>
@@ -622,10 +632,10 @@ export default function GameArena() {
 
       {/* Overlays */}
       <AudioController />
+      <LeaderboardUI />
       <EliminationFeed />
       <DashCooldownHUD />
       <MobileControls />
-      <OrientationLock />
     </div>
   );
 }

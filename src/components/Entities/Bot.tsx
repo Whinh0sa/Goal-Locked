@@ -14,12 +14,20 @@ const PLAYER_BIAS      = 0.40;   // 40% chance to target player goal when in pos
 
 type BotState = 'ATTACK' | 'DEFEND' | 'REPOSITION' | 'SLAM';
 
+const BOT_NAMES = ['Bot_Apex', 'Bot_Nova', 'Bot_Onyx', 'Bot_Flux', 'Bot_Rift', 'Bot_Echo', 'Bot_Vex', 'Bot_Zero'];
+
 export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => {
   const { world } = usePhysics();
   const isEliminated = useGameStore(state => state.eliminated[id]);
   const tier         = useGameStore(state => state.tier);
+  const setBotName   = useGameStore(state => state.setBotName);
   const groupRef   = useRef<THREE.Group>(null!);
   const bodyRef    = useRef<CANNON.Body | null>(null);
+
+  useEffect(() => {
+    const nm = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
+    setBotName(id, `${nm}_${id + 1}`);
+  }, [id, setBotName]);
 
   // --- Randomised AI Profile (stable per bot instance) ---
   const profile = useMemo(() => ({
@@ -40,10 +48,15 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
   []);
 
   useEffect(() => {
+    const randomAngle = Math.random() * Math.PI * 2;
+    const spawnRadius = 10 + Math.random() * 10;
+    const spawnX = Math.cos(randomAngle) * spawnRadius;
+    const spawnZ = Math.sin(randomAngle) * spawnRadius;
+
     const body = new CANNON.Body({
       mass: 5,
       shape: new CANNON.Sphere(0.8),
-      position: new CANNON.Vec3(goalPos.x * 0.8, 1, goalPos.z * 0.8),
+      position: new CANNON.Vec3(spawnX, 1, spawnZ),
       fixedRotation: true,
       linearDamping: 0.45,
     });
@@ -126,7 +139,7 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
         });
 
         if (passTarget) {
-          const ballBody = world.bodies.find(b => b.mass === 1);
+          const ballBody = world.bodies.find(b => b.mass === 5);
           if (ballBody) {
             const passDir = new THREE.Vector3()
               .subVectors(passTarget, ballPos)

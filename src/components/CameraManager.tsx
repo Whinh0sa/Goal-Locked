@@ -51,34 +51,27 @@ export const CameraManager = () => {
 
     // ── NORMAL GAMEPLAY ──────────────────────────────────────────────────
     const playerBody = world.bodies.find(b => (b as any).userData?.isPlayer === true);
-    const ballBody   = world.bodies.find(b => b.mass === 1 && b.shapes[0] instanceof CANNON.Sphere);
-    if (!playerBody || !ballBody) return;
+    
+    let targetCamX = 0;
+    let targetCamZ = 0;
+    let targetCamY = 50;
 
-    const pp = new THREE.Vector3().copy(playerBody.position as any);
-    const bp = new THREE.Vector3().copy(ballBody.position as any);
+    if (playerBody) {
+      const pp = new THREE.Vector3().copy(playerBody.position as any);
+      const isPortrait = window.innerHeight > window.innerWidth;
+      targetCamX = pp.x * 1.4;
+      targetCamZ = pp.z * 1.4;
+      targetCamY = isPortrait ? 60 : 35; // Hover height
+    }
 
-    const dist = pp.distanceTo(bp);
-    const t = THREE.MathUtils.clamp(1 - (dist - MIN_DIST) / (MAX_DIST - MIN_DIST), 0, 1);
-
-    const targetY   = THREE.MathUtils.lerp(CAM_Y_TACTICAL, CAM_Y_ACTION, t);
-    const targetFOV = THREE.MathUtils.lerp(FOV_TACTICAL,   FOV_ACTION,   t);
-    const mobileFactor = (state.size.width / state.size.height) < 1.6 ? 1.35 : 1.0;
-
-    const midpoint = new THREE.Vector3().lerpVectors(pp, bp, 0.4);
-    camTarget.current.lerp(midpoint, 0.08);
-
-    const idealPos = new THREE.Vector3(
-      pp.x * 0.3,
-      targetY * mobileFactor,
-      pp.z * 0.3 + 35 * mobileFactor,
-    );
+    const idealPos = new THREE.Vector3(targetCamX, targetCamY, targetCamZ);
     camPosition.current.lerp(idealPos, 0.05);
 
     state.camera.position.copy(camPosition.current);
-    state.camera.lookAt(camTarget.current);
+    state.camera.lookAt(0, 0, 0);
 
     if (pCam.fov !== undefined) {
-      pCam.fov = THREE.MathUtils.lerp(pCam.fov, targetFOV, 0.06);
+      pCam.fov = THREE.MathUtils.lerp(pCam.fov, FOV_ACTION, 0.05);
       pCam.updateProjectionMatrix();
     }
   });
