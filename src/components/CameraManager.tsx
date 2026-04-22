@@ -53,22 +53,32 @@ export const CameraManager = () => {
     const playerBody = world.bodies.find(b => (b as any).userData?.isPlayer === true);
     
     let targetCamX = 0;
-    let targetCamZ = 0;
-    let targetCamY = 50;
+    const isPortrait = window.innerHeight > window.innerWidth;
+    let targetCamZ = isPortrait ? 60 : 45;
+    let targetCamY = 65;
+    let lookTarget = new THREE.Vector3(0, 0, 0);
 
     if (playerBody) {
+      const ballPosArray = useGameStore.getState().ballPosition;
+      const bp = new THREE.Vector3().fromArray(ballPosArray);
       const pp = new THREE.Vector3().copy(playerBody.position as any);
-      const isPortrait = window.innerHeight > window.innerWidth;
-      targetCamX = pp.x * 1.4;
-      targetCamZ = pp.z * 1.4;
-      targetCamY = isPortrait ? 60 : 35; // Hover height
+      
+      const dist = pp.distanceTo(bp);
+      const t = THREE.MathUtils.clamp((dist - 3) / 25, 0, 1);
+      targetCamY = THREE.MathUtils.lerp(40, 65, t);
+
+      const midpoint = new THREE.Vector3().addVectors(pp, bp).multiplyScalar(0.5);
+      targetCamX = midpoint.x;
+      targetCamZ = midpoint.z + (isPortrait ? 60 : 45);
+      lookTarget.copy(midpoint);
     }
 
     const idealPos = new THREE.Vector3(targetCamX, targetCamY, targetCamZ);
     camPosition.current.lerp(idealPos, 0.05);
 
     state.camera.position.copy(camPosition.current);
-    state.camera.lookAt(0, 0, 0);
+    camTarget.current.lerp(lookTarget, 0.06);
+    state.camera.lookAt(camTarget.current);
 
     if (pCam.fov !== undefined) {
       pCam.fov = THREE.MathUtils.lerp(pCam.fov, FOV_ACTION, 0.05);

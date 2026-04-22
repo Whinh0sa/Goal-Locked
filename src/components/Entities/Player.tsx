@@ -25,13 +25,12 @@ export const Player = () => {
   const prevDashCooldown = useRef(0);
   // Snapshot last known position for the ghost
   const lastPos = useRef(new THREE.Vector3(ARENA_RADIUS - 6, 1, 0));
+  const playerPosition = useGameStore(state => state.playerPosition);
+  const gameStartTime = useGameStore(state => state.gameStartTime);
 
   useEffect(() => {
-    const randomAngle = Math.random() * Math.PI * 2;
-    const spawnRadius = 10 + Math.random() * 10;
-    const spawnX = Math.cos(randomAngle) * spawnRadius;
-    const spawnZ = Math.sin(randomAngle) * spawnRadius;
-    const spawnPos = new CANNON.Vec3(spawnX, 1, spawnZ);
+    const [spawnX, spawnY, spawnZ] = useGameStore.getState().playerPosition;
+    const spawnPos = new CANNON.Vec3(spawnX, spawnY, spawnZ);
     const body = new CANNON.Body({
       mass: 5,
       shape: new CANNON.Sphere(0.8),
@@ -43,10 +42,19 @@ export const Player = () => {
     world.addBody(body);
     bodyRef.current = body;
     return () => {
-      world.removeBody(body);
-      bodyRef.current = null;
+      if (bodyRef.current) world.removeBody(bodyRef.current);
     };
   }, [world]);
+
+  useEffect(() => {
+    if (bodyRef.current && gameStartTime > 0) {
+      const [sx, sy, sz] = useGameStore.getState().playerPosition;
+      bodyRef.current.position.set(sx, sy, sz);
+      bodyRef.current.velocity.set(0, 0, 0);
+      bodyRef.current.angularVelocity.set(0, 0, 0);
+      bodyRef.current.wakeUp();
+    }
+  }, [gameStartTime]);
 
   // Remove physics body from world when eliminated (no more collisions)
   useEffect(() => {

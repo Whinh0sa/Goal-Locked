@@ -13,25 +13,36 @@ export const Ball = () => {
   const glowRef = useRef<THREE.PointLight>(null!);
   const updateBallPosition = useGameStore(state => state.updateBallPosition);
   const tier               = useGameStore(state => state.tier);
+  const ballPosition = useGameStore(state => state.ballPosition);
+  const gameStartTime = useGameStore(state => state.gameStartTime);
   const bodyRef = useRef<CANNON.Body>(null!);
 
   useEffect(() => {
-    const randomAngle = Math.random() * Math.PI * 2;
-    const spawnRadius = Math.random() * 15;
-    const spawnX = Math.cos(randomAngle) * spawnRadius;
-    const spawnZ = Math.sin(randomAngle) * spawnRadius;
-
+    const [spawnX, spawnY, spawnZ] = useGameStore.getState().ballPosition;
     const body = new CANNON.Body({
         mass: 5,
         shape: new CANNON.Sphere(0.6),
-        position: new CANNON.Vec3(spawnX, 20, spawnZ),
+        position: new CANNON.Vec3(spawnX, spawnY, spawnZ),
         linearDamping: 0.4,
         angularDamping: 0.4,
     });
     world.addBody(body);
     bodyRef.current = body;
-    return () => world.removeBody(body);
-  }, [world]);
+    return () => {
+      if (bodyRef.current) world.removeBody(bodyRef.current);
+    };
+  }, [world]); // Mount once
+
+  // Reset physics on restart
+  useEffect(() => {
+    if (bodyRef.current && gameStartTime > 0) {
+      const [sx, sy, sz] = useGameStore.getState().ballPosition;
+      bodyRef.current.position.set(sx, sy, sz);
+      bodyRef.current.velocity.set(0, 0, 0);
+      bodyRef.current.angularVelocity.set(0, 0, 0);
+      bodyRef.current.wakeUp();
+    }
+  }, [gameStartTime]);
 
   useFrame((state) => {
     if (!bodyRef.current) return;

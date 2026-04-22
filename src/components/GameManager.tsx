@@ -102,11 +102,10 @@ export const GameManager = () => {
         setTimeScale(1.0);
     }
 
-    // --- Goal Detection (dynamic radius + 30° arc + height check) ---
-    // Height guard: ball must be below post height (y < 2.5) to count
-    if (distFromCenter > currentRadius && ballPos.y < 2.5) {
+    // --- Goal Detection (dynamic radius + precise post arc + height check) ---
+    // Height guard: ball must be below post height (y < 3.0) to count
+    if (distFromCenter > currentRadius && ballPos.y < 3.0) {
         const ballAngle = Math.atan2(ballPos.z, ballPos.x);
-        const ARC_HALF = Math.PI / 6; // ±15° = 30° total arc per goal sector
         const angleStep = (Math.PI * 2) / GOALS;
 
         let hitGoalIdx = -1;
@@ -119,7 +118,7 @@ export const GameManager = () => {
                 ((ballAngle - goalAngle + Math.PI * 3) % (Math.PI * 2)) - Math.PI
             );
 
-            if (diff <= ARC_HALF) {
+            if (diff < 0.2) {
                 hitGoalIdx = i;
                 break;
             }

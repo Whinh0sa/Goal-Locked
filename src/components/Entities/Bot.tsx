@@ -47,18 +47,23 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
     new THREE.Vector3(Math.cos(0) * ARENA_RADIUS, 0, Math.sin(0) * ARENA_RADIUS),
   []);
 
+  const botPositions = useGameStore(state => state.botPositions);
+  const gameStartTime = useGameStore(state => state.gameStartTime);
+
   useEffect(() => {
-    const randomAngle = Math.random() * Math.PI * 2;
-    const spawnRadius = 10 + Math.random() * 10;
-    const spawnX = Math.cos(randomAngle) * spawnRadius;
-    const spawnZ = Math.sin(randomAngle) * spawnRadius;
+    const nm = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
+    setBotName(id, `${nm}_${id + 1}`);
+
+    const [spawnX, spawnY, spawnZ] = botPositions[id];
 
     const body = new CANNON.Body({
       mass: 5,
       shape: new CANNON.Sphere(0.8),
-      position: new CANNON.Vec3(spawnX, 1, spawnZ),
+      position: new CANNON.Vec3(spawnX, spawnY, spawnZ),
       fixedRotation: true,
       linearDamping: 0.45,
+      allowSleep: true,
+      sleepSpeedLimit: 0.1,
     });
     world.addBody(body);
     bodyRef.current = body;
@@ -66,7 +71,19 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
       world.removeBody(body);
       bodyRef.current = null;
     };
-  }, [world, goalPos]);
+  }, [world, id]); // Mount once
+
+  // Reset Trigger listener
+  useEffect(() => {
+      if (bodyRef.current && gameStartTime > 0) {
+          const [sx, sy, sz] = useGameStore.getState().botPositions[id];
+          bodyRef.current.position.set(sx, sy, sz);
+          bodyRef.current.velocity.set(0, 0, 0);
+          bodyRef.current.angularVelocity.set(0, 0, 0);
+          // Wake up body if it was sleeping
+          bodyRef.current.wakeUp();
+      }
+  }, [gameStartTime, id]);
 
   useFrame((_, delta) => {
     if (isEliminated || !bodyRef.current) return;

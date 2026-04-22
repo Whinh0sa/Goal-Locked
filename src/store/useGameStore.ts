@@ -31,6 +31,7 @@ interface GameState {
   gameStartTime: number;  // Date.now() when game started, for survival timing
   playerKills: number;    // Number of bots eliminated while player is alive
   botNames: string[];     // Runtime assigned bot names for kill feed
+  botPositions: [number, number, number][]; // Physics drop coordinates
 
   // Actions
   startGame: () => void;
@@ -44,6 +45,7 @@ interface GameState {
   setSpeedMultiplier: (m: number) => void;
   triggerDash: () => void;
   setBotName: (index: number, name: string) => void;
+  resetPositions: () => void;
 }
 
 const GOAL_COUNT = 8;
@@ -54,7 +56,7 @@ const SLOT_NAMES = [
   'Sector 5',   'Sector 6', 'Sector 7', 'Sector 8',
 ];
 
-export const useGameStore = create<GameState>((set) => ({
+export const useGameStore = create<GameState>((set, get) => ({
   gameStarted: false,
   score: new Array(GOAL_COUNT).fill(0),
   eliminated: new Array(GOAL_COUNT).fill(false),
@@ -77,8 +79,12 @@ export const useGameStore = create<GameState>((set) => ({
   gameStartTime: 0,
   playerKills: 0,
   botNames: new Array(GOAL_COUNT).fill(''),
+  botPositions: new Array(GOAL_COUNT).fill([0, 15, 0]),
 
-  startGame: () => set({ gameStarted: true, gameStartTime: Date.now() }),
+  startGame: () => {
+    get().resetPositions();
+    set({ gameStarted: true, gameStartTime: Date.now() });
+  },
 
   registerGoal: (playerIndex: number) => set((state) => {
     const newEliminated = [...state.eliminated];
@@ -158,17 +164,17 @@ export const useGameStore = create<GameState>((set) => ({
     };
   }),
 
-  resetGame: () => set(state => ({
-    gameStarted: false,
-    score: new Array(GOAL_COUNT).fill(0),
-    eliminated: new Array(GOAL_COUNT).fill(false),
-    lastGoal: null,
-    victory: false,
-    gameOver: false,
-    remainingPlayers: GOAL_COUNT,
-    ballPosition: [0, 5, 0] as [number, number, number],
-    playerPosition: [18, 1, 0] as [number, number, number],
-    moveDirection: [0, 0] as [number, number],
+  resetGame: () => {
+    get().resetPositions();
+    set(state => ({
+      gameStarted: false,
+      score: new Array(GOAL_COUNT).fill(0),
+      eliminated: new Array(GOAL_COUNT).fill(false),
+      lastGoal: null,
+      victory: false,
+      gameOver: false,
+      remainingPlayers: GOAL_COUNT,
+      moveDirection: [0, 0] as [number, number],
     pulseTrigger: false,
     impactPosition: null,
     impactStrength: 0,
@@ -182,7 +188,21 @@ export const useGameStore = create<GameState>((set) => ({
     // Note: botNames are NOT reset here so they persist for rendering until next mount
     // tier intentionally preserved — carries escalating difficulty forward
     tier: state.tier,
-  })),
+    }));
+  },
+
+  resetPositions: () => set((state) => {
+    const getPos = (): [number, number, number] => {
+      const angle = Math.random() * Math.PI * 2;
+      const r = Math.random() * 12;
+      return [Math.cos(angle) * r, 15, Math.sin(angle) * r];
+    };
+    return {
+      playerPosition: getPos(),
+      ballPosition: getPos(),
+      botPositions: Array.from({ length: GOAL_COUNT }, getPos),
+    };
+  }),
 
   updateBallPosition: (pos) => set({ ballPosition: pos }),
   updatePlayerPosition: (pos) => set({ playerPosition: pos }),
