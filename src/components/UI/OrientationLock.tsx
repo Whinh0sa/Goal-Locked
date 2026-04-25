@@ -33,10 +33,10 @@ export const OrientationLock = () => {
                         <Smartphone size={64} strokeWidth={1} />
                     </motion.div>
                     
-                    <h2 className="text-xl tracking-[0.3em] mb-4 uppercase">Crucible_OS // Hardware_Alert</h2>
+                    <h2 className="text-xl tracking-[0.3em] mb-4 uppercase">HARDWARE ALERT</h2>
                     <p className="text-sm opacity-60 tracking-widest leading-loose max-w-md">
-                        TACTICAL OVERVIEW REQUIRES LANDSCAPE ORIENTATION. 
-                        PLEASE ROTATE YOUR DEVICE TO INITIALIZE SECTOR CONTROL.
+                        LANDSCAPE MODE REQUIRED. 
+                        PLEASE ROTATE YOUR DEVICE TO PLAY.
                     </p>
                     
                     <div className="mt-12 w-48 h-[2px] bg-teal-500/20 relative overflow-hidden">

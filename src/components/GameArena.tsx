@@ -46,24 +46,6 @@ const getWorldConfig = (tier: number) => {
 
 // --- Diegetic 3D HUD Components ---
 
-function LoadingOverlay() {
-    return (
-        <Float speed={5} rotationIntensity={2} floatIntensity={2}>
-            <Text
-                fontSize={2}
-                color="#00ffff"
-                anchorX="center"
-                anchorY="middle"
-                maxWidth={20}
-                textAlign="center"
-                fontStyle="italic"
-            >
-                CRUCIBLE_OS_INITIALIZING...
-            </Text>
-        </Float>
-    );
-}
-
 function DiegeticStartUI({ onStart }: { onStart: () => void }) {
     return (
         <group position={[0, 5, 10]}>
@@ -87,7 +69,7 @@ function DiegeticStartUI({ onStart }: { onStart: () => void }) {
                     letterSpacing={0.5}
                     fadeDelay={8000}
                 >
-                    DEPLOYMENT_IMMINENT
+                    GET READY
                 </FadingText>
                 
                 <group position={[0, -6, 0]} onClick={onStart}>
@@ -101,7 +83,7 @@ function DiegeticStartUI({ onStart }: { onStart: () => void }) {
                         anchorX="center"
                         anchorY="middle"
                     >
-                        INITIALIZE_SECTOR
+                        READY
                     </Text>
                 </group>
             </Float>
@@ -136,7 +118,7 @@ function DiegeticVictoryUI({ onReset }: { onReset: () => void }) {
                     anchorY="middle"
                     letterSpacing={0.15}
                 >
-                    Last Sector Standing
+                    Last Player Standing
                 </Text>
 
                 {/* PLAY AGAIN button */}
@@ -194,7 +176,7 @@ function DiegeticDefeatUI({ onReset }: { onReset: () => void }) {
                     anchorY="middle"
                     letterSpacing={0.15}
                 >
-                    Your Sector was eliminated
+                    You were eliminated
                 </Text>
 
                 {/* PLAY AGAIN button */}
@@ -283,7 +265,7 @@ function CrucibleScene() {
   return (
     <>
         <scene fog={new THREE.FogExp2(worldConf.fog, 0.02)} />
-        <Suspense fallback={<LoadingOverlay />}>
+        <Suspense fallback={null}>
             <PhysicsProvider>
                 <CameraManager />
                 
@@ -311,7 +293,7 @@ function CrucibleScene() {
                 <Ball />
                 <Player />
                 <EntryPortal />
-                {tier >= 1 && <ExitPortal position={[0, 1, ARENA_RADIUS - 3]} destinationUrl={`https://vibejam.cc/portal/2026?username=Whinhosa&color=32CD32&ref=goal-locked.vercel.app`} />}
+                {tier >= 1 && <ExitPortal angle={5/ARENA_RADIUS} destinationUrl={`https://vibejam.cc/portal/2026?username=Whinhosa&color=32CD32&ref=goal-locked.vercel.app`} />}
                 <GoalJuice />
                 <CollisionParticles />
                 <ScorchMarks />

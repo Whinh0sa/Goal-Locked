@@ -60,8 +60,8 @@ const GOAL_COUNT = 8;
 
 // Human-readable slot names
 const SLOT_NAMES = [
-  'Your Sector', 'Sector 2', 'Sector 3', 'Sector 4',
-  'Sector 5',   'Sector 6', 'Sector 7', 'Sector 8',
+  'YOU', 'BOT 2', 'BOT 3', 'BOT 4',
+  'BOT 5',   'BOT 6', 'BOT 7', 'BOT 8',
 ];
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -121,7 +121,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const remainingCount = newEliminated.filter(e => !e).length;
 
     const isPlayer = playerIndex === 0;
-    const name = state.botNames[playerIndex] || `Sector ${playerIndex + 1}`;
+    const name = state.botNames[playerIndex] || `BOT ${playerIndex + 1}`;
     
     // We only explicitly say the player eliminated them if the player is still alive, else they just die
     const message = isPlayer

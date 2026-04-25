@@ -133,7 +133,6 @@ export const MobileControls = () => {
                     >
                         <span style={{ color: '#008080', fontWeight: 900, fontSize: 24, fontStyle: 'italic', letterSpacing: '-0.05em' }}>PULSE</span>
                     </motion.div>
-                    <span style={{ marginTop: 16, fontFamily: 'monospace', fontSize: 10, color: 'rgba(0,128,128,0.4)', textTransform: 'uppercase', letterSpacing: '0.4em' }}>Trigger_Overload</span>
                 </div>
 
                 {/* Dash Button */}
