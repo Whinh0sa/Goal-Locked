@@ -28,6 +28,18 @@ import { PowerUp } from './Entities/PowerUp';
 import { ConfettiExplosion } from './VFX/ConfettiExplosion';
 import { Stats } from '../hooks/useStats';
 
+const WORLD_CONFIG: Record<number, { preset: any, bg: string, fog: string }> = {
+  1: { preset: 'city', bg: '#000000', fog: '#000000' },
+  2: { preset: 'sunset', bg: '#1c0d06', fog: '#1c0d06' },
+  3: { preset: 'night', bg: '#0a0a20', fog: '#0a0a20' },
+  4: { preset: 'warehouse', bg: '#171a1c', fog: '#171a1c' },
+  5: { preset: 'apartment', bg: '#111318', fog: '#111318' },
+};
+const getWorldConfig = (tier: number) => {
+  const t = ((tier - 1) % 5) + 1;
+  return WORLD_CONFIG[t] || WORLD_CONFIG[1];
+};
+
 // ... (skipping unchanged code for brevity in thought, but tool will use full content)
 
 // --- Diegetic 3D HUD Components ---
@@ -244,8 +256,9 @@ function WorldSpaceHUD() {
 // --- Crucible Scene (Inner R3F Context) ---
 
 function CrucibleScene() {
-  const { gameStarted, startGame, victory, gameOver, resetGame } = useGameStore();
+  const { gameStarted, startGame, victory, gameOver, resetGame, tier } = useGameStore();
   const timer = useMemo(() => new THREE.Timer(), []);
+  const worldConf = getWorldConfig(tier);
 
   useFrame(() => {
     timer.update();
@@ -267,13 +280,13 @@ function CrucibleScene() {
 
   return (
     <>
-        <scene fog={new THREE.FogExp2('#000000', 0.02)} />
+        <scene fog={new THREE.FogExp2(worldConf.fog, 0.02)} />
         <Suspense fallback={<LoadingOverlay />}>
             <PhysicsProvider>
                 <CameraManager />
                 
                 {/* Environment */}
-                <Environment preset="city" background blur={0.8} />
+                <Environment preset={worldConf.preset} background blur={0.8} />
                 <Sky sunPosition={[10, 2, 10]} />
                 <Stars radius={100} depth={50} count={3000} factor={4} saturation={0} fade speed={1} />
                 
@@ -468,6 +481,7 @@ function DashCooldownHUD() {
 
 export default function GameArena() {
   const { gameStarted, startGame, resetGame, victory, tier } = useGameStore();
+  const worldConf = getWorldConfig(tier);
 
   return (
     <div
@@ -492,7 +506,7 @@ export default function GameArena() {
         gl={{ antialias: true, alpha: false, stencil: false, depth: true }}
         camera={{ position: [0, 50, 50], fov: 50 }}
       >
-        <color attach="background" args={['#000']} />
+        <color attach="background" args={[worldConf.bg]} />
         <CrucibleScene />
       </Canvas>
 
