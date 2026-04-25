@@ -64,6 +64,7 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
       linearDamping: 0.45,
       allowSleep: true,
       sleepSpeedLimit: 0.1,
+      collisionFilterGroup: 1,
     });
     world.addBody(body);
     bodyRef.current = body;
@@ -99,6 +100,17 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
     const ballToGoalDist  = ballPos.distanceTo(goalPos2D);
     const botToBallDist   = botPos.distanceTo(ballPos);
     const hasPossession   = botToBallDist < POSSESSION_RADIUS;
+
+    const isGhostBall = Date.now() < useGameStore.getState().ghostBallUntil;
+    const isFrozen = Date.now() < useGameStore.getState().freezeBotsUntil;
+
+    // Filter mask: ~2 means collide with everything EXCEPT group 2 (Ball)
+    body.collisionFilterMask = isGhostBall ? ~2 : -1;
+
+    if (isFrozen) {
+      body.velocity.set(0, body.velocity.y, 0);
+      return;
+    }
 
     // ── FSM Transition ─────────────────────────────────────────────────
     const { currentRadius } = useGameStore.getState();

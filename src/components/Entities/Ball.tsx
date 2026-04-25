@@ -25,6 +25,7 @@ export const Ball = () => {
         position: new CANNON.Vec3(spawnX, spawnY, spawnZ),
         linearDamping: 0.4,
         angularDamping: 0.4,
+        collisionFilterGroup: 2,
     });
     world.addBody(body);
     bodyRef.current = body;

@@ -648,6 +648,12 @@ export default function GameArena() {
       <AudioController />
       <LeaderboardUI />
       <EliminationFeed />
+
+      <div className="portrait-overlay">
+        <div style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '20px' }}>⚠️</div>
+        <div style={{ fontSize: '1.8rem', fontWeight: 900 }}>LANDSCAPE MODE REQUIRED</div>
+        <div style={{ fontSize: '1rem', marginTop: '10px', color: '#cbd5e1' }}>Please rotate your device to play the game.</div>
+      </div>
       <DashCooldownHUD />
       <MobileControls />
     </div>

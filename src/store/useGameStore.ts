@@ -27,6 +27,8 @@ interface GameState {
   playerShields: number;
   playerSpeedMultiplier: number;
   dashCooldownUntil: number;
+  ghostBallUntil: number;
+  freezeBotsUntil: number;
   tier: number;           // Escalating difficulty tier — survives resets
   gameStartTime: number;  // Date.now() when game started, for survival timing
   playerKills: number;    // Number of bots eliminated while player is alive
@@ -44,6 +46,8 @@ interface GameState {
   setImpactPosition: (pos: [number, number, number] | null, strength?: number) => void;
   setSpeedMultiplier: (m: number) => void;
   triggerDash: () => void;
+  triggerGhostBall: () => void;
+  triggerFreeze: () => void;
   setBotName: (index: number, name: string) => void;
   resetPositions: () => void;
 }
@@ -75,6 +79,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   playerShields: 3,
   playerSpeedMultiplier: 1,
   dashCooldownUntil: 0,
+  ghostBallUntil: 0,
+  freezeBotsUntil: 0,
   tier: 1,
   gameStartTime: 0,
   playerKills: 0,
@@ -183,6 +189,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     playerShields: 3,
     playerSpeedMultiplier: 1,
     dashCooldownUntil: 0,
+    ghostBallUntil: 0,
+    freezeBotsUntil: 0,
     gameStartTime: 0,
     playerKills: 0,
     // Note: botNames are NOT reset here so they persist for rendering until next mount
@@ -193,9 +201,9 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   resetPositions: () => set((state) => {
     const getPos = (): [number, number, number] => {
-      const angle = Math.random() * Math.PI * 2;
-      const r = Math.random() * 12;
-      return [Math.cos(angle) * r, 15, Math.sin(angle) * r];
+      const x = (Math.random() - 0.5) * 15;
+      const z = (Math.random() - 0.5) * 15;
+      return [x, 15, z];
     };
     return {
       playerPosition: getPos(),
@@ -218,6 +226,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (now < state.dashCooldownUntil) return state; // still on cooldown
     return { dashCooldownUntil: now + 3000 };
   }),
+  triggerGhostBall: () => set({ ghostBallUntil: Date.now() + 5000 }),
+  triggerFreeze: () => set({ freezeBotsUntil: Date.now() + 3000 }),
   setBotName: (index, name) => set(state => {
     const newNames = [...state.botNames];
     newNames[index] = name;

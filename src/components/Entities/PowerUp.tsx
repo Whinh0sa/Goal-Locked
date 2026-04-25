@@ -13,6 +13,21 @@ const PICKUP_RADIUS   = 2.2;     // world-units — how close to trigger pickup
 const BOOST_DURATION  = 5000;   // ms
 const RESPAWN_DELAY   = 12000;  // ms after pickup before a new orb appears
 
+type PowerUpType = 'OVERDRIVE' | 'GHOST' | 'FREEZE';
+
+function randomPowerUpType(): PowerUpType {
+  const r = Math.random();
+  if (r < 0.33) return 'OVERDRIVE';
+  if (r < 0.66) return 'GHOST';
+  return 'FREEZE';
+}
+
+const TYPE_CONFIG = {
+  OVERDRIVE: { color: '#00ffaa' }, // Teal
+  GHOST:     { color: '#cc00ff' }, // Purple
+  FREEZE:    { color: '#00aaff' }, // Cyan
+};
+
 function randomSpawnPos(): THREE.Vector3 {
   const r = 5 + Math.random() * (ARENA_RADIUS - 10);
   const a = Math.random() * Math.PI * 2;
@@ -23,9 +38,12 @@ export const PowerUp = () => {
   const gameStarted      = useGameStore(s => s.gameStarted);
   const ballPosition     = useGameStore(s => s.ballPosition);   // proxy for player pos
   const setSpeedMult     = useGameStore(s => s.setSpeedMultiplier);
+  const triggerGhostBall = useGameStore(s => s.triggerGhostBall);
+  const triggerFreeze    = useGameStore(s => s.triggerFreeze);
 
   const [visible, setVisible]   = useState(true);
   const [spawnPos, setSpawnPos] = useState(() => randomSpawnPos());
+  const [type, setType]         = useState<PowerUpType>(() => randomPowerUpType());
   const meshRef   = useRef<THREE.Mesh>(null!);
   const collected = useRef(false);
 
@@ -37,6 +55,7 @@ export const PowerUp = () => {
       // Appear 5s after game starts
       const t = setTimeout(() => {
         setSpawnPos(randomSpawnPos());
+        setType(randomPowerUpType());
         setVisible(true);
       }, 5000);
       return () => clearTimeout(t);
@@ -71,14 +90,20 @@ export const PowerUp = () => {
       collected.current = true;
       setVisible(false);
 
-      // Apply boost
-      setSpeedMult(2);
-      setTimeout(() => setSpeedMult(1), BOOST_DURATION);
+      if (type === 'OVERDRIVE') {
+        setSpeedMult(2);
+        setTimeout(() => setSpeedMult(1), BOOST_DURATION);
+      } else if (type === 'GHOST') {
+        triggerGhostBall();
+      } else if (type === 'FREEZE') {
+        triggerFreeze();
+      }
 
       // Respawn at a new position
       setTimeout(() => {
         collected.current = false;
         setSpawnPos(randomSpawnPos());
+        setType(randomPowerUpType());
         setVisible(true);
       }, RESPAWN_DELAY);
     }
@@ -86,19 +111,21 @@ export const PowerUp = () => {
 
   if (!visible) return null;
 
+  const color = TYPE_CONFIG[type].color;
+
   return (
     <Float speed={3} rotationIntensity={2} floatIntensity={1}>
       <mesh ref={meshRef} position={spawnPos}>
         <icosahedronGeometry args={[0.55, 2]} />
         <meshStandardMaterial
-          color="#00ffaa"
-          emissive="#00ffaa"
+          color={color}
+          emissive={color}
           emissiveIntensity={5}
           roughness={0.1}
           metalness={0.8}
           toneMapped={false}
         />
-        <pointLight color="#00ffaa" intensity={4} distance={8} />
+        <pointLight color={color} intensity={4} distance={8} />
       </mesh>
     </Float>
   );
