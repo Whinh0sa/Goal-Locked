@@ -15,6 +15,7 @@ export const GameManager = () => {
 
   const isSlowMo = useRef(false);
   const lastImpactTime = useRef(0);
+  const isProcessingGoal = useRef(false);
 
   // Goal locations — computed once from shared constants
   const goalPositions = useMemo(() => {
@@ -104,7 +105,7 @@ export const GameManager = () => {
 
     // --- Goal Detection (dynamic radius + precise post arc + height check) ---
     // Height guard: ball must be below post height (y < 3.0) to count
-    if (distFromCenter > currentRadius && ballPos.y < 3.0) {
+    if (distFromCenter > currentRadius && ballPos.y < 3.0 && !isProcessingGoal.current) {
         const ballAngle = Math.atan2(ballPos.z, ballPos.x);
         const angleStep = (Math.PI * 2) / GOALS;
 
@@ -125,6 +126,7 @@ export const GameManager = () => {
         }
 
         if (hitGoalIdx !== -1) {
+            isProcessingGoal.current = true;
             registerGoal(hitGoalIdx);
 
             // ── Hit-Stop: 150ms anime-impact freeze ─────────────────
@@ -135,13 +137,20 @@ export const GameManager = () => {
                 setTimeScale(1.0);
             }, 150);
 
-            // Re-centre ball after freeze — random offset within 5u radius
+            // Re-centre ball after freeze
             setTimeout(() => {
-                const angle = Math.random() * Math.PI * 2;
-                const r     = Math.random() * 4;
-                ballBody.position.set(Math.cos(angle) * r, 5, Math.sin(angle) * r);
+                function randomArenaPos(): [number, number] {
+                  const currentRadius = useGameStore.getState().currentRadius;
+                  const maxR = Math.max(0, currentRadius - 5);
+                  const r = maxR * Math.sqrt(Math.random());
+                  const a = Math.random() * Math.PI * 2;
+                  return [Math.cos(a) * r, Math.sin(a) * r];
+                }
+                const [rx, rz] = randomArenaPos();
+                ballBody.position.set(rx, 5, rz);
                 ballBody.velocity.set(0, 0, 0);
                 ballBody.angularVelocity.set(0, 0, 0);
+                isProcessingGoal.current = false;
             }, 650);
         }
     }

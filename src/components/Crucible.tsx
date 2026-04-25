@@ -100,16 +100,17 @@ const BoundarySegment = ({
     const labelColor = isPlayerGoal ? '#32CD32' : '#FF4400';
     const angle = (index / GOALS) * Math.PI * 2;
 
-    // Spawn physics body at initial radius
+    // Spawn physics body as Back-Wall
     useEffect(() => {
         const r = ARENA_RADIUS;
-        const x = Math.cos(angle) * r;
-        const z = Math.sin(angle) * r;
+        const bx = Math.cos(angle) * (r + 1.5);
+        const bz = Math.sin(angle) * (r + 1.5);
 
-        const shape = new CANNON.Box(new CANNON.Vec3(0.15, 2, 6));
+        // Thicker, taller Back-Wall safety net
+        const shape = new CANNON.Box(new CANNON.Vec3(0.6, 5, 7));
         const body = new CANNON.Body({
             mass: 0,
-            position: new CANNON.Vec3(x, 2, z),
+            position: new CANNON.Vec3(bx, 2, bz),
             shape,
         });
         const quat = new CANNON.Quaternion();
@@ -140,9 +141,11 @@ const BoundarySegment = ({
         const z = Math.sin(angle) * r;
         groupRef.current.position.set(x, 2, z);
 
-        // Slide physics body along with visual
+        // Slide physics body along with visual, but keep it pushing from behind
         if (bodyRef.current) {
-            bodyRef.current.position.set(x, 2, z);
+            const bx = Math.cos(angle) * (r + 1.5);
+            const bz = Math.sin(angle) * (r + 1.5);
+            bodyRef.current.position.set(bx, 2, bz);
             bodyRef.current.velocity.set(0, 0, 0);
         }
     });
