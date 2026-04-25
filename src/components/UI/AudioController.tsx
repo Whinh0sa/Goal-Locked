@@ -22,8 +22,18 @@ export const AudioController = () => {
   const remainingPlayers = useGameStore(s => s.remainingPlayers);
   const pulseTrigger     = useGameStore(s => s.pulseTrigger);
   const victory          = useGameStore(s => s.victory);
+  const tier             = useGameStore(s => s.tier);
 
   const prevLogLen = useRef(0);
+  const prevTier = useRef(1);
+
+  // Shuffle track and reset rate when transitioning across tiers
+  useEffect(() => {
+    if (tier > prevTier.current) {
+      prevTier.current = tier;
+      AudioManager.changeTier();
+    }
+  }, [tier]);
 
   // Start / stop ambient drone
   useEffect(() => {

@@ -94,7 +94,7 @@ class AudioManagerClass {
     track.rate(this.currentRate, id);
 
     if (fadeIn) {
-      track.fade(0, 0.2, 3000, id);
+      track.fade(0, 0.2, 1000, id);
     }
 
     // When this track ends, advance to the next (loop whole playlist on exhaust)
@@ -113,10 +113,31 @@ class AudioManagerClass {
    */
   setAmbientIntensity(remainingPlayers: number, totalPlayers = 8) {
     const t = 1 - (remainingPlayers - 1) / (totalPlayers - 1);
-    this.currentRate = 1.0 + t * 0.4;
+    this.currentRate = Math.min(1.0 + t * 0.4, 1.6);
     if (this.currentTrack && this.currentId !== null) {
       this.currentTrack.rate(this.currentRate, this.currentId);
     }
+  }
+
+  changeTier() {
+    // 1. Stop & Clear
+    if (this.currentTrack && this.currentId !== null) {
+      this.currentTrack.stop(this.currentId);
+    }
+    this.currentId = null;
+    this.currentTrack = null;
+
+    // 2. Shuffle
+    this.playlist = shuffle([...bgmTracks]);
+    this.trackIndex = 0;
+
+    // 3. Reset Speed and State
+    this.currentRate = 1.0;
+    this.bgmStarted = true;
+    this.stopped = false;
+
+    // 4. Fade (handled by _playTrack's 1000ms fadeIn flag)
+    this._playTrack(this.playlist[0], true);
   }
 
   stopAmbient() {
