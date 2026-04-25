@@ -25,6 +25,8 @@ interface GameState {
   eliminationLog: EliminationEntry[];
   currentRadius: number;
   playerShields: number;
+  playerRingColor: string | null;
+  entryPortalActive: boolean;
   playerSpeedMultiplier: number;
   dashCooldownUntil: number;
   ghostBallUntil: number;
@@ -45,6 +47,8 @@ interface GameState {
   triggerPulse: () => void;
   setImpactPosition: (pos: [number, number, number] | null, strength?: number) => void;
   setSpeedMultiplier: (m: number) => void;
+  setPlayerRingColor: (color: string | null) => void;
+  triggerEntryPortal: () => void;
   triggerDash: () => void;
   triggerGhostBall: () => void;
   triggerFreeze: () => void;
@@ -77,6 +81,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   eliminationLog: [],
   currentRadius: ARENA_RADIUS,
   playerShields: 3,
+  playerRingColor: null,
+  entryPortalActive: false,
   playerSpeedMultiplier: 1,
   dashCooldownUntil: 0,
   ghostBallUntil: 0,
@@ -226,6 +232,11 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (now < state.dashCooldownUntil) return state; // still on cooldown
     return { dashCooldownUntil: now + 3000 };
   }),
+  setPlayerRingColor: (color) => set({ playerRingColor: color }),
+  triggerEntryPortal: () => {
+    set({ entryPortalActive: true });
+    setTimeout(() => set({ entryPortalActive: false }), 3000); // Effect lasts 3s
+  },
   triggerGhostBall: () => set({ ghostBallUntil: Date.now() + 5000 }),
   triggerFreeze: () => set({ freezeBotsUntil: Date.now() + 3000 }),
   setBotName: (index, name) => set(state => {

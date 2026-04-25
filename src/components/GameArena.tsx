@@ -26,6 +26,8 @@ import { DecoyBalls } from './Entities/DecoyBalls';
 import { FloorBumper } from './Hazards/FloorBumper';
 import { PowerUp } from './Entities/PowerUp';
 import { ConfettiExplosion } from './VFX/ConfettiExplosion';
+import { EntryPortal } from './Entities/EntryPortal';
+import { ExitPortal } from './Entities/ExitPortal';
 import { Stats } from '../hooks/useStats';
 
 const WORLD_CONFIG: Record<number, { preset: any, bg: string, fog: string }> = {
@@ -308,6 +310,8 @@ function CrucibleScene() {
                 <Crucible />
                 <Ball />
                 <Player />
+                <EntryPortal />
+                {tier >= 1 && <ExitPortal position={[0, 1, ARENA_RADIUS - 3]} destinationUrl={`https://vibejam.cc/portal/2026?username=Whinhosa&color=32CD32&ref=goal-locked.vercel.app`} />}
                 <GoalJuice />
                 <CollisionParticles />
                 <ScorchMarks />
@@ -480,8 +484,20 @@ function DashCooldownHUD() {
 // --- Main Arena Container ---
 
 export default function GameArena() {
-  const { gameStarted, startGame, resetGame, victory, tier } = useGameStore();
+  const { gameStarted, startGame, resetGame, victory, tier, setPlayerRingColor, triggerEntryPortal } = useGameStore();
   const worldConf = getWorldConfig(tier);
+
+  // Portal auto-start logic
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const isPortal = searchParams.get('portal');
+    if (isPortal === 'true' && !gameStarted) {
+      const color = searchParams.get('color');
+      if (color) setPlayerRingColor(`#${color}`);
+      startGame();
+      triggerEntryPortal();
+    }
+  }, [gameStarted, startGame, setPlayerRingColor, triggerEntryPortal]);
 
   return (
     <div

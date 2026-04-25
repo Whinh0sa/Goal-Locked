@@ -20,6 +20,7 @@ export const Player = () => {
   const speedMult        = useGameStore(state => state.playerSpeedMultiplier);
   const updatePlayerPos  = useGameStore(state => state.updatePlayerPosition);
   const isEliminated     = useGameStore(state => state.eliminated[0]);
+  const playerColor      = useGameStore(state => state.playerRingColor) || '#32CD32';
 
   // Track previous cooldown to detect the exact frame a dash was triggered
   const prevDashCooldown = useRef(0);
@@ -153,8 +154,8 @@ export const Player = () => {
               <mesh key={i} position={[offsetX, 0, 0]}>
                 <sphereGeometry args={[0.12, 8, 8]} />
                 <meshStandardMaterial
-                  color={active ? '#32CD32' : '#1a1a1a'}
-                  emissive={active ? '#32CD32' : '#000'}
+                  color={active ? playerColor : '#1a1a1a'}
+                  emissive={active ? playerColor : '#000'}
                   emissiveIntensity={active ? 4 : 0}
                   toneMapped={false}
                 />
@@ -170,13 +171,13 @@ export const Player = () => {
           </mesh>
           <mesh rotation-x={Math.PI / 2}>
             <torusGeometry args={[1.5, 0.1, 16, 80]} />
-            <meshStandardMaterial color="#32CD32" emissive="#32CD32" emissiveIntensity={4} toneMapped={false} />
+            <meshStandardMaterial color={playerColor} emissive={playerColor} emissiveIntensity={4} toneMapped={false} />
           </mesh>
           <mesh rotation-x={Math.PI / 3}>
             <torusGeometry args={[1.5, 0.04, 8, 48]} />
-            <meshStandardMaterial color="#32CD32" emissive="#32CD32" emissiveIntensity={2} toneMapped={false} />
+            <meshStandardMaterial color={playerColor} emissive={playerColor} emissiveIntensity={2} toneMapped={false} />
           </mesh>
-          <pointLight color="#32CD32" intensity={3} distance={6} />
+          <pointLight color={playerColor} intensity={3} distance={6} />
         </Float>
       </group>
 
@@ -185,8 +186,8 @@ export const Player = () => {
         <mesh>
           <sphereGeometry args={[1, 16, 16]} />
           <meshStandardMaterial
-            color="#32CD32"
-            emissive="#32CD32"
+            color={playerColor}
+            emissive={playerColor}
             emissiveIntensity={0.5}
             transparent
             opacity={0.22}
@@ -197,8 +198,8 @@ export const Player = () => {
         <mesh rotation-x={Math.PI / 2}>
           <torusGeometry args={[1.5, 0.05, 8, 48]} />
           <meshStandardMaterial
-            color="#32CD32"
-            emissive="#32CD32"
+            color={playerColor}
+            emissive={playerColor}
             emissiveIntensity={1}
             transparent
             opacity={0.35}
