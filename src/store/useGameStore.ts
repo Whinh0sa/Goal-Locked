@@ -193,7 +193,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       lastGoal: playerIndex,
       remainingPlayers: remainingCount,
       victory: isVictory,
-      gameOver: isVictory || isPlayer, // gameOver on defeat too
+      gameOver: isVictory || isPlayer || state.eliminated[0], // gameOver on defeat too, and persist if already dead
       score: state.score,
       tier: isVictory ? state.tier + 1 : state.tier,
       eliminationLog: [...state.eliminationLog, newEntry],
