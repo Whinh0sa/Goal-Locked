@@ -29,18 +29,18 @@ interface GameState {
   playerShields: number;
   playerRingColor: string | null;
   entryPortalActive: boolean;
-  playerSpeedMultiplier: number;
-  dashCooldownUntil: number;
-  ghostBallUntil: number;
-  freezeBotsUntil: number;
-  tier: number;           // Escalating difficulty tier — survives resets
-  gameStartTime: number;  // Date.now() when game started, for survival timing
-  playerKills: number;    // Number of bots eliminated while player is alive
-  botNames: string[];     // Runtime assigned bot names for kill feed
-  botPositions: [number, number, number][]; // Physics drop coordinates
-  lastStriker: number | null;               // ID of the last entity to strike/pulse the ball
+  playerSpeedUntil: number;
+  playerGhostUntil: number;
   playerJuggernautUntil: number;
-  botBuffs: Record<number, { speedMult: number, juggernautUntil: number, ghostBallUntil: number }>;
+  freezeBotsUntil: number;
+  dashCooldownUntil: number;
+  tier: number;
+  gameStartTime: number;
+  playerKills: number;
+  botNames: string[];
+  botPositions: [number, number, number][];
+  lastStriker: number | null;
+  botBuffs: Record<number, { speedUntil: number, juggernautUntil: number, ghostUntil: number }>;
   activePowerUp: { position: [number, number, number], type: string } | null;
 
   // Actions
@@ -77,6 +77,19 @@ const SLOT_NAMES = [
 export const useGameStore = create<GameState>((set, get) => ({
   gameStarted: false,
   eliminated: new Array(GOAL_COUNT).fill(false),
+  playerSpeedUntil: 0,
+  playerGhostUntil: 0,
+  playerJuggernautUntil: 0,
+  freezeBotsUntil: 0,
+  dashCooldownUntil: 0,
+  tier: 1,
+  gameStartTime: 0,
+  playerKills: 0,
+  botNames: new Array(GOAL_COUNT).fill(''),
+  botPositions: new Array(GOAL_COUNT).fill(null).map(() => [0, 10, 0] as [number, number, number]),
+  lastStriker: null,
+  botBuffs: {},
+  activePowerUp: null,
   lastGoal: null,
   victory: false,
   gameOver: false,
@@ -85,7 +98,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   maxTier: Stats.load().highestTier,
   remainingPlayers: GOAL_COUNT,
   ballPosition: [0, 5, 0],
-  playerPosition: [18, 1, 0],
+  playerPosition: [ARENA_RADIUS - 6, 1, 0],
   moveDirection: [0, 0],
   pulseTrigger: false,
   impactPosition: null,
@@ -95,19 +108,6 @@ export const useGameStore = create<GameState>((set, get) => ({
   playerShields: 3,
   playerRingColor: null,
   entryPortalActive: false,
-  playerSpeedMultiplier: 1,
-  dashCooldownUntil: 0,
-  ghostBallUntil: 0,
-  freezeBotsUntil: 0,
-  tier: 1,
-  gameStartTime: 0,
-  playerKills: 0,
-  botNames: new Array(GOAL_COUNT).fill(''),
-  botPositions: new Array(GOAL_COUNT).fill(null).map(() => [0, 10, 0] as [number, number, number]),
-  lastStriker: null,
-  playerJuggernautUntil: 0,
-  botBuffs: {},
-  activePowerUp: null,
 
   startGame: () => {
     get().resetPositions();
@@ -235,16 +235,15 @@ export const useGameStore = create<GameState>((set, get) => ({
     eliminationLog: [],
     currentRadius: ARENA_RADIUS,
     playerShields: 3,
-    playerSpeedMultiplier: 1,
-    dashCooldownUntil: 0,
-    ghostBallUntil: 0,
+    playerSpeedUntil: 0,
+    playerGhostUntil: 0,
+    playerJuggernautUntil: 0,
     freezeBotsUntil: 0,
     gameStartTime: 0,
     playerKills: 0,
-    // Note: botNames are NOT reset here so they persist for rendering until next mount
     lastStriker: null,
-    playerJuggernautUntil: 0,
     botBuffs: {},
+    activePowerUp: null,
     }));
   },
 
@@ -286,7 +285,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     setTimeout(() => set({ pulseTrigger: false }), 100);
   },
   setImpactPosition: (pos, strength = 0) => set({ impactPosition: pos, impactStrength: strength }),
-  setSpeedMultiplier: (m) => set({ playerSpeedMultiplier: m }),
+  setSpeedMultiplier: (m) => set({ playerSpeedUntil: m > 1 ? Date.now() + 5000 : 0 }),
   triggerDash: () => set(state => {
     const now = Date.now();
     if (now < state.dashCooldownUntil) return state; // still on cooldown
@@ -297,7 +296,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ entryPortalActive: true });
     setTimeout(() => set({ entryPortalActive: false }), 3000); // Effect lasts 3s
   },
-  triggerGhostBall: () => set({ ghostBallUntil: Date.now() + 5000 }),
+  triggerGhostBall: () => set({ playerGhostUntil: Date.now() + 5000 }),
   triggerFreeze: () => set({ freezeBotsUntil: Date.now() + 3000 }),
   setBotName: (index, name) => set(state => {
     const newNames = [...state.botNames];
@@ -312,16 +311,16 @@ export const useGameStore = create<GameState>((set, get) => ({
     const duration = 5000;
 
     if (type === 'speed') {
-      if (isPlayer) return { playerSpeedMultiplier: 1.6 };
+      if (isPlayer) return { playerSpeedUntil: now + duration };
       const newBuffs = { ...state.botBuffs };
-      newBuffs[entityId] = { ...(newBuffs[entityId] || { speedMult: 1, juggernautUntil: 0, ghostBallUntil: 0 }), speedMult: 1.6 };
+      newBuffs[entityId] = { ...(newBuffs[entityId] || { speedUntil: 0, juggernautUntil: 0, ghostUntil: 0 }), speedUntil: now + duration };
       return { botBuffs: newBuffs };
     }
 
     if (type === 'ghost') {
-      if (isPlayer) return { ghostBallUntil: now + duration };
+      if (isPlayer) return { playerGhostUntil: now + duration };
       const newBuffs = { ...state.botBuffs };
-      newBuffs[entityId] = { ...(newBuffs[entityId] || { speedMult: 1, juggernautUntil: 0, ghostBallUntil: 0 }), ghostBallUntil: now + duration };
+      newBuffs[entityId] = { ...(newBuffs[entityId] || { speedUntil: 0, juggernautUntil: 0, ghostUntil: 0 }), ghostUntil: now + duration };
       return { botBuffs: newBuffs };
     }
 
@@ -330,16 +329,15 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
 
     if (type === 'juggernaut') {
-      if (isPlayer) return { playerJuggernautUntil: now + duration, playerSpeedMultiplier: 1.4 };
+      if (isPlayer) return { playerJuggernautUntil: now + duration, playerSpeedUntil: now + duration };
       const newBuffs = { ...state.botBuffs };
       newBuffs[entityId] = { 
-        ...(newBuffs[entityId] || { speedMult: 1, juggernautUntil: 0, ghostBallUntil: 0 }), 
+        ...(newBuffs[entityId] || { speedUntil: 0, juggernautUntil: 0, ghostUntil: 0 }), 
         juggernautUntil: now + duration,
-        speedMult: 1.4 
+        speedUntil: now + duration 
       };
       return { botBuffs: newBuffs };
     }
-
     return state;
   }),
 

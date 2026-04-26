@@ -23,6 +23,7 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
   const setLastStriker = useGameStore(state => state.setLastStriker);
   const groupRef = useRef<THREE.Group>(null!);
   const bodyRef = useRef<CANNON.Body | null>(null);
+  const botBuffs = useGameStore(state => state.botBuffs);
 
   useEffect(() => {
     const nm = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
@@ -101,9 +102,15 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
     if (!ballPos3) return;
 
     // ── Buff Application ──────────────────────────────────────────
-    const myBuffs = botBuffs[id] || { speedMult: 1, juggernautUntil: 0, ghostBallUntil: 0 };
-    const isJuggernaut = myBuffs.juggernautUntil > Date.now();
-    const speedMultiplier = myBuffs.speedMult;
+    const now = Date.now();
+    const myBuffs = botBuffs[id] || { speedUntil: 0, juggernautUntil: 0, ghostUntil: 0 };
+    
+    const isJuggernaut = myBuffs.juggernautUntil > now;
+    const isSpeedBoosted = myBuffs.speedUntil > now;
+    
+    let speedMultiplier = 1.0;
+    if (isSpeedBoosted) speedMultiplier = 1.6;
+    else if (isJuggernaut) speedMultiplier = 1.4;
 
     // Dynamic mass for Juggernaut
     if (isJuggernaut && body.mass !== 200) {
@@ -123,11 +130,11 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
     const hasPossession = botToBallDist < POSSESSION_RADIUS;
 
     // Self-immunity from freeze if I was the collector
-    const isFrozen = Date.now() < freezeBotsUntil && lastStriker !== id;
-    const isGhostBall = Date.now() < ghostBallUntil;
+    const isFrozen = now < freezeBotsUntil && lastStriker !== id;
+    const isGhostBall = now < stateStore.playerGhostUntil;
 
     // Filter mask: ~2 means collide with everything EXCEPT group 2 (Ball)
-    body.collisionFilterMask = (isGhostBall || myBuffs.ghostBallUntil > Date.now()) ? ~2 : -1;
+    body.collisionFilterMask = (isGhostBall || myBuffs.ghostUntil > now) ? ~2 : -1;
 
     if (isFrozen) {
       body.velocity.set(0, body.velocity.y, 0);
@@ -254,7 +261,7 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
             ballBody.position
           );
           setLastStriker(id);
-          lastShotTime.current = Date.now();
+          lastShotTime.current = now;
           setTimeout(() => { if(stateRef.current === 'SHOOT') stateRef.current = 'ATTACK'; }, 500);
         }
       }
@@ -287,6 +294,22 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
           <sphereGeometry args={[1, 24, 24]} />
           <meshStandardMaterial color="#1a0000" metalness={0.9} roughness={0.2} />
         </mesh>
+
+        {/* Juggernaut Golden Aura */}
+        {Date.now() < (botBuffs[id]?.juggernautUntil || 0) && (
+          <mesh>
+            <sphereGeometry args={[1.2, 24, 24]} />
+            <meshStandardMaterial 
+              color="#FFD700" 
+              emissive="#FFD700" 
+              emissiveIntensity={10} 
+              transparent 
+              opacity={0.3} 
+              toneMapped={false} 
+            />
+          </mesh>
+        )}
+
         <mesh rotation-x={Math.PI / 2}>
           <torusGeometry args={[1.5, 0.1, 12, 64]} />
           <meshStandardMaterial color="#FF0033" emissive="#FF0033" emissiveIntensity={4} toneMapped={false} />

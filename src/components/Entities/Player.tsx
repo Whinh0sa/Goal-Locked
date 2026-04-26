@@ -17,11 +17,12 @@ export const Player = () => {
   const ghostRef  = useRef<THREE.Group>(null!);
 
   const playerShields    = useGameStore(state => state.playerShields);
-  const speedMult        = useGameStore(state => state.playerSpeedMultiplier);
+  const playerSpeedUntil = useGameStore(state => state.playerSpeedUntil);
   const updatePlayerPos  = useGameStore(state => state.updatePlayerPosition);
   const isEliminated     = useGameStore(state => state.eliminated[0]);
   const playerColor      = useGameStore(state => state.playerRingColor) || '#32CD32';
   const playerJuggernautUntil = useGameStore(s => s.playerJuggernautUntil);
+  const playerGhostUntil = useGameStore(s => s.playerGhostUntil);
   const setLastStriker   = useGameStore(state => state.setLastStriker);
 
   // Track previous cooldown to detect the exact frame a dash was triggered
@@ -90,18 +91,25 @@ export const Player = () => {
     const body = bodyRef.current;
     if (!body) return;
 
+    // ── Buff Calculations & Physics Application ──────────────────────
     const { moveDirection, pulseTrigger, dashCooldownUntil } = useGameStore.getState();
     const x = moveDirection[0];
     const z = moveDirection[1];
 
-    body.velocity.set(x * SPEED * speedMult, body.velocity.y, z * SPEED * speedMult);
+    const now = Date.now();
+    const isJuggernaut = playerJuggernautUntil > now;
+    const isSpeedBoosted = playerSpeedUntil > now;
+    
+    let currentSpeedMult = 1.0;
+    if (isSpeedBoosted) currentSpeedMult = 1.6;
+    else if (isJuggernaut) currentSpeedMult = 1.4;
+
+    body.velocity.set(x * SPEED * currentSpeedMult, body.velocity.y, z * SPEED * currentSpeedMult);
 
     if (body.position.y > 1.5) {
       body.velocity.y = -20;
     }
 
-    // ── Buff Application ──────────────────────────────────────────
-    const isJuggernaut = playerJuggernautUntil > Date.now();
     if (isJuggernaut && body.mass !== 200) {
       body.mass = 200;
       body.updateMassProperties();
@@ -199,6 +207,22 @@ export const Player = () => {
             <sphereGeometry args={[1, 32, 32]} />
             <meshStandardMaterial color="#0B0B0B" metalness={0.9} roughness={0.1} />
           </mesh>
+
+          {/* Juggernaut Golden Aura */}
+          {Date.now() < playerJuggernautUntil && (
+            <mesh>
+              <sphereGeometry args={[1.2, 32, 32]} />
+              <meshStandardMaterial 
+                color="#FFD700" 
+                emissive="#FFD700" 
+                emissiveIntensity={10} 
+                transparent 
+                opacity={0.3} 
+                toneMapped={false} 
+              />
+            </mesh>
+          )}
+
           <mesh rotation-x={Math.PI / 2}>
             <torusGeometry args={[1.5, 0.1, 16, 80]} />
             <meshStandardMaterial color={playerColor} emissive={playerColor} emissiveIntensity={4} toneMapped={false} />
