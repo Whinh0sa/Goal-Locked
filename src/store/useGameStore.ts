@@ -91,7 +91,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   gameStartTime: 0,
   playerKills: 0,
   botNames: new Array(GOAL_COUNT).fill(''),
-  botPositions: new Array(GOAL_COUNT).fill([0, 15, 0]),
+  botPositions: new Array(GOAL_COUNT).fill(null).map(() => [0, 10, 0] as [number, number, number]),
 
   startGame: () => {
     get().resetPositions();
@@ -207,9 +207,9 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   resetPositions: () => set((state) => {
     const getPos = (): [number, number, number] => {
-      const x = (Math.random() - 0.5) * 15;
-      const z = (Math.random() - 0.5) * 15;
-      return [x, 15, z];
+      const x = (Math.random() - 0.5) * 20;
+      const z = (Math.random() - 0.5) * 20;
+      return [x, 10, z];
     };
     return {
       playerPosition: getPos(),
