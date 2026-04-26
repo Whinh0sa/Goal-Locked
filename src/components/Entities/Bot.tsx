@@ -97,7 +97,7 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
     const body = bodyRef.current;
 
     const stateStore = useGameStore.getState();
-    const { ballPosition, botBuffs, freezeBotsUntil, ghostBallUntil, lastStriker, currentRadius, tier } = stateStore;
+    const { ballPosition, botBuffs, freezeBotsUntil, playerGhostUntil, lastStriker, currentRadius, tier } = stateStore;
     const ballPos3 = ballPosition;
     if (!ballPos3) return;
 
