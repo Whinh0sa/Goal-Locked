@@ -17,8 +17,10 @@ const WARNING_DURATION = 1500;  // ms red warning stays visible
 const RISE_TARGET = 5;          // world-units height the bumper reaches
 const BUMPER_SIZE = 2.5;        // half-size of the bumper square
 
-function randomArenaPos(): [number, number] {
-  const r = (ARENA_RADIUS - 6) * Math.sqrt(Math.random());
+function randomArenaPos(radius: number): [number, number] {
+  const safetyBuffer = 6;
+  const maxR = Math.max(5, radius - safetyBuffer);
+  const r = maxR * Math.sqrt(Math.random());
   const a = Math.random() * Math.PI * 2;
   return [Math.cos(a) * r, Math.sin(a) * r];
 }
@@ -26,6 +28,7 @@ function randomArenaPos(): [number, number] {
 export const FloorBumper = () => {
   const { world } = usePhysics();
   const gameStarted = useGameStore(s => s.gameStarted);
+  const currentRadius = useGameStore(s => s.currentRadius);
 
   const [phase, setPhase]   = useState<Phase>('idle');
   const [pos, setPos]       = useState<[number, number]>([0, 0]);
@@ -55,7 +58,7 @@ export const FloorBumper = () => {
   useEffect(() => {
     if (!gameStarted) return;
     const kick = () => {
-      const newPos = randomArenaPos();
+      const newPos = randomArenaPos(useGameStore.getState().currentRadius);
       setPos(newPos);
       setPhase('warning');
       bumperY.current = -0.3;
@@ -73,6 +76,18 @@ export const FloorBumper = () => {
   }, [gameStarted]);
 
   useFrame((_, delta) => {
+    // --- OOB Sweeper ---
+    const distFromCenter = Math.sqrt(pos[0] * pos[0] + pos[1] * pos[1]);
+    if ((phase === 'warning' || phase === 'rising') && distFromCenter > currentRadius) {
+      // Swallowed by walls! Despawn immediately.
+      setPhase('idle');
+      if (bodyRef.current) {
+        world.removeBody(bodyRef.current);
+        bodyRef.current = null;
+      }
+      return;
+    }
+
     if (phase === 'rising') {
       bumperY.current = Math.min(bumperY.current + delta * 12, RISE_TARGET);
       if (bumperY.current >= RISE_TARGET) {

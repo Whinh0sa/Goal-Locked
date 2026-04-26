@@ -30,8 +30,10 @@ const TYPE_CONFIG = {
   JUGGERNAUT: { color: '#FFD700' }, // Gold
 };
 
-function randomSpawnPos(): THREE.Vector3 {
-  const r = 5 + Math.random() * (ARENA_RADIUS - 10);
+function randomSpawnPos(radius: number): THREE.Vector3 {
+  const safetyMargin = 4;
+  const maxR = Math.max(5, radius - safetyMargin);
+  const r = 5 + Math.random() * (maxR - 5);
   const a = Math.random() * Math.PI * 2;
   return new THREE.Vector3(Math.cos(a) * r, 1.5, Math.sin(a) * r);
 }
@@ -39,12 +41,13 @@ function randomSpawnPos(): THREE.Vector3 {
 export const PowerUp = () => {
   const gameStarted    = useGameStore(s => s.gameStarted);
   const triggerPowerUp = useGameStore(s => s.triggerPowerUp);
-  const { world }      = useGameStore.getState() as any; // Access world if available or use state
+  const currentRadius  = useGameStore(s => s.currentRadius);
+  const { world }      = useGameStore.getState() as any;
 
   const setActivePowerUp = useGameStore(s => s.setActivePowerUp);
 
   const [visible, setVisible]   = useState(false);
-  const [spawnPos, setSpawnPos] = useState(() => randomSpawnPos());
+  const [spawnPos, setSpawnPos] = useState(() => randomSpawnPos(ARENA_RADIUS));
   const [type, setType]         = useState<PowerUpType>(() => randomPowerUpType());
   const meshRef   = useRef<THREE.Mesh>(null!);
   const collected = useRef(false);
@@ -59,7 +62,7 @@ export const PowerUp = () => {
     }
 
     const initialTimer = setTimeout(() => {
-      const pos = randomSpawnPos();
+      const pos = randomSpawnPos(useGameStore.getState().currentRadius);
       const t = randomPowerUpType();
       setSpawnPos(pos);
       setType(t);
@@ -75,6 +78,28 @@ export const PowerUp = () => {
 
   useFrame(() => {
     if (!visible || collected.current || !gameStarted) return;
+
+    // --- OOB Sweeper ---
+    const distFromCenter = Math.sqrt(spawnPos.x * spawnPos.x + spawnPos.z * spawnPos.z);
+    if (distFromCenter > currentRadius - 1) {
+      // Swallowed by wall! Forced respawn.
+      collected.current = true;
+      setVisible(false);
+      setActivePowerUp(null);
+      
+      setTimeout(() => {
+        if (useGameStore.getState().gameStarted) {
+          collected.current = false;
+          const nextPos = randomSpawnPos(useGameStore.getState().currentRadius);
+          const nextType = randomPowerUpType();
+          setSpawnPos(nextPos);
+          setType(nextType);
+          setVisible(true);
+          setActivePowerUp({ position: [nextPos.x, nextPos.y, nextPos.z], type: nextType });
+        }
+      }, 2000); // Shorter retry if swallowed
+      return;
+    }
 
     const orbPos = spawnPos;
     const state = useGameStore.getState();
@@ -120,10 +145,10 @@ export const PowerUp = () => {
 
     // Respawn cycle
     setTimeout(() => {
-      if (useGameStore.getState().gameStarted) {
-        collected.current = false;
-        const nextPos = randomSpawnPos();
-        const nextType = randomPowerUpType();
+        if (useGameStore.getState().gameStarted) {
+          collected.current = false;
+          const nextPos = randomSpawnPos(useGameStore.getState().currentRadius);
+          const nextType = randomPowerUpType();
         setSpawnPos(nextPos);
         setType(nextType);
         setVisible(true);
