@@ -244,7 +244,7 @@ function WorldSpaceHUD() {
 // --- Crucible Scene (Inner R3F Context) ---
 
 function CrucibleScene() {
-  const { gameStarted, startGame, victory, gameOver, resetGame, tier, eliminated } = useGameStore();
+  const { gameStarted, startGame, victory, gameOver, resetGame, advanceToNextTier, tier, eliminated } = useGameStore();
   const timer = useMemo(() => new THREE.Timer(), []);
   const worldConf = getWorldConfig(tier);
 
@@ -310,7 +310,7 @@ function CrucibleScene() {
                 <PowerUp />
                 <ConfettiExplosion />
 
-                {gameOver && victory && <DiegeticVictoryUI onReset={resetGame} />}
+                {gameOver && victory && <DiegeticVictoryUI onReset={advanceToNextTier} />}
                 {(gameOver || eliminated[0]) && !victory && <DiegeticDefeatUI onReset={resetGame} />}
 
                 {botGoalPositions.map((pos, i) => (
@@ -470,7 +470,7 @@ function DashCooldownHUD() {
 // --- Main Arena Container ---
 
 export default function GameArena() {
-  const { gameStarted, startGame, resetGame, victory, gameOver, score, highScore, tier, setPlayerRingColor, triggerEntryPortal, eliminated } = useGameStore();
+  const { gameStarted, startGame, resetGame, victory, gameOver, score, highScore, tier, setPlayerRingColor, triggerEntryPortal, eliminated, advanceToNextTier } = useGameStore();
   const worldConf = getWorldConfig(tier);
 
   // Portal auto-start logic
@@ -632,7 +632,7 @@ export default function GameArena() {
             <button
               onClick={() => {
                 AudioManager.startAmbient();
-                resetGame();
+                advanceToNextTier();
               }}
               style={{
                 marginTop: 32,

@@ -57,6 +57,7 @@ interface GameState {
   triggerFreeze: () => void;
   setBotName: (index: number, name: string) => void;
   setLastStriker: (id: number | null) => void;
+  advanceToNextTier: () => void;
   resetPositions: () => void;
 }
 
@@ -207,6 +208,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     set(state => ({
       gameStarted: false,
       score: 0,
+      tier: 1,
       eliminated: new Array(GOAL_COUNT).fill(false),
       lastGoal: null,
       victory: false,
@@ -226,9 +228,22 @@ export const useGameStore = create<GameState>((set, get) => ({
     gameStartTime: 0,
     playerKills: 0,
     // Note: botNames are NOT reset here so they persist for rendering until next mount
-    // tier intentionally preserved — carries escalating difficulty forward
-    tier: state.tier,
     lastStriker: null,
+    }));
+  },
+
+  advanceToNextTier: () => {
+    get().resetPositions();
+    set(state => ({
+      gameStarted: true,
+      eliminated: new Array(GOAL_COUNT).fill(false),
+      lastGoal: null,
+      victory: false,
+      gameOver: false,
+      remainingPlayers: GOAL_COUNT,
+      currentRadius: ARENA_RADIUS,
+      lastStriker: null,
+      // score, tier, playerKills are INHERITED/PERSISTED
     }));
   },
 
