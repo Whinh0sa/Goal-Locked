@@ -73,7 +73,8 @@ class AudioManagerClass {
 
   // ── BGM ──────────────────────────────────────────────────────────────────
   startAmbient() {
-    if (this.bgmStarted) return;
+    // Stop everything before starting fresh
+    this.stopAmbient();
     this.bgmStarted = true;
     this.stopped = false;
 
@@ -85,8 +86,14 @@ class AudioManagerClass {
 
   private _playTrack(track: Howl, fadeIn: boolean) {
     if (this.stopped) return;
-    this.currentTrack = track;
+    
+    // Stop ANY current track before playing a new one
+    if (this.currentTrack) {
+        this.currentTrack.stop();
+        // this.currentTrack.unload(); // intentional avoid unload to keep memory warm, stop() is enough for overlap
+    }
 
+    this.currentTrack = track;
     track.volume(fadeIn ? 0 : 0.2);
     const id = track.play();
     this.currentId = id;
@@ -121,12 +128,7 @@ class AudioManagerClass {
   }
 
   changeTier() {
-    // 1. Stop & Clear
-    if (this.currentTrack && this.currentId !== null) {
-      this.currentTrack.stop(this.currentId);
-    }
-    this.currentId = null;
-    this.currentTrack = null;
+    this.stopAmbient();
 
     // 2. Shuffle
     this.playlist = shuffle([...bgmTracks]);

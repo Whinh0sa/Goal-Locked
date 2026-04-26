@@ -95,3 +95,36 @@ canvas {
     color: #ff3e00;
   }
 }
+
+/* Responsive UI Scaling */
+.responsive-scale {
+  transition: transform 0.2s ease-out;
+}
+
+@media (max-width: 1024px) {
+  .responsive-scale.leaderboard {
+    transform: scale(0.85);
+    transform-origin: top right;
+  }
+  .responsive-scale.elimination-feed {
+    transform: scale(0.8);
+    transform-origin: top left;
+  }
+  .responsive-scale.mobile-controls {
+    transform: scale(0.75);
+    transform-origin: bottom center;
+  }
+}
+
+@media (max-width: 600px) {
+  .responsive-scale.leaderboard {
+    transform: scale(0.7);
+    top: 12px !important;
+    right: 12px !important;
+  }
+  .responsive-scale.elimination-feed {
+    transform: scale(0.65);
+    top: 12px !important;
+    left: 12px !important;
+  }
+}

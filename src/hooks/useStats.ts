@@ -13,6 +13,7 @@ export interface PlayerStats {
   fastestSurvival: number | null;  // ms, null if never won
   totalBotsDeleted: number;
   highestTier: number;
+  highestScore: number;
 }
 
 function load(): PlayerStats {
@@ -28,7 +29,7 @@ function save(s: PlayerStats) {
 }
 
 function defaultStats(): PlayerStats {
-  return { fastestSurvival: null, totalBotsDeleted: 0, highestTier: 1 };
+  return { fastestSurvival: null, totalBotsDeleted: 0, highestTier: 1, highestScore: 0 };
 }
 
 export const Stats = {
@@ -50,6 +51,16 @@ export const Stats = {
     }
     if (tier > s.highestTier) s.highestTier = tier;
     save(s);
+    return s;
+  },
+
+  /** Call on match end to update high score */
+  recordScore(score: number) {
+    const s = load();
+    if (score > s.highestScore) {
+      s.highestScore = score;
+      save(s);
+    }
     return s;
   },
 

@@ -35,15 +35,16 @@ export function EliminationFeed() {
 
   return (
     <div
+      className="responsive-scale elimination-feed"
       style={{
         position: 'absolute',
         top: 24,
-        right: 24,
-        zIndex: 200,
+        left: 24,
+        zIndex: 1000,
         display: 'flex',
         flexDirection: 'column',
         gap: 10,
-        alignItems: 'flex-end',
+        alignItems: 'flex-start',
         pointerEvents: 'none',
       }}
     >
@@ -51,9 +52,9 @@ export function EliminationFeed() {
         {visible.map(entry => (
           <motion.div
             key={entry.timestamp}
-            initial={{ opacity: 0, x: 80, scale: 0.9 }}
+            initial={{ opacity: 0, x: -80, scale: 0.9 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: 80, scale: 0.85 }}
+            exit={{ opacity: 0, x: -80, scale: 0.85 }}
             transition={{ type: 'spring', stiffness: 380, damping: 28 }}
             style={{
               background:

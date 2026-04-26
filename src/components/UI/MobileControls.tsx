@@ -46,6 +46,7 @@ export const MobileControls = () => {
 
     return (
         <div
+            className="responsive-scale mobile-controls"
             style={{
                 position: 'absolute',
                 inset: 0,

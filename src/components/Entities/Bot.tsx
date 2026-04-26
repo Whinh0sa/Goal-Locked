@@ -7,10 +7,9 @@ import { usePhysics } from '../../hooks/usePhysics';
 import { useGameStore } from '../../store/useGameStore';
 import { ARENA_RADIUS, GOALS } from '../../constants';
 
-const BASE_SPEED = 14;
-const POSSESSION_RADIUS = 2.2;   // distance to "have" the ball
-const PASS_DISTANCE = 15;     // units from target before preferring a pass
-const PLAYER_BIAS = 0.40;   // 40% chance to target player goal when in possession
+const BASE_SPEED = 16;       // increased for responsiveness
+const POSSESSION_RADIUS = 2.5; // larger radius to "have" the ball
+const PLAYER_BIAS = 0.8;      // 80% chance to target player goal
 
 type BotState = 'ATTACK' | 'DEFEND' | 'REPOSITION' | 'SLAM';
 
@@ -140,10 +139,26 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
     const shouldUpdate = frameCount.current % 5 === 0;
 
     if (shouldUpdate) {
-      // --- Determine target goal ---
-      let targetGoal = goalPos2D;
-      if (hasPossession && profile.prefersPlayer && !useGameStore.getState().eliminated[0]) {
-        targetGoal = new THREE.Vector3(playerGoalPos.x, 0, playerGoalPos.z);
+      // --- Determine target goal (ONLY active players) ---
+      const eliminated = useGameStore.getState().eliminated;
+      const activeTargets = eliminated
+        .map((isDead, idx) => (!isDead && idx !== id) ? idx : -1)
+        .filter(idx => idx !== -1);
+
+      let targetGoal = goalPos2D; // fallback
+      
+      if (activeTargets.length > 0) {
+        const playerAlive = !eliminated[0];
+        // 80% bias to player if alive
+        const attackPlayer = playerAlive && (Math.random() < PLAYER_BIAS);
+        
+        if (attackPlayer) {
+          targetGoal = playerGoalPos;
+        } else {
+          const randomIdx = activeTargets[Math.floor(Math.random() * activeTargets.length)];
+          const angle = (randomIdx * (Math.PI * 2)) / GOALS;
+          targetGoal = new THREE.Vector3(Math.cos(angle) * ARENA_RADIUS, 0, Math.sin(angle) * ARENA_RADIUS);
+        }
       }
 
       let direction = new THREE.Vector3();
@@ -178,11 +193,9 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
         direction.set(0, 0, 0);
       }
 
-      // ── Proximity Slowdown ──
-      if (botToBallDist < 2) {
+      // ── Proximity Slowdown (Relaxed for aggression) ──
+      if (botToBallDist < 1.5 && stateRef.current !== 'SLAM') {
         speed = 0;
-      } else if (botToBallDist < 5) {
-        speed *= 0.4;
       }
 
       lastDirection.current.copy(direction);

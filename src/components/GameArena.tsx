@@ -470,7 +470,7 @@ function DashCooldownHUD() {
 // --- Main Arena Container ---
 
 export default function GameArena() {
-  const { gameStarted, startGame, resetGame, victory, tier, setPlayerRingColor, triggerEntryPortal } = useGameStore();
+  const { gameStarted, startGame, resetGame, victory, gameOver, score, highScore, tier, setPlayerRingColor, triggerEntryPortal } = useGameStore();
   const worldConf = getWorldConfig(tier);
 
   // Portal auto-start logic
@@ -557,7 +557,7 @@ export default function GameArena() {
                 marginTop: 24,
               }}>
                 {[
-                  { label: 'FASTEST WIN', value: stats.fastestSurvival !== null ? Stats.formatTime(stats.fastestSurvival) : '—' },
+                  { label: 'BEST SCORE', value: stats.highestScore.toString() },
                   { label: 'BOTS DELETED', value: stats.totalBotsDeleted.toString() },
                   { label: 'BEST TIER', value: `T${stats.highestTier}` },
                 ].map(s => (
@@ -627,7 +627,8 @@ export default function GameArena() {
             <div style={{ fontSize: '3.5rem', fontWeight: 900, color: '#fbbf24', textShadow: '0 0 60px rgba(251,191,36,0.8)' }}>
               🏆 You Win!
             </div>
-            <div style={{ color: '#cbd5e1', fontSize: '1rem', marginTop: 8 }}>Last player standing</div>
+            <div style={{ color: '#cbd5e1', fontSize: '1.2rem', marginTop: 8 }}>Tier Upgrade: Entrance Level Cleared</div>
+            <div style={{ color: '#fbbf24', fontSize: '1.8rem', fontWeight: 900, marginTop: 12 }}>SCORE: {score}</div>
             <button
               onClick={() => {
                 AudioManager.startAmbient();
@@ -652,7 +653,47 @@ export default function GameArena() {
         </div>
       )}
 
-      {/* Overlays */}
+      {/* HTML Game Over Screen (Defeat) */}
+      {gameOver && !victory && (
+        <div
+          style={{
+            position: 'absolute', inset: 0,
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            background: 'radial-gradient(ellipse at center, rgba(255,0,0,0.1) 0%, transparent 70%)',
+            zIndex: 100,
+            fontFamily: '"Poppins", sans-serif',
+          }}
+        >
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '3rem', fontWeight: 900, color: '#ff3b3b', textShadow: '0 0 40px rgba(255,59,59,0.5)' }}>
+              ELIMINATED
+            </div>
+            <div style={{ color: '#cbd5e1', fontSize: '1rem', marginTop: 8 }}>Tier Progress Halted</div>
+            <div style={{ color: '#ff3b3b', fontSize: '1.8rem', fontWeight: 900, marginTop: 12 }}>SCORE: {score}</div>
+            <button
+              onClick={() => {
+                AudioManager.startAmbient();
+                resetGame();
+              }}
+              style={{
+                marginTop: 32,
+                padding: '16px 56px',
+                background: 'rgba(255, 255, 255, 0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                borderRadius: 12,
+                color: '#fff',
+                fontFamily: '"Poppins", sans-serif',
+                fontWeight: 700,
+                fontSize: '1.1rem',
+                cursor: 'pointer',
+              }}
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      )}
       <AudioController />
       <LeaderboardUI />
       <EliminationFeed />

@@ -10,11 +10,13 @@ export interface EliminationEntry {
 
 interface GameState {
   gameStarted: boolean;
-  score: number[];
-  eliminated: boolean[];
   lastGoal: number | null;
+  eliminated: boolean[];
   victory: boolean;
-  gameOver: boolean;  // true for both win AND loss — gates end-game UI
+  gameOver: boolean;
+  score: number;       // Current match score
+  highScore: number;   // All-time high score
+  maxTier: number;     // Highest tier ever reached
   remainingPlayers: number;
   ballPosition: [number, number, number];
   playerPosition: [number, number, number];
@@ -66,11 +68,13 @@ const SLOT_NAMES = [
 
 export const useGameStore = create<GameState>((set, get) => ({
   gameStarted: false,
-  score: new Array(GOAL_COUNT).fill(0),
   eliminated: new Array(GOAL_COUNT).fill(false),
   lastGoal: null,
   victory: false,
   gameOver: false,
+  score: 0,
+  highScore: Stats.load().highestScore,
+  maxTier: Stats.load().highestTier,
   remainingPlayers: GOAL_COUNT,
   ballPosition: [0, 5, 0],
   playerPosition: [18, 1, 0],
@@ -139,7 +143,13 @@ export const useGameStore = create<GameState>((set, get) => ({
     };
 
     // Persist bot deletions to localStorage
-    if (!isPlayer) Stats.recordBotElimination();
+    if (!isPlayer) {
+      Stats.recordBotElimination();
+      // Increase score by 10 for every bot elimination if player is alive
+      if (!newEliminated[0]) {
+        state.score += 10;
+      }
+    }
 
     // Condition A: player just got eliminated → game over, defeat
     if (isPlayer) {
@@ -160,6 +170,19 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (isVictory) {
       const survivalMs = Date.now() - state.gameStartTime;
       Stats.recordVictory(survivalMs, state.tier + 1);
+      
+      // Update max tier
+      if (state.tier + 1 > state.maxTier) {
+        localStorage.setItem('crucible_maxtier', (state.tier + 1).toString());
+        state.maxTier = state.tier + 1;
+      }
+    }
+
+    // Persistence on game over (Win or Loss)
+    if (isPlayer || isVictory) {
+      Stats.recordScore(state.score);
+      // Refresh highScore from disk
+      state.highScore = Stats.load().highestScore;
     }
 
     return {
@@ -167,8 +190,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       lastGoal: playerIndex,
       remainingPlayers: remainingCount,
       victory: isVictory,
-      gameOver: isVictory,
-      // Increment tier immediately on victory (carries into next game)
+      gameOver: isVictory || isPlayer, // gameOver on defeat too
+      score: state.score,
       tier: isVictory ? state.tier + 1 : state.tier,
       eliminationLog: [...state.eliminationLog, newEntry],
       currentRadius: state.currentRadius * 0.9,
@@ -180,7 +203,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     get().resetPositions();
     set(state => ({
       gameStarted: false,
-      score: new Array(GOAL_COUNT).fill(0),
+      score: 0,
       eliminated: new Array(GOAL_COUNT).fill(false),
       lastGoal: null,
       victory: false,
@@ -205,16 +228,17 @@ export const useGameStore = create<GameState>((set, get) => ({
     }));
   },
 
-  resetPositions: () => set((state) => {
-    const getPos = (): [number, number, number] => {
-      const x = (Math.random() - 0.5) * 20;
-      const z = (Math.random() - 0.5) * 20;
-      return [x, 10, z];
+  resetPositions: () => set(() => {
+    const getPos = (scatter = 20): [number, number, number] => {
+      const x = (Math.random() - 0.5) * scatter;
+      const z = (Math.random() - 0.5) * scatter;
+      const y = 10 + Math.random() * 5; // Drop from height
+      return [x, y, z];
     };
     return {
-      playerPosition: getPos(),
-      ballPosition: getPos(),
-      botPositions: Array.from({ length: GOAL_COUNT }, getPos),
+      playerPosition: [18, 1, 0], // Fixed start for player
+      ballPosition: [0, 5, 0],    // Fixed start for ball
+      botPositions: Array.from({ length: GOAL_COUNT }, () => getPos(30)), // Wider scatter for bots
     };
   }),
 
