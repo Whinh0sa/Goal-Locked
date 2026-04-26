@@ -21,6 +21,7 @@ export const Player = () => {
   const updatePlayerPos  = useGameStore(state => state.updatePlayerPosition);
   const isEliminated     = useGameStore(state => state.eliminated[0]);
   const playerColor      = useGameStore(state => state.playerRingColor) || '#32CD32';
+  const setLastStriker   = useGameStore(state => state.setLastStriker);
 
   // Track previous cooldown to detect the exact frame a dash was triggered
   const prevDashCooldown = useRef(0);
@@ -95,6 +96,7 @@ export const Player = () => {
       const dx = x !== 0 || z !== 0 ? x : 1;
       const dz = x !== 0 || z !== 0 ? z : 0;
       body.applyImpulse(new CANNON.Vec3(dx * 400, 0, dz * 400), body.position);
+      setLastStriker(0);
     }
 
     // Publish player position
@@ -138,6 +140,7 @@ export const Player = () => {
         const dist = dp.length();
         if (dist < 5) {
           ballBodyP.applyImpulse(dp.scale(250 / Math.max(dist, 0.1)), ballBodyP.position);
+          setLastStriker(0);
         }
       }
     }

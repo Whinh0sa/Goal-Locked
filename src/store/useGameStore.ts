@@ -38,6 +38,7 @@ interface GameState {
   playerKills: number;    // Number of bots eliminated while player is alive
   botNames: string[];     // Runtime assigned bot names for kill feed
   botPositions: [number, number, number][]; // Physics drop coordinates
+  lastStriker: number | null;               // ID of the last entity to strike/pulse the ball
 
   // Actions
   startGame: () => void;
@@ -55,6 +56,7 @@ interface GameState {
   triggerGhostBall: () => void;
   triggerFreeze: () => void;
   setBotName: (index: number, name: string) => void;
+  setLastStriker: (id: number | null) => void;
   resetPositions: () => void;
 }
 
@@ -96,6 +98,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   playerKills: 0,
   botNames: new Array(GOAL_COUNT).fill(''),
   botPositions: new Array(GOAL_COUNT).fill(null).map(() => [0, 10, 0] as [number, number, number]),
+  lastStriker: null,
 
   startGame: () => {
     get().resetPositions();
@@ -145,8 +148,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     // Persist bot deletions to localStorage
     if (!isPlayer) {
       Stats.recordBotElimination();
-      // Increase score by 10 for every bot elimination if player is alive
-      if (!newEliminated[0]) {
+      // Increase score by 10 ONLY if player was the last striker
+      if (state.lastStriker === 0) {
         state.score += 10;
       }
     }
@@ -225,6 +228,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     // Note: botNames are NOT reset here so they persist for rendering until next mount
     // tier intentionally preserved — carries escalating difficulty forward
     tier: state.tier,
+    lastStriker: null,
     }));
   },
 
@@ -267,5 +271,6 @@ export const useGameStore = create<GameState>((set, get) => ({
     const newNames = [...state.botNames];
     newNames[index] = name;
     return { botNames: newNames };
-  })
+  }),
+  setLastStriker: (id) => set({ lastStriker: id })
 }));

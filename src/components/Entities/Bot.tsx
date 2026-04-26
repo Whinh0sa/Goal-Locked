@@ -20,6 +20,7 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
   const isEliminated = useGameStore(state => state.eliminated[id]);
   const tier = useGameStore(state => state.tier);
   const setBotName = useGameStore(state => state.setBotName);
+  const setLastStriker = useGameStore(state => state.setLastStriker);
   const groupRef = useRef<THREE.Group>(null!);
   const bodyRef = useRef<CANNON.Body | null>(null);
 
@@ -213,6 +214,7 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
             new CANNON.Vec3(shootDir.x * 300, 0, shootDir.z * 300),
             ballBody.position
           );
+          setLastStriker(id);
           lastShotTime.current = Date.now();
           setTimeout(() => { if(stateRef.current === 'SHOOT') stateRef.current = 'ATTACK'; }, 500);
         }
