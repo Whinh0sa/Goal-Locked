@@ -169,10 +169,14 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
       }
 
       direction.y = 0;
-      direction.normalize();
-      direction.x += profile.noiseX;
-      direction.z += profile.noiseZ;
-      direction.normalize();
+      if (direction.lengthSq() > 0.0001) {
+        direction.normalize();
+        direction.x += profile.noiseX;
+        direction.z += profile.noiseZ;
+        direction.normalize();
+      } else {
+        direction.set(0, 0, 0);
+      }
 
       // ── Proximity Slowdown ──
       if (botToBallDist < 2) {
@@ -185,18 +189,11 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
       lastSpeed.current = speed;
     }
 
-    // ── Apply Movement via Impulse (Stable resolution) ──
-    if (lastSpeed.current > 0) {
-      body.wakeUp(); // Ensure the body is active
-      const force = 350; // Increased to overcome damping (m=5)
-      body.applyImpulse(
-        new CANNON.Vec3(
-          lastDirection.current.x * force * delta,
-          0,
-          lastDirection.current.z * force * delta
-        ),
-        body.position
-      );
+    // ── Apply Responsive Movement (Velocity Override) ──
+    if (bodyRef.current) {
+      bodyRef.current.velocity.x = lastDirection.current.x * lastSpeed.current;
+      bodyRef.current.velocity.z = lastDirection.current.z * lastSpeed.current;
+      // CANNON handles gravity internally; we only override X and Z
     }
 
     groupRef.current.position.set(body.position.x, body.position.y, body.position.z);
