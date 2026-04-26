@@ -48,167 +48,190 @@ const getWorldConfig = (tier: number) => {
 
 // --- Diegetic 3D HUD Components ---
 
-function DiegeticStartUI({ onStart }: { onStart: () => void }) {
+function DiegeticStartUI({ onStart, tier }: { onStart: () => void, tier: number }) {
+    const stats = Stats.load();
     return (
-        <group position={[0, 5, 10]}>
-            <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
-                <FadingText
-                    fontSize={4}
-                    color="white"
-                    anchorX="center"
-                    anchorY="middle"
-                    fontStyle="italic"
-                    fadeDelay={10000}
-                >
-                    CRUCIBLE
-                </FadingText>
-                <FadingText
-                    position={[0, -3, 0]}
-                    fontSize={0.5}
-                    color="#00cccc"
-                    anchorX="center"
-                    anchorY="middle"
-                    letterSpacing={0.5}
-                    fadeDelay={8000}
-                >
-                    GET READY
-                </FadingText>
-                
-                <group position={[0, -6, 0]} onClick={onStart}>
-                    <mesh>
-                        <planeGeometry args={[12, 2.5]} />
-                        <meshBasicMaterial color="#008080" transparent opacity={0.2} />
-                    </mesh>
-                    <Text
-                        fontSize={0.8}
-                        color="#00ffff"
-                        anchorX="center"
-                        anchorY="middle"
+        <Html fullscreen zIndexRange={[100, 0]} pointerEvents="none">
+            <div style={{
+                position: 'absolute', inset: 0,
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
+                background: 'radial-gradient(ellipse at center, rgba(0,100,255,0.12) 0%, transparent 70%)',
+                fontFamily: '"Poppins", sans-serif',
+            }}>
+                <div style={{ textAlign: 'center' }}>
+                    {tier > 1 && (
+                        <div style={{
+                            display: 'inline-block',
+                            background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+                            color: '#000',
+                            fontWeight: 900,
+                            fontSize: '0.75rem',
+                            letterSpacing: '0.15em',
+                            padding: '4px 16px',
+                            borderRadius: 999,
+                            marginBottom: 12,
+                            boxShadow: '0 0 20px rgba(251,191,36,0.6)',
+                        }}>⚔️ TIER {tier} — ESCALATED DIFFICULTY</div>
+                    )}
+
+                    <div style={{ 
+                        fontSize: '5rem', fontWeight: 900, color: '#fff', lineHeight: 1, 
+                        textShadow: '0 0 60px rgba(100,180,255,0.6)',
+                        pointerEvents: 'auto'
+                    }}>
+                        ⚽ Goal-Locked
+                    </div>
+                    <div style={{ fontSize: '1.1rem', color: '#7dd3fc', marginTop: 12, fontWeight: 600, letterSpacing: '0.1em' }}>
+                        Football Battle Royale
+                    </div>
+
+                    <div style={{
+                        display: 'flex', gap: 24, justifyContent: 'center',
+                        marginTop: 24,
+                    }}>
+                        {[
+                            { label: 'BEST SCORE', value: stats.highestScore.toString() },
+                            { label: 'BOTS DELETED', value: stats.totalBotsDeleted.toString() },
+                            { label: 'BEST TIER', value: `T${stats.highestTier}` },
+                        ].map(s => (
+                            <div key={s.label} style={{
+                                background: 'rgba(255,255,255,0.05)',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: 10,
+                                padding: '10px 20px',
+                                minWidth: 90,
+                                pointerEvents: 'auto'
+                            }}>
+                                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>{s.value}</div>
+                                <div style={{ fontSize: '0.55rem', color: 'rgba(180,220,255,0.5)', letterSpacing: '0.12em', marginTop: 2 }}>{s.label}</div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <button
+                        onClick={onStart}
+                        style={{
+                            marginTop: 28,
+                            padding: '16px 56px',
+                            background: tier > 1
+                                ? 'linear-gradient(135deg, #f59e0b, #ef4444)'
+                                : 'linear-gradient(135deg, #3b82f6, #06b6d4)',
+                            border: 'none',
+                            borderRadius: 12,
+                            color: '#fff',
+                            fontFamily: '"Poppins", sans-serif',
+                            fontWeight: 700,
+                            fontSize: '1.1rem',
+                            letterSpacing: '0.05em',
+                            cursor: 'pointer',
+                            pointerEvents: 'auto',
+                            boxShadow: tier > 1
+                                ? '0 0 40px rgba(245,158,11,0.5)'
+                                : '0 0 40px rgba(59,130,246,0.5)',
+                            transition: 'transform 0.1s, box-shadow 0.2s',
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
                     >
-                        READY
-                    </Text>
-                </group>
-            </Float>
-        </group>
+                        {tier > 1 ? `⚔️ Enter Tier ${tier}` : 'Play Now'}
+                    </button>
+                    <div style={{ marginTop: 20, fontSize: '0.8rem', color: 'rgba(180,220,255,0.5)', letterSpacing: '0.08em' }}>
+                        WASD to move &nbsp;·&nbsp; Space to shoot &nbsp;·&nbsp; Shift to DASH
+                    </div>
+                </div>
+            </div>
+        </Html>
     );
 }
 
-function DiegeticVictoryUI({ onReset }: { onReset: () => void }) {
+function DiegeticVictoryUI({ onReset, score }: { onReset: () => void, score: number }) {
     return (
-        <group position={[0, 8, 5]}>
-            <Float speed={3} rotationIntensity={0.5} floatIntensity={1.5}>
-                {/* Glow backlight */}
-                <pointLight color="#32CD32" intensity={6} distance={20} />
-
-                <Text
-                    fontSize={4}
-                    color="#32CD32"
-                    anchorX="center"
-                    anchorY="middle"
-                    fontWeight={900}
-                    outlineWidth={0.05}
-                    outlineColor="#000"
-                >
-                    YOU WIN!
-                </Text>
-
-                <Text
-                    position={[0, -3.5, 0]}
-                    fontSize={0.9}
-                    color="#aaffaa"
-                    anchorX="center"
-                    anchorY="middle"
-                    letterSpacing={0.15}
-                >
-                    Last Player Standing
-                </Text>
-
-                {/* PLAY AGAIN button */}
-                <group position={[0, -6, 0]}>
-                    <Html transform distanceFactor={25} zIndexRange={[100, 0]}>
-                        <button 
-                            onClick={onReset}
-                            style={{ 
-                                pointerEvents: 'auto',
-                                background: 'rgba(50,205,50,0.18)',
-                                border: '2px solid #32CD32',
-                                color: '#32CD32',
-                                fontSize: '18px',
-                                fontWeight: 700,
-                                padding: '12px 32px',
-                                cursor: 'pointer',
-                                textShadow: '0 0 10px #32CD32',
-                                textTransform: 'uppercase',
-                                outline: 'none'
-                            }}
-                        >
-                            Play Again
-                        </button>
-                    </Html>
-                </group>
-            </Float>
-        </group>
+        <Html fullscreen zIndexRange={[100, 0]} pointerEvents="none">
+            <div style={{
+                position: 'absolute', inset: 0,
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
+                background: 'radial-gradient(ellipse at center, rgba(0,100,255,0.12) 0%, transparent 70%)',
+                fontFamily: '"Poppins", sans-serif',
+            }}>
+                <div style={{ textAlign: 'center' }}>
+                    <div style={{ 
+                        fontSize: '3.5rem', fontWeight: 900, color: '#fbbf24', 
+                        textShadow: '0 0 60px rgba(251,191,36,0.8)',
+                        pointerEvents: 'auto'
+                    }}>
+                        🏆 You Win!
+                    </div>
+                    <div style={{ color: '#cbd5e1', fontSize: '1.2rem', marginTop: 8 }}>Tier Upgrade: Entrance Level Cleared</div>
+                    <div style={{ color: '#fbbf24', fontSize: '1.8rem', fontWeight: 900, marginTop: 12 }}>SCORE: {score}</div>
+                    <button
+                        onClick={onReset}
+                        style={{
+                            marginTop: 32,
+                            padding: '16px 56px',
+                            background: 'linear-gradient(135deg, #3b82f6, #06b6d4)',
+                            border: 'none',
+                            borderRadius: 12,
+                            color: '#fff',
+                            fontFamily: '"Poppins", sans-serif',
+                            fontWeight: 700,
+                            fontSize: '1.1rem',
+                            cursor: 'pointer',
+                            pointerEvents: 'auto',
+                            boxShadow: '0 0 40px rgba(59,130,246,0.5)',
+                        }}
+                    >
+                        Play Again
+                    </button>
+                </div>
+            </div>
+        </Html>
     );
 }
 
-function DiegeticDefeatUI({ onReset }: { onReset: () => void }) {
+function DiegeticDefeatUI({ onReset, score }: { onReset: () => void, score: number }) {
     return (
-        <group position={[0, 8, 5]}>
-            <Float speed={2} rotationIntensity={0.3} floatIntensity={1}>
-                {/* Red glow backlight */}
-                <pointLight color="#FF3B3B" intensity={5} distance={18} />
-
-                <Text
-                    fontSize={4}
-                    color="#FF3B3B"
-                    anchorX="center"
-                    anchorY="middle"
-                    fontWeight={900}
-                    outlineWidth={0.05}
-                    outlineColor="#000"
-                >
-                    YOU LOST
-                </Text>
-
-                <Text
-                    position={[0, -3.5, 0]}
-                    fontSize={0.9}
-                    color="#ff9999"
-                    anchorX="center"
-                    anchorY="middle"
-                    letterSpacing={0.15}
-                >
-                    You were eliminated
-                </Text>
-
-                {/* PLAY AGAIN button */}
-                <group position={[0, -6, 0]}>
-                    <Html transform distanceFactor={25} zIndexRange={[100, 0]}>
-                        <button 
-                            onClick={() => {
-                                AudioManager.startAmbient();
-                                onReset();
-                            }}
-                            style={{ 
-                                pointerEvents: 'auto',
-                                background: 'rgba(255,59,59,0.18)',
-                                border: '2px solid #FF3B3B',
-                                color: '#FF3B3B',
-                                fontSize: '18px',
-                                fontWeight: 700,
-                                padding: '12px 32px',
-                                cursor: 'pointer',
-                                textShadow: '0 0 10px #FF3B3B',
-                                textTransform: 'uppercase',
-                                outline: 'none'
-                            }}
-                        >
-                            Try Again
-                        </button>
-                    </Html>
-                </group>
-            </Float>
-        </group>
+        <Html fullscreen zIndexRange={[100, 0]} pointerEvents="none">
+            <div style={{
+                position: 'absolute', inset: 0,
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
+                background: 'radial-gradient(ellipse at center, rgba(255,0,0,0.1) 0%, transparent 70%)',
+                fontFamily: '"Poppins", sans-serif',
+            }}>
+                <div style={{ textAlign: 'center' }}>
+                    <div style={{ 
+                        fontSize: '3rem', fontWeight: 900, color: '#ff3b3b', 
+                        textShadow: '0 0 40px rgba(255,59,59,0.5)',
+                        pointerEvents: 'auto'
+                    }}>
+                        ELIMINATED
+                    </div>
+                    <div style={{ color: '#cbd5e1', fontSize: '1rem', marginTop: 8 }}>Tier Progress Halted</div>
+                    <div style={{ color: '#ff3b3b', fontSize: '1.8rem', fontWeight: 900, marginTop: 12 }}>SCORE: {score}</div>
+                    <button
+                        onClick={onReset}
+                        style={{
+                            marginTop: 32,
+                            padding: '16px 56px',
+                            background: 'rgba(255, 255, 255, 0.1)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            borderRadius: 12,
+                            color: '#fff',
+                            fontFamily: '"Poppins", sans-serif',
+                            fontWeight: 700,
+                            fontSize: '1.1rem',
+                            cursor: 'pointer',
+                            pointerEvents: 'auto',
+                            backdropFilter: 'blur(10px)',
+                        }}
+                    >
+                        Try Again
+                    </button>
+                </div>
+            </div>
+        </Html>
     );
 }
 
@@ -245,7 +268,7 @@ function WorldSpaceHUD() {
 // --- Crucible Scene (Inner R3F Context) ---
 
 function CrucibleScene() {
-  const { gameStarted, startGame, victory, gameOver, resetGame, advanceToNextTier, tier, eliminated } = useGameStore();
+  const { gameStarted, startGame, victory, gameOver, resetGame, advanceToNextTier, tier, eliminated, score } = useGameStore();
   const timer = useMemo(() => new THREE.Timer(), []);
   const worldConf = getWorldConfig(tier);
 
@@ -321,8 +344,15 @@ function CrucibleScene() {
                 <PowerUp />
                 <ConfettiExplosion />
 
-                {gameOver && victory && <DiegeticVictoryUI onReset={advanceToNextTier} />}
-                {(gameOver || eliminated[0]) && !victory && <DiegeticDefeatUI onReset={resetGame} />}
+                {!gameStarted && <DiegeticStartUI tier={tier} onStart={() => {
+                    AudioManager.startAmbient();
+                    startGame();
+                }} />}
+                {gameOver && victory && <DiegeticVictoryUI score={score} onReset={advanceToNextTier} />}
+                {(gameOver || eliminated[0]) && !victory && <DiegeticDefeatUI score={score} onReset={() => {
+                    AudioManager.startAmbient();
+                    resetGame();
+                }} />}
 
                 {botGoalPositions.map((pos, i) => (
                     i !== 0 && <Bot key={i} id={i} goalPos={pos} />
@@ -478,6 +508,56 @@ function DashCooldownHUD() {
   );
 }
 
+// --- Camera Mode Selection UI ---
+
+function CameraModeUI() {
+  const { cameraMode, cycleCameraMode, gameStarted } = useGameStore();
+
+  if (!gameStarted) return null;
+
+  return (
+    <div
+      onClick={cycleCameraMode}
+      style={{
+        position: 'fixed',
+        bottom: '30px',
+        left: '30px',
+        padding: '12px 24px',
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        borderRadius: '16px',
+        color: '#fff',
+        fontFamily: '"Poppins", sans-serif',
+        fontSize: '0.75rem',
+        fontWeight: 700,
+        letterSpacing: '0.1em',
+        cursor: 'pointer',
+        pointerEvents: 'auto',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        zIndex: 1000,
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        userSelect: 'none',
+        boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+        e.currentTarget.style.transform = 'scale(1.05)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+        e.currentTarget.style.transform = 'scale(1)';
+      }}
+    >
+      <span style={{ opacity: 0.5, fontSize: '0.65rem' }}>VIEW:</span>
+      <span style={{ color: '#00eeff' }}>{cameraMode}</span>
+    </div>
+  );
+}
+
 // --- Main Arena Container ---
 
 export default function GameArena() {
@@ -523,188 +603,6 @@ export default function GameArena() {
         <CrucibleScene />
       </Canvas>
 
-      {/* HTML Start Screen */}
-      {!gameStarted && (() => {
-        const stats = Stats.load();
-        return (
-          <div
-            style={{
-              position: 'absolute', inset: 0,
-              display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center',
-              background: 'radial-gradient(ellipse at center, rgba(0,100,255,0.12) 0%, transparent 70%)',
-              zIndex: 100,
-              fontFamily: '"Poppins", sans-serif',
-            }}
-          >
-            <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap" />
-            <div style={{ textAlign: 'center' }}>
-              {/* Tier badge */}
-              {tier > 1 && (
-                <div style={{
-                  display: 'inline-block',
-                  background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
-                  color: '#000',
-                  fontWeight: 900,
-                  fontSize: '0.75rem',
-                  letterSpacing: '0.15em',
-                  padding: '4px 16px',
-                  borderRadius: 999,
-                  marginBottom: 12,
-                  boxShadow: '0 0 20px rgba(251,191,36,0.6)',
-                }}>⚔️ TIER {tier} — ESCALATED DIFFICULTY</div>
-              )}
-
-              <div style={{ fontSize: '5rem', fontWeight: 900, color: '#fff', lineHeight: 1, textShadow: '0 0 60px rgba(100,180,255,0.6)' }}>
-                ⚽ Goal-Locked
-              </div>
-              <div style={{ fontSize: '1.1rem', color: '#7dd3fc', marginTop: 12, fontWeight: 600, letterSpacing: '0.1em' }}>
-                Football Battle Royale
-              </div>
-
-              {/* Stats panel */}
-              <div style={{
-                display: 'flex', gap: 24, justifyContent: 'center',
-                marginTop: 24,
-              }}>
-                {[
-                  { label: 'BEST SCORE', value: stats.highestScore.toString() },
-                  { label: 'BOTS DELETED', value: stats.totalBotsDeleted.toString() },
-                  { label: 'BEST TIER', value: `T${stats.highestTier}` },
-                ].map(s => (
-                  <div key={s.label} style={{
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: 10,
-                    padding: '10px 20px',
-                    minWidth: 90,
-                  }}>
-                    <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>{s.value}</div>
-                    <div style={{ fontSize: '0.55rem', color: 'rgba(180,220,255,0.5)', letterSpacing: '0.12em', marginTop: 2 }}>{s.label}</div>
-                  </div>
-                ))}
-              </div>
-
-              <button
-                onClick={() => {
-                  AudioManager.startAmbient();
-                  startGame();
-                }}
-                style={{
-                  marginTop: 28,
-                  padding: '16px 56px',
-                  background: tier > 1
-                    ? 'linear-gradient(135deg, #f59e0b, #ef4444)'
-                    : 'linear-gradient(135deg, #3b82f6, #06b6d4)',
-                  border: 'none',
-                  borderRadius: 12,
-                  color: '#fff',
-                  fontFamily: '"Poppins", sans-serif',
-                  fontWeight: 700,
-                  fontSize: '1.1rem',
-                  letterSpacing: '0.05em',
-                  cursor: 'pointer',
-                  boxShadow: tier > 1
-                    ? '0 0 40px rgba(245,158,11,0.5)'
-                    : '0 0 40px rgba(59,130,246,0.5)',
-                  transition: 'transform 0.1s, box-shadow 0.2s',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; }}
-                onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-              >
-                {tier > 1 ? `⚔️ Enter Tier ${tier}` : 'Play Now'}
-              </button>
-              <div style={{ marginTop: 20, fontSize: '0.8rem', color: 'rgba(180,220,255,0.5)', letterSpacing: '0.08em' }}>
-                WASD to move &nbsp;·&nbsp; Space to shoot &nbsp;·&nbsp; Shift to DASH
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* HTML Victory Screen */}
-      {victory && (
-        <div
-          style={{
-            position: 'absolute', inset: 0,
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center',
-            background: 'radial-gradient(ellipse at center, rgba(0,100,255,0.12) 0%, transparent 70%)',
-            zIndex: 100,
-            fontFamily: '"Poppins", sans-serif',
-          }}
-        >
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '3.5rem', fontWeight: 900, color: '#fbbf24', textShadow: '0 0 60px rgba(251,191,36,0.8)' }}>
-              🏆 You Win!
-            </div>
-            <div style={{ color: '#cbd5e1', fontSize: '1.2rem', marginTop: 8 }}>Tier Upgrade: Entrance Level Cleared</div>
-            <div style={{ color: '#fbbf24', fontSize: '1.8rem', fontWeight: 900, marginTop: 12 }}>SCORE: {score}</div>
-            <button
-              onClick={() => {
-                AudioManager.startAmbient();
-                advanceToNextTier();
-              }}
-              style={{
-                marginTop: 32,
-                padding: '16px 56px',
-                background: 'linear-gradient(135deg, #3b82f6, #06b6d4)',
-                border: 'none',
-                borderRadius: 12,
-                color: '#fff',
-                fontFamily: '"Poppins", sans-serif',
-                fontWeight: 700,
-                fontSize: '1.1rem',
-                cursor: 'pointer',
-              }}
-            >
-              Play Again
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* HTML Game Over Screen (Defeat) */}
-      {(gameOver || eliminated[0]) && !victory && (
-        <div
-          style={{
-            position: 'absolute', inset: 0,
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center',
-            background: 'radial-gradient(ellipse at center, rgba(255,0,0,0.1) 0%, transparent 70%)',
-            zIndex: 100,
-            fontFamily: '"Poppins", sans-serif',
-          }}
-        >
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '3rem', fontWeight: 900, color: '#ff3b3b', textShadow: '0 0 40px rgba(255,59,59,0.5)' }}>
-              ELIMINATED
-            </div>
-            <div style={{ color: '#cbd5e1', fontSize: '1rem', marginTop: 8 }}>Tier Progress Halted</div>
-            <div style={{ color: '#ff3b3b', fontSize: '1.8rem', fontWeight: 900, marginTop: 12 }}>SCORE: {score}</div>
-            <button
-              onClick={() => {
-                AudioManager.startAmbient();
-                resetGame();
-              }}
-              style={{
-                marginTop: 32,
-                padding: '16px 56px',
-                background: 'rgba(255, 255, 255, 0.1)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: 12,
-                color: '#fff',
-                fontFamily: '"Poppins", sans-serif',
-                fontWeight: 700,
-                fontSize: '1.1rem',
-                cursor: 'pointer',
-              }}
-            >
-              Try Again
-            </button>
-          </div>
-        </div>
-      )}
       <AudioController />
       <LeaderboardUI />
       <EliminationFeed />
@@ -715,6 +613,7 @@ export default function GameArena() {
         <div style={{ fontSize: '1rem', marginTop: '10px', color: '#cbd5e1' }}>Please rotate your device to play the game.</div>
       </div>
       <DashCooldownHUD />
+      <CameraModeUI />
       <MobileControls />
     </div>
   );

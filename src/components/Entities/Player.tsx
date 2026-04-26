@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
@@ -64,7 +64,19 @@ export const Player = () => {
     };
   }, [world, isEliminated]);
 
-  // ── Reset Listener ──────────────────────────────────────────
+  // Cinematic "Attract Mode" formation
+  const cinematicPos = useMemo(() => new CANNON.Vec3(ARENA_RADIUS - 3, 1.0, 0), []);
+
+  useEffect(() => {
+    if (bodyRef.current && gameStartTime === 0) {
+      bodyRef.current.position.copy(cinematicPos);
+      bodyRef.current.velocity.set(0, 0, 0);
+      bodyRef.current.angularVelocity.set(0, 0, 0);
+      bodyRef.current.wakeUp();
+    }
+  }, [gameStartTime, cinematicPos]);
+
+  // Reset Listener
   useEffect(() => {
     if (bodyRef.current && gameStartTime > 0 && !isEliminated) {
       const spawnX = (Math.random() - 0.5) * 15;
@@ -123,8 +135,7 @@ export const Player = () => {
       prevDashCooldown.current = dashCooldownUntil;
       const dx = x !== 0 || z !== 0 ? x : 1;
       const dz = x !== 0 || z !== 0 ? z : 0;
-      body.applyImpulse(new CANNON.Vec3(dx * 400, 0, dz * 400), body.position);
-      setLastStriker(0);
+      bodyRef.current.applyImpulse(new CANNON.Vec3(dx * 400, 0, dz * 400), bodyRef.current.position);
     }
 
     // Publish player position
@@ -168,7 +179,6 @@ export const Player = () => {
         const dist = dp.length();
         if (dist < 5) {
           ballBodyP.applyImpulse(dp.scale(250 / Math.max(dist, 0.1)), ballBodyP.position);
-          setLastStriker(0);
         }
       }
     }

@@ -35,7 +35,8 @@ function randomSpawnPos(radius: number): THREE.Vector3 {
   const maxR = Math.max(5, radius - safetyMargin);
   const r = 5 + Math.random() * (maxR - 5);
   const a = Math.random() * Math.PI * 2;
-  return new THREE.Vector3(Math.cos(a) * r, 1.5, Math.sin(a) * r);
+  // Hitbox stays grounded at 0.5; Float will offset the visual mesh only
+  return new THREE.Vector3(Math.cos(a) * r, 0.5, Math.sin(a) * r);
 }
 
 export const PowerUp = () => {
@@ -163,19 +164,21 @@ export const PowerUp = () => {
   const color = config.color;
 
   return (
-    <Float speed={5} rotationIntensity={3} floatIntensity={2}>
-      <mesh ref={meshRef} position={spawnPos}>
-        <icosahedronGeometry args={[0.55, 2]} />
-        <meshStandardMaterial
-          color={color}
-          emissive={color}
-          emissiveIntensity={8}
-          roughness={0}
-          metalness={1}
-          toneMapped={false}
-        />
-        <pointLight color={color} intensity={12} distance={12} />
-      </mesh>
-    </Float>
+    <group position={spawnPos}>
+      <Float speed={5} rotationIntensity={3} floatIntensity={1.5}>
+        <mesh ref={meshRef}>
+          <octahedronGeometry args={[0.7, 0]} />
+          <meshStandardMaterial
+            color={color}
+            emissive={color}
+            emissiveIntensity={12}
+            roughness={0}
+            metalness={1}
+            toneMapped={false}
+          />
+          <pointLight color={color} intensity={15} distance={15} />
+        </mesh>
+      </Float>
+    </group>
   );
 };

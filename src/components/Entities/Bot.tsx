@@ -80,7 +80,22 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
     };
   }, [world, id]); // Mount once
 
-  // Reset Trigger listener
+  // Cinematic "Attract Mode" formation
+  const cinematicPos = useMemo(() => {
+    const angle = (id / 8) * Math.PI * 2;
+    return new CANNON.Vec3(Math.cos(angle) * 10, 1.0, Math.sin(angle) * 10);
+  }, [id]);
+
+  useEffect(() => {
+    if (bodyRef.current && gameStartTime === 0) {
+      bodyRef.current.position.copy(cinematicPos);
+      bodyRef.current.velocity.set(0, 0, 0);
+      bodyRef.current.angularVelocity.set(0, 0, 0);
+      bodyRef.current.wakeUp();
+    }
+  }, [gameStartTime, id, cinematicPos]);
+
+  // Reset Trigger listener (Mid-game or Tier Advance)
   useEffect(() => {
     if (bodyRef.current && gameStartTime > 0) {
       const [sx, sy, sz] = useGameStore.getState().botPositions[id];
@@ -168,12 +183,12 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
       const { eliminated, activePowerUp } = stateStore;
       const playerAlive = !eliminated[0];
 
-      // ── Power-Up Hunting Logic ────────────────────────────────────
+      // ── Power-Up Hunting Logic (Heuristic: Near Pup < 12 && Ball Far > 15) ──
       let huntingPowerUp = false;
-      if (activePowerUp) {
+      if (activePowerUp && botToBallDist > 15) {
         const pupPos = new THREE.Vector3(activePowerUp.position[0], 0, activePowerUp.position[2]);
         const distToPup = botPos.distanceTo(pupPos);
-        if (distToPup < 10) {
+        if (distToPup < 12) {
           targetGoal = pupPos;
           huntingPowerUp = true;
         }

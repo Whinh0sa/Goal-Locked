@@ -42,6 +42,7 @@ interface GameState {
   lastStriker: number | null;
   botBuffs: Record<number, { speedUntil: number, juggernautUntil: number, ghostUntil: number }>;
   activePowerUp: { position: [number, number, number], type: string } | null;
+  cameraMode: 'DYNAMIC' | 'TACTICAL' | 'ORBIT';
 
   // Actions
   startGame: () => void;
@@ -64,6 +65,7 @@ interface GameState {
   resetPositions: () => void;
   setActivePowerUp: (powerUp: { position: [number, number, number], type: string } | null) => void;
   triggerPowerUp: (type: 'speed' | 'ghost' | 'freeze' | 'juggernaut', entityId: number) => void;
+  cycleCameraMode: () => void;
 }
 
 const GOAL_COUNT = 8;
@@ -90,6 +92,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   lastStriker: null,
   botBuffs: {},
   activePowerUp: null,
+  cameraMode: 'DYNAMIC',
   lastGoal: null,
   victory: false,
   gameOver: false,
@@ -98,7 +101,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   maxTier: Stats.load().highestTier,
   remainingPlayers: GOAL_COUNT,
   ballPosition: [0, 5, 0],
-  playerPosition: [ARENA_RADIUS - 6, 1, 0],
+  playerPosition: [ARENA_RADIUS - 3, 1, 0],
   moveDirection: [0, 0],
   pulseTrigger: false,
   impactPosition: null,
@@ -271,7 +274,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       return [x, y, z];
     };
     return {
-      playerPosition: [18, 1, 0], // Fixed start for player
+      playerPosition: [ARENA_RADIUS - 3, 1, 0], // Fixed start for player
       ballPosition: [0, 5, 0],    // Fixed start for ball
       botPositions: Array.from({ length: GOAL_COUNT }, () => getPos(30)), // Wider scatter for bots
     };
@@ -341,5 +344,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     return state;
   }),
 
-  setActivePowerUp: (powerUp) => set({ activePowerUp: powerUp })
+  setActivePowerUp: (powerUp) => set({ activePowerUp: powerUp }),
+  cycleCameraMode: () => set(state => {
+    const modes: ('DYNAMIC' | 'TACTICAL' | 'ORBIT')[] = ['DYNAMIC', 'TACTICAL', 'ORBIT'];
+    const nextIdx = (modes.indexOf(state.cameraMode) + 1) % modes.length;
+    return { cameraMode: modes[nextIdx] };
+  })
 }));

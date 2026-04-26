@@ -49,39 +49,67 @@ export const CameraManager = () => {
       return;
     }
 
-    // ── NORMAL GAMEPLAY ──────────────────────────────────────────────────
-    const playerBody = world.bodies.find(b => (b as any).userData?.isPlayer === true);
-    
-    let targetCamX = 0;
+    // ── GAMEPLAY CAMERA MODES ────────────────────────────────────────────
+    const stateStore = useGameStore.getState();
+    const { ballPosition, currentRadius, cameraMode, eliminated } = stateStore;
+    const isPlayerDead = eliminated[0];
+    const livePlayerPos = stateStore.playerPosition;
     const isPortrait = window.innerHeight > window.innerWidth;
-    let targetCamZ = isPortrait ? 60 : 45;
-    let targetCamY = 65;
-    let lookTarget = new THREE.Vector3(0, 0, 0);
 
-    if (playerBody) {
-      const ballPosArray = useGameStore.getState().ballPosition;
-      const bp = new THREE.Vector3().fromArray(ballPosArray);
-      const pp = new THREE.Vector3().copy(playerBody.position as any);
-      
-      const dist = pp.distanceTo(bp);
-      const t = THREE.MathUtils.clamp((dist - 3) / 25, 0, 1);
-      targetCamY = THREE.MathUtils.lerp(40, 65, t);
+    let targetPosition = new THREE.Vector3();
+    let targetLookAt = new THREE.Vector3();
+    let targetFov = FOV_ACTION;
 
-      const midpoint = new THREE.Vector3().addVectors(pp, bp).multiplyScalar(0.5);
-      targetCamX = midpoint.x;
-      targetCamZ = midpoint.z + (isPortrait ? 60 : 45);
-      lookTarget.copy(midpoint);
+    if (cameraMode === 'TACTICAL') {
+      // High-altitude top-down overview
+      const height = isPortrait ? 90 : 70;
+      targetPosition.set(0, height, 0.01); // Small Z offset to avoid gimbal lock/direction issues
+      targetLookAt.set(0, 0, 0);
+      targetFov = isPortrait ? 60 : 50;
+    } 
+    else if (cameraMode === 'ORBIT') {
+      // Wider trailing "Action Cam" or rotating spectator view
+      const orbitTarget = isPlayerDead ? ballPosition : livePlayerPos;
+      orbitAngle.current += delta * 0.2;
+      const radius = 35;
+      const height = 25;
+      targetPosition.set(
+        orbitTarget[0] + Math.cos(orbitAngle.current) * radius,
+        height,
+        orbitTarget[2] + Math.sin(orbitAngle.current) * radius
+      );
+      targetLookAt.set(orbitTarget[0], 0, orbitTarget[2]);
+      targetFov = 40;
+    }
+    else {
+      // DYNAMIC: Tracks midpoint between Player and Ball
+      let anchorX = 0;
+      let anchorZ = 0;
+
+      if (!isPlayerDead) {
+        anchorX = (livePlayerPos[0] + ballPosition[0]) / 2;
+        anchorZ = (livePlayerPos[2] + ballPosition[2]) / 2;
+      } else {
+        anchorX = ballPosition[0];
+        anchorZ = ballPosition[2];
+      }
+
+      // Mobile scaling: pull back further on portrait
+      const zOffset = isPortrait ? 65 : 42;
+      const yOffset = isPortrait ? 55 : 45;
+
+      targetPosition.set(anchorX, yOffset, anchorZ + zOffset);
+      targetLookAt.set(anchorX, 0, anchorZ);
+      targetFov = isPortrait ? 40 : 35;
     }
 
-    const idealPos = new THREE.Vector3(targetCamX, targetCamY, targetCamZ);
-    camPosition.current.lerp(idealPos, 0.05);
-
-    state.camera.position.copy(camPosition.current);
-    camTarget.current.lerp(lookTarget, 0.06);
+    // Smooth Lerp transitions
+    state.camera.position.lerp(targetPosition, 0.06);
+    camTarget.current.lerp(targetLookAt, 0.08);
     state.camera.lookAt(camTarget.current);
 
     if (pCam.fov !== undefined) {
-      pCam.fov = THREE.MathUtils.lerp(pCam.fov, FOV_ACTION, 0.05);
+      pCam.fov = THREE.MathUtils.lerp(pCam.fov, targetFov, 0.05);
       pCam.updateProjectionMatrix();
     }
   });
