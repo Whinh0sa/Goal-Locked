@@ -11,7 +11,7 @@ const BASE_SPEED = 16;       // increased for responsiveness
 const POSSESSION_RADIUS = 2.5; // larger radius to "have" the ball
 const PLAYER_BIAS = 0.8;      // 80% chance to target player goal
 
-type BotState = 'ATTACK' | 'DEFEND' | 'REPOSITION' | 'SLAM';
+type BotState = 'ATTACK' | 'DEFEND' | 'REPOSITION' | 'SLAM' | 'SHOOT';
 
 const BOT_NAMES = ['Bot_Apex', 'Bot_Nova', 'Bot_Onyx', 'Bot_Flux', 'Bot_Rift', 'Bot_Echo', 'Bot_Vex', 'Bot_Zero'];
 
@@ -43,6 +43,7 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
   const frameCount = useRef(Math.floor(Math.random() * 5)); // offset starts so they don't all sync
   const lastDirection = useRef(new THREE.Vector3());
   const lastSpeed = useRef(BASE_SPEED);
+  const lastShotTime = useRef(0);
 
   // Player goal position (index 0, angle = 0)
   const playerGoalPos = useMemo(() =>
@@ -59,7 +60,7 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
     const [spawnX, spawnY, spawnZ] = botPositions[id];
 
     const body = new CANNON.Body({
-      mass: 5,
+      mass: 50,
       shape: new CANNON.Sphere(0.8),
       position: new CANNON.Vec3(spawnX, spawnY, spawnZ),
       fixedRotation: true,
@@ -118,12 +119,10 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
     const { currentRadius } = useGameStore.getState();
     const ballInBotHalf = ballToGoalDist < currentRadius * 0.55;
 
-    if (stateRef.current !== 'REPOSITION') {
+    if (stateRef.current !== 'REPOSITION' && stateRef.current !== 'SHOOT') {
       if (botToBallDist < 3.0) {
-        // Ball is right on top of us — slam it away immediately
         stateRef.current = 'SLAM';
       } else if (ballInBotHalf) {
-        // Ball is approaching our goal — intercept
         stateRef.current = 'DEFEND';
       } else {
         if (botPos.length() < 2 && Math.random() < 0.005) {
@@ -139,22 +138,18 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
     const shouldUpdate = frameCount.current % 5 === 0;
 
     if (shouldUpdate) {
-      // --- Determine target goal (ONLY active players) ---
-      const eliminated = useGameStore.getState().eliminated;
-      const activeTargets = eliminated
-        .map((isDead, idx) => (!isDead && idx !== id) ? idx : -1)
-        .filter(idx => idx !== -1);
-
       let targetGoal = goalPos2D; // fallback
-      
-      if (activeTargets.length > 0) {
-        const playerAlive = !eliminated[0];
-        // 80% bias to player if alive
-        const attackPlayer = playerAlive && (Math.random() < PLAYER_BIAS);
+      const eliminated = useGameStore.getState().eliminated;
+      const playerAlive = !eliminated[0];
+
+      if (playerAlive) {
+        targetGoal = playerGoalPos;
+      } else {
+        const activeTargets = eliminated
+          .map((isDead, idx) => (!isDead && idx !== id) ? idx : -1)
+          .filter(idx => idx !== -1);
         
-        if (attackPlayer) {
-          targetGoal = playerGoalPos;
-        } else {
+        if (activeTargets.length > 0) {
           const randomIdx = activeTargets[Math.floor(Math.random() * activeTargets.length)];
           const angle = (randomIdx * (Math.PI * 2)) / GOALS;
           targetGoal = new THREE.Vector3(Math.cos(angle) * ARENA_RADIUS, 0, Math.sin(angle) * ARENA_RADIUS);
@@ -176,6 +171,9 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
         const interceptPos = new THREE.Vector3((ballPos.x + goalPos2D.x) / 2, 0, (ballPos.z + goalPos2D.z) / 2);
         direction.subVectors(interceptPos, botPos);
         speed = BASE_SPEED * profile.aggression * tierMult;
+      } else if (stateRef.current === 'SHOOT') {
+        direction.subVectors(targetGoal, botPos);
+        speed = BASE_SPEED * 0.5;
       } else {
         direction.subVectors(goalPos2D, botPos);
         speed = BASE_SPEED * 0.7;
@@ -200,6 +198,29 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
 
       lastDirection.current.copy(direction);
       lastSpeed.current = speed;
+
+      // ── SHOOT TRIGGER ──────────────────────────────────────────────
+      const facingTarget = direction.dot(new THREE.Vector3().subVectors(targetGoal, botPos).normalize()) > 0.8;
+      const canShoot = Date.now() - lastShotTime.current > 2000;
+      if (botToBallDist < 3.5 && facingTarget && canShoot) {
+        stateRef.current = 'SHOOT';
+        
+        // Find ball and pulse it
+        const ballBody = world.bodies.find(b => b.mass === 5 && b.shapes[0] instanceof CANNON.Sphere);
+        if (ballBody) {
+          const shootDir = new THREE.Vector3().subVectors(targetGoal, ballPos).normalize();
+          ballBody.applyImpulse(
+            new CANNON.Vec3(shootDir.x * 300, 0, shootDir.z * 300),
+            ballBody.position
+          );
+          lastShotTime.current = Date.now();
+          setTimeout(() => { if(stateRef.current === 'SHOOT') stateRef.current = 'ATTACK'; }, 500);
+        }
+      }
+    }
+
+    if (body.position.y > 1.5) {
+      body.velocity.y = -20;
     }
 
     // ── Apply Responsive Movement (Velocity Override) ──

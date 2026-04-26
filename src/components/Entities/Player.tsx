@@ -33,7 +33,7 @@ export const Player = () => {
     const [spawnX, spawnY, spawnZ] = useGameStore.getState().playerPosition;
     const spawnPos = new CANNON.Vec3(spawnX, spawnY, spawnZ);
     const body = new CANNON.Body({
-      mass: 5,
+      mass: 50,
       shape: new CANNON.Sphere(0.8),
       position: spawnPos,
       fixedRotation: true,
@@ -84,6 +84,10 @@ export const Player = () => {
     const z = moveDirection[1];
 
     body.velocity.set(x * SPEED * speedMult, body.velocity.y, z * SPEED * speedMult);
+
+    if (body.position.y > 1.5) {
+      body.velocity.y = -20;
+    }
 
     // ── DASH ──────────────────────────────────────────────────────────
     if (dashCooldownUntil !== prevDashCooldown.current && dashCooldownUntil > Date.now() - 100) {
