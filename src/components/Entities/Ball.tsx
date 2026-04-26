@@ -54,6 +54,15 @@ export const Ball = () => {
     }
   }, [gameStartTime]);
 
+  const lastStriker = useGameStore(state => state.lastStriker);
+
+  const getPossessionColor = () => {
+    if (lastStriker === 0) return '#32CD32'; // Player: Cyber Neon Lime
+    if (lastStriker !== null && lastStriker > 0) return '#FF0033'; // Bot: Hostile Red
+    return '#FF8C00'; // Neutral: Current Gold/Orange
+  };
+  const currentColor = getPossessionColor();
+
   useFrame((state) => {
     if (!bodyRef.current) return;
     const body = bodyRef.current;
@@ -83,29 +92,34 @@ export const Ball = () => {
     const time = state.clock.getElapsedTime();
     if (ballMesh.current) {
         (ballMesh.current.material as THREE.MeshPhysicalMaterial).emissiveIntensity = 4 + Math.sin(time * 25) * 2;
+        (ballMesh.current.material as THREE.MeshPhysicalMaterial).color.set(currentColor);
+        (ballMesh.current.material as THREE.MeshPhysicalMaterial).emissive.set(currentColor);
+    }
+    if (glowRef.current) {
+        glowRef.current.color.set(currentColor);
     }
   });
 
   return (
     <group ref={groupRef}>
       <Trail
-        width={2}
-        length={6}
-        color={new THREE.Color('#FF8C00')}
+        width={1.5}
+        length={8}
+        color={new THREE.Color(currentColor)}
         attenuation={(t) => t * t}
       >
         <mesh ref={ballMesh} castShadow>
             <icosahedronGeometry args={[0.6, 3]} />
             <meshPhysicalMaterial 
-                color="#FF8C00"
-                emissive="#FF8C00"
+                color={currentColor}
+                emissive={currentColor}
                 emissiveIntensity={4}
                 roughness={0.1}
                 metalness={1}
                 clearcoat={1}
                 reflectivity={1}
             />
-            <pointLight ref={glowRef} color="#FF8C00" intensity={3} distance={15} />
+            <pointLight ref={glowRef} color={currentColor} intensity={3} distance={15} />
         </mesh>
       </Trail>
       {/* Inner Core */}
