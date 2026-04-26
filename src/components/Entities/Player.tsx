@@ -50,7 +50,7 @@ export const Player = () => {
         fixedRotation: true,
         linearDamping: 0.4,
       });
-      (body as any).userData = { isPlayer: true };
+      (body as any).userData = { id: 0, type: 'player' };
       world.addBody(body);
       bodyRef.current = body;
     }

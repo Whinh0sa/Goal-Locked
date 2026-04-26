@@ -70,7 +70,7 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
       sleepSpeedLimit: 0.1,
       collisionFilterGroup: 1,
     });
-    (body as any).userData = { id };
+    (body as any).userData = { id, type: 'bot' };
     world.addBody(body);
     bodyRef.current = body;
     return () => {

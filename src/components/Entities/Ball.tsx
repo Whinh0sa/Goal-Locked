@@ -27,6 +27,15 @@ export const Ball = () => {
         angularDamping: 0.4,
         collisionFilterGroup: 2,
     });
+
+    body.addEventListener('collide', (e: any) => {
+      const colliderId = e.body.userData?.id;
+      // If the ball hits a player or a bot (ignore walls/floors)
+      if (colliderId !== undefined) {
+        useGameStore.getState().setLastStriker(colliderId);
+      }
+    });
+
     world.addBody(body);
     bodyRef.current = body;
     return () => {

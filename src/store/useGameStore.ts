@@ -137,16 +137,24 @@ export const useGameStore = create<GameState>((set, get) => ({
     const remainingCount = newEliminated.filter(e => !e).length;
 
     const isPlayer = playerIndex === 0;
-    const name = state.botNames[playerIndex] || `BOT ${playerIndex + 1}`;
-    
-    // We only explicitly say the player eliminated them if the player is still alive, else they just die
-    const message = isPlayer
-      ? 'GAME OVER — You\'ve been eliminated'
-      : state.eliminated[0] ? `${name} was eliminated` : `Player eliminated ${name}`;
+    const victimName = isPlayer ? "PLAYER" : (state.botNames[playerIndex] || `BOT ${playerIndex + 1}`);
 
-    const newPlayerKills = (!isPlayer && !state.eliminated[0]) 
-      ? state.playerKills + 1 
-      : state.playerKills;
+    // Determine the striker
+    const strikerId = state.lastStriker;
+    let strikerName = "THE ARENA";
+    if (strikerId === 0) strikerName = "PLAYER";
+    else if (strikerId !== null && strikerId > 0) {
+      strikerName = state.botNames[strikerId] || `BOT ${strikerId + 1}`;
+    }
+
+    const message = (isPlayer && strikerId === null) 
+      ? "GAME OVER — You've been eliminated" 
+      : `${strikerName} eliminated ${victimName}`;
+
+    // Scoring & Kill tracking: Only if player (0) hit it and a bot (not 0) died
+    const isPlayerKill = strikerId === 0 && !isPlayer;
+    const newScore = isPlayerKill ? state.score + 10 : state.score;
+    const newPlayerKills = isPlayerKill ? state.playerKills + 1 : state.playerKills;
 
     const newEntry: EliminationEntry = {
       id: playerIndex,
@@ -157,10 +165,6 @@ export const useGameStore = create<GameState>((set, get) => ({
     // Persist bot deletions to localStorage
     if (!isPlayer) {
       Stats.recordBotElimination();
-      // Increase score by 10 ONLY if player was the last striker
-      if (state.lastStriker === 0) {
-        state.score += 10;
-      }
     }
 
     // Condition A: player just got eliminated → game over, defeat
@@ -174,6 +178,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         eliminationLog: [...state.eliminationLog, newEntry],
         currentRadius: state.currentRadius * 0.9,
         playerShields: 0,
+        lastStriker: null, // Reset memory
       };
     }
 
@@ -192,7 +197,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     // Persistence on game over (Win or Loss)
     if (isPlayer || isVictory) {
-      Stats.recordScore(state.score);
+      Stats.recordScore(newScore);
       // Refresh highScore from disk
       state.highScore = Stats.load().highestScore;
     }
@@ -202,12 +207,13 @@ export const useGameStore = create<GameState>((set, get) => ({
       lastGoal: playerIndex,
       remainingPlayers: remainingCount,
       victory: isVictory,
-      gameOver: isVictory || isPlayer || state.eliminated[0], // gameOver on defeat too, and persist if already dead
-      score: state.score,
+      gameOver: isVictory || isPlayer || state.eliminated[0],
+      score: newScore,
       tier: isVictory ? state.tier + 1 : state.tier,
       eliminationLog: [...state.eliminationLog, newEntry],
       currentRadius: state.currentRadius * 0.9,
       playerKills: newPlayerKills,
+      lastStriker: null, // Reset memory
     };
   }),
 
