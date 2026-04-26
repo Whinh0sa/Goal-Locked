@@ -70,8 +70,9 @@ export const FloorBumper = () => {
       return () => clearTimeout(warningTimer);
     };
     const interval = setInterval(kick, CYCLE_INTERVAL);
-    // Start first event after a short delay so game can begin
-    const initial = setTimeout(kick, 8000);
+    // Start first event after a random delay so multiple bumpers don't fire together
+    const initialDelay = 5000 + Math.random() * 10000;
+    const initial = setTimeout(kick, initialDelay);
     return () => { clearInterval(interval); clearTimeout(initial); };
   }, [gameStarted]);
 

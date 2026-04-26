@@ -24,12 +24,13 @@ import { AudioController } from './UI/AudioController';
 import { LeaderboardUI } from './UI/LeaderboardUI';
 import { DecoyBalls } from './Entities/DecoyBalls';
 import { FloorBumper } from './Hazards/FloorBumper';
+import { Stats } from '../hooks/useStats';
+import { AudioManager } from '../audio/AudioManager';
+import { GravityWell } from './Hazards/GravityWell';
 import { PowerUp } from './Entities/PowerUp';
 import { ConfettiExplosion } from './VFX/ConfettiExplosion';
 import { EntryPortal } from './Entities/EntryPortal';
 import { ExitPortal } from './Entities/ExitPortal';
-import { Stats } from '../hooks/useStats';
-import { AudioManager } from '../audio/AudioManager';
 
 const WORLD_CONFIG: Record<number, { preset: any, bg: string, fog: string }> = {
   1: { preset: 'city', bg: '#000000', fog: '#000000' },
@@ -306,7 +307,17 @@ function CrucibleScene() {
 
                 {/* Chaos Systems */}
                 <DecoyBalls />
-                <FloorBumper />
+                {(() => {
+                    const trapCount = 2 + (tier * 2);
+                    return Array.from({ length: trapCount }).map((_, i) => {
+                        const isGravityWell = tier >= 3 && (i + 1) % 3 === 0;
+                        return isGravityWell ? (
+                            <GravityWell key={`well-${i}`} />
+                        ) : (
+                            <FloorBumper key={`trap-${i}`} />
+                        );
+                    });
+                })()}
                 <PowerUp />
                 <ConfettiExplosion />
 
