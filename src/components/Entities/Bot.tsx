@@ -191,9 +191,12 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
 
     // ── Apply Responsive Movement (Velocity Override) ──
     if (bodyRef.current) {
-      bodyRef.current.velocity.x = lastDirection.current.x * lastSpeed.current;
-      bodyRef.current.velocity.z = lastDirection.current.z * lastSpeed.current;
-      // CANNON handles gravity internally; we only override X and Z
+        bodyRef.current.wakeUp();
+        bodyRef.current.velocity.set(
+            lastDirection.current.x * lastSpeed.current,
+            bodyRef.current.velocity.y, // Maintain natural gravity
+            lastDirection.current.z * lastSpeed.current
+        );
     }
 
     groupRef.current.position.set(body.position.x, body.position.y, body.position.z);
@@ -203,7 +206,8 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
 
   return (
     <group ref={groupRef}>
-      <Float speed={4} rotationIntensity={2} floatIntensity={0.5}>
+      {/* Mesh component grounded with Float only on the visual parts */}
+      <Float speed={4} rotationIntensity={2} floatIntensity={0.2}>
         <mesh castShadow>
           <sphereGeometry args={[1, 24, 24]} />
           <meshStandardMaterial color="#1a0000" metalness={0.9} roughness={0.2} />
