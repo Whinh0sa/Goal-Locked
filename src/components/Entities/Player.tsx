@@ -30,41 +30,50 @@ export const Player = () => {
   const playerPosition = useGameStore(state => state.playerPosition);
   const gameStartTime = useGameStore(state => state.gameStartTime);
 
+  // ── Physics Body Lifecycle ──────────────────────────────────
   useEffect(() => {
-    const [spawnX, spawnY, spawnZ] = useGameStore.getState().playerPosition;
-    const spawnPos = new CANNON.Vec3(spawnX, spawnY, spawnZ);
-    const body = new CANNON.Body({
-      mass: 50,
-      shape: new CANNON.Sphere(0.8),
-      position: spawnPos,
-      fixedRotation: true,
-      linearDamping: 0.4,
-    });
-    (body as any).userData = { isPlayer: true };
-    world.addBody(body);
-    bodyRef.current = body;
-    return () => {
-      if (bodyRef.current) world.removeBody(bodyRef.current);
-    };
-  }, [world]);
+    if (isEliminated) {
+      if (bodyRef.current) {
+        world.removeBody(bodyRef.current);
+        bodyRef.current = null;
+      }
+      return;
+    }
 
+    if (!bodyRef.current) {
+      const [spawnX, spawnY, spawnZ] = useGameStore.getState().playerPosition;
+      const body = new CANNON.Body({
+        mass: 50,
+        shape: new CANNON.Sphere(0.8),
+        position: new CANNON.Vec3(spawnX, 15, spawnZ), // Drop from sky
+        fixedRotation: true,
+        linearDamping: 0.4,
+      });
+      (body as any).userData = { isPlayer: true };
+      world.addBody(body);
+      bodyRef.current = body;
+    }
+
+    return () => {
+      if (bodyRef.current) {
+        world.removeBody(bodyRef.current);
+        bodyRef.current = null;
+      }
+    };
+  }, [world, isEliminated]);
+
+  // ── Reset Listener ──────────────────────────────────────────
   useEffect(() => {
-    if (bodyRef.current && gameStartTime > 0) {
-      const [sx, sy, sz] = useGameStore.getState().playerPosition;
-      bodyRef.current.position.set(sx, sy, sz);
+    if (bodyRef.current && gameStartTime > 0 && !isEliminated) {
+      const spawnX = (Math.random() - 0.5) * 15;
+      const spawnZ = (Math.random() - 0.5) * 15;
+      
+      bodyRef.current.position.set(spawnX, 15, spawnZ);
       bodyRef.current.velocity.set(0, 0, 0);
       bodyRef.current.angularVelocity.set(0, 0, 0);
       bodyRef.current.wakeUp();
     }
-  }, [gameStartTime]);
-
-  // Remove physics body from world when eliminated (no more collisions)
-  useEffect(() => {
-    if (isEliminated && bodyRef.current) {
-      world.removeBody(bodyRef.current);
-      bodyRef.current = null;
-    }
-  }, [isEliminated, world]);
+  }, [gameStartTime, isEliminated]);
 
   useFrame(() => {
     // ── ELIMINATED: freeze ghost at last known position ───────────────

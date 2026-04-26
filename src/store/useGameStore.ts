@@ -243,6 +243,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       remainingPlayers: GOAL_COUNT,
       currentRadius: ARENA_RADIUS,
       lastStriker: null,
+      gameStartTime: Date.now(),
       // score, tier, playerKills are INHERITED/PERSISTED
     }));
   },
