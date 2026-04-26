@@ -41,6 +41,9 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
 
   const stateRef         = useRef<BotState>('ATTACK');
   const repositionTimer  = useRef(0);
+  const frameCount       = useRef(Math.floor(Math.random() * 5)); // offset starts so they don't all sync
+  const lastDirection    = useRef(new THREE.Vector3());
+  const lastSpeed        = useRef(BASE_SPEED);
 
   // Player goal position (index 0, angle = 0)
   const playerGoalPos = useMemo(() =>
@@ -133,83 +136,68 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
       }
     }
 
-    // ── Determine target goal ─────────────────────────────────────────
-    // If in possession: 40%-chance bots aim for the player's goal directly
-    let targetGoal = goalPos2D;
-    if (hasPossession && profile.prefersPlayer && !useGameStore.getState().eliminated[0]) {
-      targetGoal = new THREE.Vector3(playerGoalPos.x, 0, playerGoalPos.z);
-    }
+    frameCount.current++;
+    const shouldUpdate = frameCount.current % 5 === 0;
 
-    // ── Passing: if in possession but far from target, look for a nearby ally ──
-    let direction = new THREE.Vector3();
-    let speed = BASE_SPEED;
-
-    // Tier multiplier: each tier adds 20% aggression on top of base profile
-    const tierMult = 1 + (tier - 1) * 0.2;
-
-    if (stateRef.current === 'SLAM') {
-      direction.subVectors(ballPos, botPos);
-      speed = BASE_SPEED * 2.0 * profile.aggression * tierMult;
-
-    } else if (stateRef.current === 'ATTACK') {
-      if (hasPossession && botPos.distanceTo(targetGoal) > PASS_DISTANCE) {
-        // Find nearest other bot body (mass=5, not self) to "pass" to
-        let nearestDist = Infinity;
-        let passTarget: THREE.Vector3 | null = null;
-
-        world.bodies.forEach(b => {
-          if (b === body || b.mass !== 5) return;
-          const bPos = new THREE.Vector3(b.position.x, 0, b.position.z);
-          const d = botPos.distanceTo(bPos);
-          if (d < nearestDist) {
-            nearestDist = d;
-            passTarget = bPos;
-          }
-        });
-
-        if (passTarget) {
-          const ballBody = world.bodies.find(b => b.mass === 5);
-          if (ballBody) {
-            const passDir = new THREE.Vector3()
-              .subVectors(passTarget, ballPos)
-              .normalize();
-            ballBody.applyImpulse(
-              new CANNON.Vec3(passDir.x * 18, 2, passDir.z * 18),
-              ballBody.position,
-            );
-          }
+    if (shouldUpdate) {
+        // --- Determine target goal ---
+        let targetGoal = goalPos2D;
+        if (hasPossession && profile.prefersPlayer && !useGameStore.getState().eliminated[0]) {
+            targetGoal = new THREE.Vector3(playerGoalPos.x, 0, playerGoalPos.z);
         }
-      }
-      const chaseTarget = hasPossession ? targetGoal : ballPos;
-      direction.subVectors(chaseTarget, botPos);
-      speed = BASE_SPEED * profile.aggression * tierMult;
 
-    } else if (stateRef.current === 'DEFEND') {
-      // Intercept vector: position between ball and own goal
-      // targetPos = (ballPos + myGoalPos) / 2
-      const interceptPos = new THREE.Vector3(
-        (ballPos.x + goalPos2D.x) / 2,
-        0,
-        (ballPos.z + goalPos2D.z) / 2,
-      );
-      direction.subVectors(interceptPos, botPos);
-      speed = BASE_SPEED * profile.aggression * tierMult;
+        let direction = new THREE.Vector3();
+        let speed = BASE_SPEED;
+        const tierMult = 1 + (tier - 1) * 0.2;
 
-    } else {
-      // REPOSITION — retreat toward own goal
-      direction.subVectors(goalPos2D, botPos);
-      speed = BASE_SPEED * 0.7;
-      repositionTimer.current -= delta;
-      if (repositionTimer.current <= 0) stateRef.current = 'ATTACK';
+        if (stateRef.current === 'SLAM') {
+            direction.subVectors(ballPos, botPos);
+            speed = BASE_SPEED * 2.0 * profile.aggression * tierMult;
+        } else if (stateRef.current === 'ATTACK') {
+            const chaseTarget = hasPossession ? targetGoal : ballPos;
+            direction.subVectors(chaseTarget, botPos);
+            speed = BASE_SPEED * profile.aggression * tierMult;
+        } else if (stateRef.current === 'DEFEND') {
+            const interceptPos = new THREE.Vector3((ballPos.x + goalPos2D.x) / 2, 0, (ballPos.z + goalPos2D.z) / 2);
+            direction.subVectors(interceptPos, botPos);
+            speed = BASE_SPEED * profile.aggression * tierMult;
+        } else {
+            direction.subVectors(goalPos2D, botPos);
+            speed = BASE_SPEED * 0.7;
+            repositionTimer.current -= delta * 5; // adjusted for throttle
+            if (repositionTimer.current <= 0) stateRef.current = 'ATTACK';
+        }
+
+        direction.y = 0;
+        direction.normalize();
+        direction.x += profile.noiseX;
+        direction.z += profile.noiseZ;
+        direction.normalize();
+
+        // ── Proximity Slowdown ──
+        if (botToBallDist < 2) {
+            speed = 0;
+        } else if (botToBallDist < 5) {
+            speed *= 0.4;
+        }
+
+        lastDirection.current.copy(direction);
+        lastSpeed.current = speed;
     }
 
-    direction.y = 0;
-    direction.normalize();
-    direction.x += profile.noiseX;
-    direction.z += profile.noiseZ;
-    direction.normalize();
+    // ── Apply Movement via Impulse (Stable resolution) ──
+    if (lastSpeed.current > 0) {
+        const force = 40; 
+        body.applyImpulse(
+            new CANNON.Vec3(
+                lastDirection.current.x * force * delta,
+                0,
+                lastDirection.current.z * force * delta
+            ),
+            body.position
+        );
+    }
 
-    body.velocity.set(direction.x * speed, body.velocity.y, direction.z * speed);
     groupRef.current.position.set(body.position.x, body.position.y, body.position.z);
   });
 

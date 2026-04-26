@@ -55,10 +55,9 @@ export const Ball = () => {
       body.applyImpulse(new CANNON.Vec3(0, -30, 0), body.position);
     }
 
-    // ── Tier scaling: each tier reduces damping 5% (ball gets slicker) ───
-    const tierDamping = Math.max(0.1 - (tier - 1) * 0.005, 0.04);
-    body.linearDamping  = tierDamping;
-    body.angularDamping = tierDamping;
+    // ── High Damping for natural feel (0.5 baseline) ──────────────────
+    body.linearDamping  = 0.5;
+    body.angularDamping = 0.5;
 
     // ── Velocity Clamp ──
     const v = body.velocity;

@@ -113,12 +113,15 @@ export const Player = () => {
         ballBody.angularVelocity.x += tz * SPIN;
         ballBody.angularVelocity.z -= tx * SPIN;
 
-        // ── MAGNETIC DRIBBLE ─────────────────────────────────────────────
+        // ── STICKY DRIBBLING (Natural Feel) ──────────────────────────────
         if (dist2 < 3 && (x !== 0 || z !== 0)) {
-          // Force the ball to stick slightly in front of the player
-          // ballBody.velocity contains the current velocity; overriding its X and Z 
-          // but maintaining its Y for bouncing.
-          ballBody.velocity.set(body.velocity.x * 1.1, ballBody.velocity.y, body.velocity.z * 1.1);
+          // Instead of overriding velocity, we apply a gentle impulse toward the player
+          // to create a "sticky" but physically honest dribbling feel.
+          const pullStrength = 1.2;
+          ballBody.applyImpulse(
+            new CANNON.Vec3(-dx2 * pullStrength, 0, -dz2 * pullStrength),
+            ballBody.position
+          );
         }
       }
     }
