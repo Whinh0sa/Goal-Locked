@@ -33,6 +33,7 @@ const bgmTracks: Howl[] = Array.from({ length: BGM_COUNT }, (_, i) =>
     volume: 0,          // start silent; fade in on first play
     preload: true,
     html5: true,
+    autoplay: false,    // Critical for mobile: must be triggered by interaction
   }),
 );
 

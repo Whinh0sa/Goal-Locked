@@ -29,6 +29,7 @@ import { ConfettiExplosion } from './VFX/ConfettiExplosion';
 import { EntryPortal } from './Entities/EntryPortal';
 import { ExitPortal } from './Entities/ExitPortal';
 import { Stats } from '../hooks/useStats';
+import { AudioManager } from '../audio/AudioManager';
 
 const WORLD_CONFIG: Record<number, { preset: any, bg: string, fog: string }> = {
   1: { preset: 'city', bg: '#000000', fog: '#000000' },
@@ -183,7 +184,10 @@ function DiegeticDefeatUI({ onReset }: { onReset: () => void }) {
                 <group position={[0, -6, 0]}>
                     <Html transform distanceFactor={25} zIndexRange={[100, 0]}>
                         <button 
-                            onClick={onReset}
+                            onClick={() => {
+                                AudioManager.startAmbient();
+                                onReset();
+                            }}
                             style={{ 
                                 pointerEvents: 'auto',
                                 background: 'rgba(255,59,59,0.18)',
@@ -571,7 +575,10 @@ export default function GameArena() {
               </div>
 
               <button
-                onClick={startGame}
+                onClick={() => {
+                  AudioManager.startAmbient();
+                  startGame();
+                }}
                 style={{
                   marginTop: 28,
                   padding: '16px 56px',
@@ -622,7 +629,10 @@ export default function GameArena() {
             </div>
             <div style={{ color: '#cbd5e1', fontSize: '1rem', marginTop: 8 }}>Last player standing</div>
             <button
-              onClick={resetGame}
+              onClick={() => {
+                AudioManager.startAmbient();
+                resetGame();
+              }}
               style={{
                 marginTop: 32,
                 padding: '16px 56px',

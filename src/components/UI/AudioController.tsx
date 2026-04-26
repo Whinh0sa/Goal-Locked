@@ -35,11 +35,9 @@ export const AudioController = () => {
     }
   }, [tier]);
 
-  // Start / stop ambient drone
+  // Start / stop ambient drone — MOVED TO DIRECT INTERACTION (GameArena.tsx)
   useEffect(() => {
-    if (gameStarted) {
-      AudioManager.startAmbient();
-    } else {
+    if (!gameStarted) {
       AudioManager.stopAmbient();
     }
   }, [gameStarted]);
