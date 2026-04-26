@@ -87,12 +87,6 @@ class AudioManagerClass {
   private _playTrack(track: Howl, fadeIn: boolean) {
     if (this.stopped) return;
     
-    // Stop ANY current track before playing a new one
-    if (this.currentTrack) {
-        this.currentTrack.stop();
-        // this.currentTrack.unload(); // intentional avoid unload to keep memory warm, stop() is enough for overlap
-    }
-
     this.currentTrack = track;
     track.volume(fadeIn ? 0 : 0.2);
     const id = track.play();
@@ -144,20 +138,17 @@ class AudioManagerClass {
   }
 
   stopAmbient() {
-    if (!this.bgmStarted) return;
     this.stopped = true;
+    this.bgmStarted = false;
 
-    if (this.currentTrack && this.currentId !== null) {
-      const vol = this.currentTrack.volume() as number;
-      this.currentTrack.fade(vol, 0, 2000, this.currentId);
-      const track = this.currentTrack;
-      const id    = this.currentId;
-      setTimeout(() => { track.stop(id); }, 2100);
-    }
+    // HARD KILL: Iterate through all possible BGM tracks and force stop them.
+    bgmTracks.forEach(track => {
+        track.stop();
+        track.volume(0); // Ensure they are globally muted
+    });
 
     this.currentId    = null;
     this.currentTrack = null;
-    this.bgmStarted   = false;
     this.currentRate  = 1.0;
   }
 }
