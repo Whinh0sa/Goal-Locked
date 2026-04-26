@@ -21,6 +21,7 @@ export const Player = () => {
   const updatePlayerPos  = useGameStore(state => state.updatePlayerPosition);
   const isEliminated     = useGameStore(state => state.eliminated[0]);
   const playerColor      = useGameStore(state => state.playerRingColor) || '#32CD32';
+  const playerJuggernautUntil = useGameStore(s => s.playerJuggernautUntil);
   const setLastStriker   = useGameStore(state => state.setLastStriker);
 
   // Track previous cooldown to detect the exact frame a dash was triggered
@@ -97,6 +98,16 @@ export const Player = () => {
 
     if (body.position.y > 1.5) {
       body.velocity.y = -20;
+    }
+
+    // ── Buff Application ──────────────────────────────────────────
+    const isJuggernaut = playerJuggernautUntil > Date.now();
+    if (isJuggernaut && body.mass !== 200) {
+      body.mass = 200;
+      body.updateMassProperties();
+    } else if (!isJuggernaut && body.mass !== 50) {
+      body.mass = 50;
+      body.updateMassProperties();
     }
 
     // ── DASH ──────────────────────────────────────────────────────────

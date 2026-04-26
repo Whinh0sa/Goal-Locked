@@ -70,6 +70,7 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
       sleepSpeedLimit: 0.1,
       collisionFilterGroup: 1,
     });
+    (body as any).userData = { id };
     world.addBody(body);
     bodyRef.current = body;
     return () => {
@@ -94,8 +95,24 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
     if (isEliminated || !bodyRef.current) return;
     const body = bodyRef.current;
 
-    const ballPos3 = useGameStore.getState().ballPosition;
+    const stateStore = useGameStore.getState();
+    const { ballPosition, botBuffs, freezeBotsUntil, ghostBallUntil, lastStriker, currentRadius, tier } = stateStore;
+    const ballPos3 = ballPosition;
     if (!ballPos3) return;
+
+    // ── Buff Application ──────────────────────────────────────────
+    const myBuffs = botBuffs[id] || { speedMult: 1, juggernautUntil: 0, ghostBallUntil: 0 };
+    const isJuggernaut = myBuffs.juggernautUntil > Date.now();
+    const speedMultiplier = myBuffs.speedMult;
+
+    // Dynamic mass for Juggernaut
+    if (isJuggernaut && body.mass !== 200) {
+      body.mass = 200;
+      body.updateMassProperties();
+    } else if (!isJuggernaut && body.mass !== 50) {
+      body.mass = 50;
+      body.updateMassProperties();
+    }
 
     const botPos = new THREE.Vector3(body.position.x, 0, body.position.z);
     const ballPos = new THREE.Vector3(ballPos3[0], 0, ballPos3[2]);
@@ -105,11 +122,12 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
     const botToBallDist = botPos.distanceTo(ballPos);
     const hasPossession = botToBallDist < POSSESSION_RADIUS;
 
-    const isGhostBall = Date.now() < useGameStore.getState().ghostBallUntil;
-    const isFrozen = Date.now() < useGameStore.getState().freezeBotsUntil;
+    // Self-immunity from freeze if I was the collector
+    const isFrozen = Date.now() < freezeBotsUntil && lastStriker !== id;
+    const isGhostBall = Date.now() < ghostBallUntil;
 
     // Filter mask: ~2 means collide with everything EXCEPT group 2 (Ball)
-    body.collisionFilterMask = isGhostBall ? ~2 : -1;
+    body.collisionFilterMask = (isGhostBall || myBuffs.ghostBallUntil > Date.now()) ? ~2 : -1;
 
     if (isFrozen) {
       body.velocity.set(0, body.velocity.y, 0);
@@ -117,7 +135,6 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
     }
 
     // ── FSM Transition ─────────────────────────────────────────────────
-    const { currentRadius } = useGameStore.getState();
     const ballInBotHalf = ballToGoalDist < currentRadius * 0.55;
 
     if (stateRef.current !== 'REPOSITION' && stateRef.current !== 'SHOOT') {
@@ -140,20 +157,36 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
 
     if (shouldUpdate) {
       let targetGoal = goalPos2D; // fallback
-      const eliminated = useGameStore.getState().eliminated;
+      const stateStore = useGameStore.getState();
+      const { eliminated, activePowerUp } = stateStore;
       const playerAlive = !eliminated[0];
 
-      if (playerAlive) {
-        targetGoal = playerGoalPos;
-      } else {
-        const activeTargets = eliminated
-          .map((isDead, idx) => (!isDead && idx !== id) ? idx : -1)
-          .filter(idx => idx !== -1);
-        
-        if (activeTargets.length > 0) {
-          const randomIdx = activeTargets[Math.floor(Math.random() * activeTargets.length)];
-          const angle = (randomIdx * (Math.PI * 2)) / GOALS;
-          targetGoal = new THREE.Vector3(Math.cos(angle) * ARENA_RADIUS, 0, Math.sin(angle) * ARENA_RADIUS);
+      // ── Power-Up Hunting Logic ────────────────────────────────────
+      let huntingPowerUp = false;
+      if (activePowerUp) {
+        const pupPos = new THREE.Vector3(activePowerUp.position[0], 0, activePowerUp.position[2]);
+        const distToPup = botPos.distanceTo(pupPos);
+        if (distToPup < 10) {
+          targetGoal = pupPos;
+          huntingPowerUp = true;
+        }
+      }
+
+      if (!huntingPowerUp) {
+        // Normal AI Targeting
+        if (playerAlive && profile.prefersPlayer) {
+          targetGoal = playerGoalPos;
+        } else {
+          // Target a random alive bot's goal
+          const aliveIndices = eliminated
+            .map((e, index) => (!e && index !== id ? index : -1))
+            .filter(idx => idx !== -1);
+          
+          if (aliveIndices.length > 0) {
+            const randomIndex = aliveIndices[Math.floor(Math.random() * aliveIndices.length)];
+            const angle = (randomIndex / 8) * Math.PI * 2;
+            targetGoal = new THREE.Vector3(Math.cos(angle) * ARENA_RADIUS, 0, Math.sin(angle) * ARENA_RADIUS);
+          }
         }
       }
 
@@ -196,6 +229,12 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
       if (botToBallDist < 1.5 && stateRef.current !== 'SLAM') {
         speed = 0;
       }
+
+      // ── Apply Buffs ──
+      speed *= speedMultiplier;
+
+      const { x: vx, z: vz } = direction.clone().multiplyScalar(speed);
+      body.velocity.set(vx, body.velocity.y, vz);
 
       lastDirection.current.copy(direction);
       lastSpeed.current = speed;

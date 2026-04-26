@@ -39,6 +39,9 @@ interface GameState {
   botNames: string[];     // Runtime assigned bot names for kill feed
   botPositions: [number, number, number][]; // Physics drop coordinates
   lastStriker: number | null;               // ID of the last entity to strike/pulse the ball
+  playerJuggernautUntil: number;
+  botBuffs: Record<number, { speedMult: number, juggernautUntil: number, ghostBallUntil: number }>;
+  activePowerUp: { position: [number, number, number], type: string } | null;
 
   // Actions
   startGame: () => void;
@@ -59,6 +62,8 @@ interface GameState {
   setLastStriker: (id: number | null) => void;
   advanceToNextTier: () => void;
   resetPositions: () => void;
+  setActivePowerUp: (powerUp: { position: [number, number, number], type: string } | null) => void;
+  triggerPowerUp: (type: 'speed' | 'ghost' | 'freeze' | 'juggernaut', entityId: number) => void;
 }
 
 const GOAL_COUNT = 8;
@@ -100,6 +105,9 @@ export const useGameStore = create<GameState>((set, get) => ({
   botNames: new Array(GOAL_COUNT).fill(''),
   botPositions: new Array(GOAL_COUNT).fill(null).map(() => [0, 10, 0] as [number, number, number]),
   lastStriker: null,
+  playerJuggernautUntil: 0,
+  botBuffs: {},
+  activePowerUp: null,
 
   startGame: () => {
     get().resetPositions();
@@ -229,6 +237,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     playerKills: 0,
     // Note: botNames are NOT reset here so they persist for rendering until next mount
     lastStriker: null,
+    playerJuggernautUntil: 0,
+    botBuffs: {},
     }));
   },
 
@@ -288,5 +298,44 @@ export const useGameStore = create<GameState>((set, get) => ({
     newNames[index] = name;
     return { botNames: newNames };
   }),
-  setLastStriker: (id) => set({ lastStriker: id })
+  setLastStriker: (id) => set({ lastStriker: id }),
+
+  triggerPowerUp: (type, entityId) => set(state => {
+    const isPlayer = entityId === 0;
+    const now = Date.now();
+    const duration = 5000;
+
+    if (type === 'speed') {
+      if (isPlayer) return { playerSpeedMultiplier: 1.6 };
+      const newBuffs = { ...state.botBuffs };
+      newBuffs[entityId] = { ...(newBuffs[entityId] || { speedMult: 1, juggernautUntil: 0, ghostBallUntil: 0 }), speedMult: 1.6 };
+      return { botBuffs: newBuffs };
+    }
+
+    if (type === 'ghost') {
+      if (isPlayer) return { ghostBallUntil: now + duration };
+      const newBuffs = { ...state.botBuffs };
+      newBuffs[entityId] = { ...(newBuffs[entityId] || { speedMult: 1, juggernautUntil: 0, ghostBallUntil: 0 }), ghostBallUntil: now + duration };
+      return { botBuffs: newBuffs };
+    }
+
+    if (type === 'freeze') {
+      return { freezeBotsUntil: now + 3000 };
+    }
+
+    if (type === 'juggernaut') {
+      if (isPlayer) return { playerJuggernautUntil: now + duration, playerSpeedMultiplier: 1.4 };
+      const newBuffs = { ...state.botBuffs };
+      newBuffs[entityId] = { 
+        ...(newBuffs[entityId] || { speedMult: 1, juggernautUntil: 0, ghostBallUntil: 0 }), 
+        juggernautUntil: now + duration,
+        speedMult: 1.4 
+      };
+      return { botBuffs: newBuffs };
+    }
+
+    return state;
+  }),
+
+  setActivePowerUp: (powerUp) => set({ activePowerUp: powerUp })
 }));

@@ -13,19 +13,21 @@ const PICKUP_RADIUS   = 2.2;     // world-units — how close to trigger pickup
 const BOOST_DURATION  = 5000;   // ms
 const RESPAWN_DELAY   = 12000;  // ms after pickup before a new orb appears
 
-type PowerUpType = 'OVERDRIVE' | 'GHOST' | 'FREEZE';
+type PowerUpType = 'SPEED' | 'GHOST' | 'FREEZE' | 'JUGGERNAUT';
 
 function randomPowerUpType(): PowerUpType {
   const r = Math.random();
-  if (r < 0.33) return 'OVERDRIVE';
-  if (r < 0.66) return 'GHOST';
-  return 'FREEZE';
+  if (r < 0.25) return 'SPEED';
+  if (r < 0.50) return 'GHOST';
+  if (r < 0.75) return 'FREEZE';
+  return 'JUGGERNAUT';
 }
 
 const TYPE_CONFIG = {
-  OVERDRIVE: { color: '#00ffaa' }, // Teal
-  GHOST:     { color: '#cc00ff' }, // Purple
-  FREEZE:    { color: '#00aaff' }, // Cyan
+  SPEED:      { color: '#32CD32' }, // Neon Lime
+  GHOST:      { color: '#9126EF' }, // Electric Purple
+  FREEZE:     { color: '#00ccff' }, // Cyan
+  JUGGERNAUT: { color: '#FFD700' }, // Gold
 };
 
 function randomSpawnPos(): THREE.Vector3 {
@@ -35,97 +37,119 @@ function randomSpawnPos(): THREE.Vector3 {
 }
 
 export const PowerUp = () => {
-  const gameStarted      = useGameStore(s => s.gameStarted);
-  const ballPosition     = useGameStore(s => s.ballPosition);   // proxy for player pos
-  const setSpeedMult     = useGameStore(s => s.setSpeedMultiplier);
-  const triggerGhostBall = useGameStore(s => s.triggerGhostBall);
-  const triggerFreeze    = useGameStore(s => s.triggerFreeze);
+  const gameStarted    = useGameStore(s => s.gameStarted);
+  const triggerPowerUp = useGameStore(s => s.triggerPowerUp);
+  const { world }      = useGameStore.getState() as any; // Access world if available or use state
 
-  const [visible, setVisible]   = useState(true);
+  const setActivePowerUp = useGameStore(s => s.setActivePowerUp);
+
+  const [visible, setVisible]   = useState(false);
   const [spawnPos, setSpawnPos] = useState(() => randomSpawnPos());
   const [type, setType]         = useState<PowerUpType>(() => randomPowerUpType());
   const meshRef   = useRef<THREE.Mesh>(null!);
   const collected = useRef(false);
 
-  // Reset when game resets
+  // Appearance cycle
   useEffect(() => {
     if (!gameStarted) {
       collected.current = false;
       setVisible(false);
-      // Appear 5s after game starts
-      const t = setTimeout(() => {
-        setSpawnPos(randomSpawnPos());
-        setType(randomPowerUpType());
-        setVisible(true);
-      }, 5000);
-      return () => clearTimeout(t);
+      setActivePowerUp(null);
+      return;
     }
-  }, [gameStarted]);
+
+    const initialTimer = setTimeout(() => {
+      const pos = randomSpawnPos();
+      const t = randomPowerUpType();
+      setSpawnPos(pos);
+      setType(t);
+      setVisible(true);
+      setActivePowerUp({ position: [pos.x, pos.y, pos.z], type: t });
+    }, 5000);
+
+    return () => {
+      clearTimeout(initialTimer);
+      setActivePowerUp(null);
+    };
+  }, [gameStarted, setActivePowerUp]);
 
   useFrame(() => {
     if (!visible || collected.current || !gameStarted) return;
 
-    // Use ballPosition as a stand-in proxy to check player proximity.
-    // For true player tracking we read the physics world directly
-    // via the userData tag in the store approach; here we use the
-    // store's ballPosition which Ball.tsx publishes every frame, and
-    // we rely on GameArena to also expose playerPosition if needed.
-    // A simpler approach that works: proximity check vs the orb independently.
     const orbPos = spawnPos;
+    const state = useGameStore.getState();
+    const { playerPosition, eliminated, world } = state as any;
 
-    // Read actual player position from the DOM physics world via the store ballPosition.
-    // We'll subscribe to a separate playerPosition we add to the store — OR use the
-    // impactPosition as an indirect trigger. For now: check distance every frame
-    // against a playerPosition we'll piggyback from the store.
-    const state = useGameStore.getState() as any;
-    const playerPos: [number, number, number] | null = state.playerPosition ?? null;
-    if (!playerPos) return;
+    // 1. Check Player
+    if (!eliminated[0]) {
+      const dx = playerPosition[0] - orbPos.x;
+      const dy = playerPosition[1] - orbPos.y;
+      const dz = playerPosition[2] - orbPos.z;
+      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-    const dx = playerPos[0] - orbPos.x;
-    const dy = playerPos[1] - orbPos.y;
-    const dz = playerPos[2] - orbPos.z;
-    const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-
-    if (dist < PICKUP_RADIUS) {
-      collected.current = true;
-      setVisible(false);
-
-      if (type === 'OVERDRIVE') {
-        setSpeedMult(2);
-        setTimeout(() => setSpeedMult(1), BOOST_DURATION);
-      } else if (type === 'GHOST') {
-        triggerGhostBall();
-      } else if (type === 'FREEZE') {
-        triggerFreeze();
+      if (dist < PICKUP_RADIUS) {
+        handlePickup(0);
+        return;
       }
+    }
 
-      // Respawn at a new position
-      setTimeout(() => {
-        collected.current = false;
-        setSpawnPos(randomSpawnPos());
-        setType(randomPowerUpType());
-        setVisible(true);
-      }, RESPAWN_DELAY);
+    // 2. Check Bots via physics bodies
+    const bodies = world?.bodies || [];
+    for (const body of bodies) {
+      const userData = body.userData;
+      if (userData && userData.id !== undefined && userData.id > 0) {
+        // Only check bots that aren't eliminated (implied by body being in world)
+        const dx = body.position.x - orbPos.x;
+        const dz = body.position.z - orbPos.z;
+        const dist = Math.sqrt(dx * dx + dz * dz);
+        if (dist < PICKUP_RADIUS) {
+          handlePickup(userData.id);
+          return;
+        }
+      }
     }
   });
 
+  const handlePickup = (entityId: number) => {
+    collected.current = true;
+    setVisible(false);
+    setActivePowerUp(null);
+
+    const typeKey = type.toLowerCase() as any;
+    triggerPowerUp(typeKey, entityId);
+
+    // Respawn cycle
+    setTimeout(() => {
+      if (useGameStore.getState().gameStarted) {
+        collected.current = false;
+        const nextPos = randomSpawnPos();
+        const nextType = randomPowerUpType();
+        setSpawnPos(nextPos);
+        setType(nextType);
+        setVisible(true);
+        setActivePowerUp({ position: [nextPos.x, nextPos.y, nextPos.z], type: nextType });
+      }
+    }, RESPAWN_DELAY);
+  };
+
   if (!visible) return null;
 
-  const color = TYPE_CONFIG[type].color;
+  const config = TYPE_CONFIG[type];
+  const color = config.color;
 
   return (
-    <Float speed={3} rotationIntensity={2} floatIntensity={1}>
+    <Float speed={5} rotationIntensity={3} floatIntensity={2}>
       <mesh ref={meshRef} position={spawnPos}>
         <icosahedronGeometry args={[0.55, 2]} />
         <meshStandardMaterial
           color={color}
           emissive={color}
-          emissiveIntensity={5}
-          roughness={0.1}
-          metalness={0.8}
+          emissiveIntensity={8}
+          roughness={0}
+          metalness={1}
           toneMapped={false}
         />
-        <pointLight color={color} intensity={4} distance={8} />
+        <pointLight color={color} intensity={12} distance={12} />
       </mesh>
     </Float>
   );
