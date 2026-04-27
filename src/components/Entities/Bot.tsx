@@ -23,6 +23,9 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
   const setLastStriker = useGameStore(state => state.setLastStriker);
   const groupRef = useRef<THREE.Group>(null!);
   const bodyRef = useRef<CANNON.Body | null>(null);
+  const matRef1 = useRef<THREE.MeshStandardMaterial>(null!);
+  const matRef2 = useRef<THREE.MeshStandardMaterial>(null!);
+  const lightRef = useRef<THREE.PointLight>(null!);
   const botBuffs = useGameStore(state => state.botBuffs);
 
   useEffect(() => {
@@ -111,13 +114,14 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
     if (isEliminated || !bodyRef.current) return;
     const body = bodyRef.current;
 
+    const now = Date.now();
     const stateStore = useGameStore.getState();
-    const { ballPosition, botBuffs, freezeBotsUntil, playerGhostUntil, lastStriker, currentRadius, tier } = stateStore;
+    const { ballPosition, botBuffs, freezeBotsUntil, empUntil, playerGhostUntil, lastStriker, currentRadius, tier } = stateStore;
+    const isEMPed = now < empUntil;
     const ballPos3 = ballPosition;
     if (!ballPos3) return;
 
     // ── Buff Application ──────────────────────────────────────────
-    const now = Date.now();
     const myBuffs = botBuffs[id] || { speedUntil: 0, juggernautUntil: 0, ghostUntil: 0 };
     
     const isJuggernaut = myBuffs.juggernautUntil > now;
@@ -254,6 +258,7 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
 
       // ── Apply Buffs ──
       speed *= speedMultiplier;
+      if (isEMPed) speed *= 0.3;
 
       const { x: vx, z: vz } = direction.clone().multiplyScalar(speed);
       body.velocity.set(vx, body.velocity.y, vz);
@@ -297,6 +302,30 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
     }
 
     groupRef.current.position.set(body.position.x, body.position.y, body.position.z);
+    
+    // ── EMP Visual Override ──
+    if (matRef1.current && matRef2.current && lightRef.current) {
+      if (isEMPed) {
+        const stunStutter = Math.random() > 0.5 ? 4 : 0;
+        matRef1.current.color.setHex(0x00FFFF);
+        matRef1.current.emissive.setHex(0x00FFFF);
+        matRef1.current.emissiveIntensity = stunStutter;
+        matRef2.current.color.setHex(0x00FFFF);
+        matRef2.current.emissive.setHex(0x00FFFF);
+        matRef2.current.emissiveIntensity = stunStutter;
+        lightRef.current.color.setHex(0x00FFFF);
+        lightRef.current.intensity = stunStutter;
+      } else {
+        matRef1.current.color.setHex(0xFF0033);
+        matRef1.current.emissive.setHex(0xFF0033);
+        matRef1.current.emissiveIntensity = 4;
+        matRef2.current.color.setHex(0xFF0033);
+        matRef2.current.emissive.setHex(0xFF0033);
+        matRef2.current.emissiveIntensity = 2;
+        lightRef.current.color.setHex(0xFF0033);
+        lightRef.current.intensity = 2;
+      }
+    }
   });
 
   if (isEliminated) return null;
@@ -327,13 +356,13 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
 
         <mesh rotation-x={Math.PI / 2}>
           <torusGeometry args={[1.5, 0.1, 12, 64]} />
-          <meshStandardMaterial color="#FF0033" emissive="#FF0033" emissiveIntensity={4} toneMapped={false} />
+          <meshStandardMaterial ref={matRef1} color="#FF0033" emissive="#FF0033" emissiveIntensity={4} toneMapped={false} />
         </mesh>
         <mesh rotation-x={Math.PI / 3}>
           <torusGeometry args={[1.5, 0.04, 8, 48]} />
-          <meshStandardMaterial color="#FF0033" emissive="#FF0033" emissiveIntensity={2} toneMapped={false} />
+          <meshStandardMaterial ref={matRef2} color="#FF0033" emissive="#FF0033" emissiveIntensity={2} toneMapped={false} />
         </mesh>
-        <pointLight color="#FF0033" intensity={2} distance={5} />
+        <pointLight ref={lightRef} color="#FF0033" intensity={2} distance={5} />
       </Float>
     </group>
   );

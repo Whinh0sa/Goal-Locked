@@ -14,14 +14,15 @@ const PICKUP_RADIUS   = 2.2;     // world-units — how close to trigger pickup
 const BOOST_DURATION  = 5000;   // ms
 const RESPAWN_DELAY   = 12000;  // ms after pickup before a new orb appears
 
-type PowerUpType = 'SPEED' | 'GHOST' | 'FREEZE' | 'JUGGERNAUT';
+type PowerUpType = 'SPEED' | 'GHOST' | 'FREEZE' | 'JUGGERNAUT' | 'EMP';
 
 function randomPowerUpType(): PowerUpType {
   const r = Math.random();
-  if (r < 0.25) return 'SPEED';
-  if (r < 0.50) return 'GHOST';
-  if (r < 0.75) return 'FREEZE';
-  return 'JUGGERNAUT';
+  if (r < 0.20) return 'SPEED';
+  if (r < 0.40) return 'GHOST';
+  if (r < 0.60) return 'FREEZE';
+  if (r < 0.80) return 'JUGGERNAUT';
+  return 'EMP';
 }
 
 const TYPE_CONFIG = {
@@ -29,6 +30,7 @@ const TYPE_CONFIG = {
   GHOST:      { color: '#9126EF' }, // Electric Purple
   FREEZE:     { color: '#00ccff' }, // Cyan
   JUGGERNAUT: { color: '#FFD700' }, // Gold
+  EMP:        { color: '#00FFFF' }, // Bright Stuttering Cyan
 };
 
 function randomSpawnPos(radius: number): THREE.Vector3 {
@@ -168,7 +170,11 @@ export const PowerUp = () => {
     <group position={spawnPos}>
       <Float speed={5} rotationIntensity={3} floatIntensity={1.5}>
         <mesh ref={meshRef}>
-          <octahedronGeometry args={[0.7, 0]} />
+          {type === 'EMP' ? (
+            <torusKnotGeometry args={[0.3, 0.1, 64, 16]} />
+          ) : (
+            <octahedronGeometry args={[0.7, 0]} />
+          )}
           <meshStandardMaterial
             color={color}
             emissive={color}

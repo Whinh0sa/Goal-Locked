@@ -35,6 +35,7 @@ interface GameState {
   playerGhostUntil: number;
   playerJuggernautUntil: number;
   freezeBotsUntil: number;
+  empUntil: number;
   dashCooldownUntil: number;
   tier: number;
   gameStartTime: number;
@@ -60,6 +61,9 @@ interface GameState {
   setSpeedMultiplier: (m: number) => void;
   setPlayerRingColor: (color: string | null) => void;
   triggerEntryPortal: () => void;
+  triggerBotFreeze: () => void;
+  triggerEMP: () => void;
+  triggerDashCD: () => void;
   triggerDash: () => void;
   triggerGhostBall: () => void;
   triggerFreeze: () => void;
@@ -89,6 +93,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   playerGhostUntil: 0,
   playerJuggernautUntil: 0,
   freezeBotsUntil: 0,
+  empUntil: 0,
   dashCooldownUntil: 0,
   tier: 1,
   gameStartTime: 0,
@@ -265,6 +270,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     playerGhostUntil: 0,
     playerJuggernautUntil: 0,
     freezeBotsUntil: 0,
+    empUntil: 0,
     gameStartTime: 0,
     playerKills: 0,
     lastStriker: null,
@@ -332,6 +338,9 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ entryPortalActive: true });
     setTimeout(() => set({ entryPortalActive: false }), 3000); // Effect lasts 3s
   },
+  triggerBotFreeze: () => set({ freezeBotsUntil: Date.now() + 5000 }),
+  triggerEMP: () => set({ empUntil: Date.now() + 10000 }),
+  triggerDashCD: () => set({ dashCooldownUntil: Date.now() + 1000 }),
   triggerGhostBall: () => set({ playerGhostUntil: Date.now() + 5000 }),
   triggerFreeze: () => set({ freezeBotsUntil: Date.now() + 3000 }),
   setBotName: (index, name) => set(state => {
