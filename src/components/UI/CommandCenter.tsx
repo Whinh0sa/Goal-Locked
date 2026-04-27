@@ -165,59 +165,96 @@ export function CommandCenter() {
     <div style={isMobile ? mobileStyle : desktopStyle}>
       <h2 style={{
         marginTop: 0,
-        marginBottom: isMobile ? 0 : 8,
+        marginBottom: isMobile ? '1.5rem' : 8,
         color: '#fff',
         fontFamily: '"Poppins", sans-serif',
-        fontSize: isMobile ? '2rem' : '1rem',
+        fontSize: isMobile ? '1.8rem' : '1rem',
         textTransform: 'uppercase',
-        letterSpacing: '0.1em',
+        letterSpacing: '0.15em',
         borderBottom: isMobile ? 'none' : '1px solid rgba(255,255,255,0.1)',
         paddingBottom: 8,
-        textAlign: isMobile ? 'center' : 'left'
+        textAlign: isMobile ? 'center' : 'left',
+        width: '100%'
       }}>
-        {isMobile ? 'PAUSED' : 'Command Center'}
+        {isMobile ? 'COMMAND CENTER' : 'Command Center'}
       </h2>
       
-      <div style={{ position: 'relative', width: '100%', maxWidth: isMobile ? '400px' : 'none', minHeight: '120px' }}>
-        <LeaderboardUI />
-      </div>
-      
-      <div style={{ position: 'relative', width: '100%', maxWidth: isMobile ? '400px' : 'none', minHeight: '120px' }}>
-        <EliminationFeed />
-      </div>
-      
-      <div style={{ width: '100%', maxWidth: isMobile ? '400px' : 'none' }}>
-        <CameraModeUI />
-      </div>
-      <div style={{ width: '100%', maxWidth: isMobile ? '400px' : 'none' }}>
-        <ZoomSliderHUD />
-      </div>
+      {isMobile ? (
+        <>
+          {/* Bifurcated Content Container */}
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'row', 
+            width: '95%', 
+            maxWidth: '900px', 
+            justifyContent: 'center',
+            gap: '2rem',
+            marginBottom: '2rem',
+            alignItems: 'flex-start'
+          }}>
+            {/* LEFT COLUMN: Data */}
+            <div style={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: '0' }}>
+              <div style={{ position: 'relative', width: '100%', minHeight: '120px' }}>
+                <LeaderboardUI />
+              </div>
+              <div style={{ position: 'relative', width: '100%', minHeight: '100px' }}>
+                <EliminationFeed />
+              </div>
+            </div>
 
-      {isMobile && (
-        <button
-          onClick={() => {
-            togglePause();
-            toggleHud();
-          }}
-          style={{
-            marginTop: '1rem',
-            padding: '16px 48px',
-            background: '#32CD32',
-            border: 'none',
-            borderRadius: '12px',
-            color: '#000',
-            fontFamily: '"Poppins", sans-serif',
-            fontWeight: 900,
-            fontSize: '1.2rem',
-            letterSpacing: '0.1em',
-            cursor: 'pointer',
-            boxShadow: '0 0 30px rgba(50, 205, 50, 0.4)',
-            width: '100%',
-            maxWidth: '400px'
-          }}
-        >
-          RESUME GAME
-        </button>
+            {/* RIGHT COLUMN: Controls */}
+            <div style={{ flex: 0.8, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1.5rem', minWidth: '0' }}>
+              <div style={{ width: '100%' }}>
+                <CameraModeUI />
+              </div>
+              <div style={{ width: '100%' }}>
+                <ZoomSliderHUD />
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Full-Width Button */}
+          <button
+            onClick={() => {
+              togglePause();
+              toggleHud();
+            }}
+            style={{
+              width: '80%',
+              maxWidth: '350px',
+              padding: '1rem',
+              backgroundColor: '#32CD32',
+              color: '#0B0B0B',
+              fontFamily: '"Poppins", sans-serif',
+              fontWeight: 900,
+              borderRadius: '12px',
+              border: 'none',
+              textTransform: 'uppercase',
+              fontSize: '1.1rem',
+              letterSpacing: '0.1em',
+              cursor: 'pointer',
+              boxShadow: '0 0 30px rgba(50, 205, 50, 0.3)',
+              marginTop: 'auto'
+            }}
+          >
+            Resume Game
+          </button>
+        </>
+      ) : (
+        <>
+          <div style={{ position: 'relative', width: '100%', minHeight: '120px' }}>
+            <LeaderboardUI />
+          </div>
+          <div style={{ position: 'relative', width: '100%', minHeight: '120px' }}>
+            <EliminationFeed />
+          </div>
+          <div style={{ width: '100%' }}>
+            <CameraModeUI />
+          </div>
+          <div style={{ width: '100%' }}>
+            <ZoomSliderHUD />
+          </div>
+        </>
       )}
     </div>
   );
