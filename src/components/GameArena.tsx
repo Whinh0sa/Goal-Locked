@@ -553,19 +553,10 @@ function CanvasFallback({ error, resetErrorBoundary }: { error: Error; resetErro
   );
 }
 
-// --- HUD Toggle UI ---
-
 function HUDToggleButton() {
   const { isHudOpen, toggleHud, gameStarted } = useGameStore();
-  const [isMobile, setIsMobile] = React.useState(typeof window !== 'undefined' && window.innerWidth < 1024);
 
-  React.useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 1024);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  if (!gameStarted || !isMobile) return null;
+  if (!gameStarted) return null;
 
   return (
     <div
@@ -675,18 +666,7 @@ export default function GameArena() {
     }
   }, [gameStarted, startGame, setPlayerRingColor, triggerEntryPortal]);
 
-  // Desktop layout safety pin
-  useEffect(() => {
-    const checkMobile = () => {
-      const isMobile = window.innerWidth < 1024;
-      if (!isMobile) {
-        useGameStore.setState({ isHudOpen: true });
-      }
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+
 
   return (
     <div
