@@ -20,9 +20,8 @@ import * as THREE from 'three';
 import { MobileControls } from './UI/MobileControls';
 import { FadingText } from './UI/FadingText';
 import { GOALS, ARENA_RADIUS } from '../constants';
-import { EliminationFeed } from './UI/EliminationFeed';
 import { AudioController } from './UI/AudioController';
-import { LeaderboardUI } from './UI/LeaderboardUI';
+import { CommandCenter } from './UI/CommandCenter';
 import { DecoyBalls } from './Entities/DecoyBalls';
 import { FloorBumper } from './Hazards/FloorBumper';
 import { Stats } from '../hooks/useStats';
@@ -483,135 +482,7 @@ function DashCooldownHUD() {
   );
 }
 
-// --- Camera Mode Selection UI ---
-
-function CameraModeUI() {
-  const { cameraMode, cycleCameraMode, gameStarted } = useGameStore();
-
-  if (!gameStarted) return null;
-
-  return (
-    <div
-      onClick={cycleCameraMode}
-      style={{
-        position: 'fixed',
-        bottom: '30px',
-        left: '30px',
-        padding: '12px 24px',
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-        border: '1px solid rgba(255, 255, 255, 0.2)',
-        borderRadius: '16px',
-        color: '#fff',
-        fontFamily: '"Poppins", sans-serif',
-        fontSize: '0.75rem',
-        fontWeight: 700,
-        letterSpacing: '0.1em',
-        cursor: 'pointer',
-        pointerEvents: 'auto',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px',
-        zIndex: 1000,
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        userSelect: 'none',
-        boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
-        e.currentTarget.style.transform = 'scale(1.05)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-        e.currentTarget.style.transform = 'scale(1)';
-      }}
-    >
-      <span style={{ opacity: 0.5, fontSize: '0.65rem' }}>VIEW:</span>
-      <span style={{ color: '#00eeff' }}>{cameraMode}</span>
-    </div>
-  );
-}
-
-// --- Zoom Slider HUD ---
-
-function ZoomSliderHUD() {
-  const gameStarted   = useGameStore(s => s.gameStarted);
-  const zoomOffset    = useGameStore(s => s.zoomOffset);
-  const setZoomOffset = useGameStore(s => s.setZoomOffset);
-
-  if (!gameStarted) return null;
-
-  return (
-    <div style={{
-      position: 'fixed',
-      left: 16,
-      top: '50%',
-      transform: 'translateY(-50%)',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: 8,
-      zIndex: 100,
-      pointerEvents: 'auto',
-    }}>
-      {/* Card wrapper */}
-      <div style={{
-        background: 'rgba(255,255,255,0.08)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        border: '1px solid rgba(255,255,255,0.15)',
-        borderRadius: 16,
-        padding: '14px 10px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 8,
-        boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-      }}>
-        {/* Label */}
-        <span style={{
-          fontSize: '0.5rem',
-          fontFamily: '"Poppins", sans-serif',
-          fontWeight: 700,
-          letterSpacing: '0.12em',
-          color: 'rgba(0,238,255,0.7)',
-          textTransform: 'uppercase',
-          writingMode: 'vertical-rl',
-          transform: 'rotate(180deg)',
-        }}>ZOOM</span>
-
-        {/* Vertical slider */}
-        <input
-          type="range"
-          min={0}
-          max={50}
-          step={1}
-          value={zoomOffset}
-          onChange={e => setZoomOffset(Number(e.target.value))}
-          style={{
-            writingMode: 'vertical-lr',
-            direction: 'rtl',
-            WebkitAppearance: 'slider-vertical',
-            width: 28,
-            height: 110,
-            cursor: 'pointer',
-            accentColor: '#00eeff',
-            background: 'transparent',
-          }}
-        />
-
-        {/* Value readout */}
-        <span style={{
-          fontSize: '0.55rem',
-          fontFamily: '"Poppins", sans-serif',
-          fontWeight: 700,
-          color: 'rgba(255,255,255,0.4)',
-        }}>{zoomOffset.toFixed(0)}</span>
-      </div>
-    </div>
-  );
-}
+// --- Canvas Error Fallback ---
 
 // --- Canvas Error Fallback ---
 
@@ -694,8 +565,8 @@ function HUDToggleButton() {
       onClick={toggleHud}
       style={{
         position: 'fixed',
-        top: '64px',
-        right: '16px',
+        top: '24px',
+        right: '24px',
         padding: '8px 12px',
         backgroundColor: isHudOpen ? 'rgba(0, 238, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)',
         backdropFilter: 'blur(12px)',
@@ -827,12 +698,7 @@ export default function GameArena() {
       </ErrorBoundary>
 
       <AudioController />
-      {isHudOpen && (
-        <>
-          <LeaderboardUI />
-          <EliminationFeed />
-        </>
-      )}
+      <CommandCenter />
 
       {/* ── 2D Game-State Overlays ─────────────────────────────────────────── */}
       {!gameStarted && (
@@ -859,8 +725,6 @@ export default function GameArena() {
         <div style={{ fontSize: '1rem', marginTop: '10px', color: '#cbd5e1' }}>Please rotate your device to play the game.</div>
       </div>
       <DashCooldownHUD />
-      <ZoomSliderHUD />
-      <CameraModeUI />
       <HUDToggleButton />
       <MobileControls />
     </div>

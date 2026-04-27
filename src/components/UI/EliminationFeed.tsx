@@ -37,10 +37,7 @@ export function EliminationFeed() {
     <div
       className="responsive-scale elimination-feed"
       style={{
-        position: 'absolute',
-        top: 24,
-        left: 24,
-        zIndex: 1000,
+        position: 'relative',
         display: 'flex',
         flexDirection: 'column',
         gap: 10,

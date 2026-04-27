@@ -10,9 +10,7 @@ export const LeaderboardUI = () => {
         <div 
             className="responsive-scale leaderboard"
             style={{
-                position: 'absolute',
-                top: 24,
-                right: 24,
+                position: 'relative',
                 zIndex: 1000,
                 background: 'rgba(0, 0, 0, 0.65)',
                 backdropFilter: 'blur(8px)',
