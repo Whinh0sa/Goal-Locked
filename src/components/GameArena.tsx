@@ -64,6 +64,13 @@ const OVERLAY_BASE: React.CSSProperties = {
 
 function StartScreen({ onStart, tier }: { onStart: () => void; tier: number }) {
     const stats = Stats.load();
+    const enterFullscreen = () => {
+        const elem = document.documentElement;
+        if (elem.requestFullscreen) elem.requestFullscreen();
+        // @ts-ignore
+        else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+    };
+
     return (
         <div style={{
             ...OVERLAY_BASE,
@@ -109,7 +116,10 @@ function StartScreen({ onStart, tier }: { onStart: () => void; tier: number }) {
                     ))}
                 </div>
                 <button
-                    onClick={onStart}
+                    onClick={() => {
+                        enterFullscreen();
+                        onStart();
+                    }}
                     style={{
                         marginTop: 28,
                         padding: '16px 56px',
@@ -720,7 +730,7 @@ export default function GameArena() {
         top: 0,
         left: 0,
         width: '100vw',
-        height: '100vh',
+        height: '100dvh',
         overflow: 'hidden',
         backgroundColor: '#0B0B0B',
         touchAction: 'none',

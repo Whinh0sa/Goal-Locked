@@ -148,7 +148,7 @@ export function CommandCenter() {
     position: 'fixed',
     inset: 0,
     width: '100vw',
-    height: '100vh',
+    height: '100dvh',
     backgroundColor: 'rgba(11, 11, 11, 0.95)',
     zIndex: 9999,
     display: 'flex',

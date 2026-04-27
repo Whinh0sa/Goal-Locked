@@ -13,7 +13,7 @@ html, body, #root {
   margin: 0;
   padding: 0;
   width: 100vw;
-  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   background-color: var(--tactical-black);
   color: var(--tactical-white);
@@ -84,7 +84,7 @@ canvas {
     top: 0;
     left: 0;
     width: 100vw;
-    height: 100vh;
+    height: 100dvh;
     z-index: 99999;
     background: rgba(5, 5, 5, 0.95);
     backdrop-filter: blur(30px);
