@@ -724,6 +724,61 @@ function HUDToggleButton() {
   );
 }
 
+// --- Tier Cleared Banner ---
+function TierBanner() {
+  const tier = useGameStore(s => s.tier);
+  const [show, setShow] = React.useState(false);
+  const prevTier = React.useRef(tier);
+
+  React.useEffect(() => {
+    if (tier > prevTier.current && tier > 1) {
+      setShow(true);
+      const t = setTimeout(() => setShow(false), 3500);
+      return () => clearTimeout(t);
+    }
+    prevTier.current = tier;
+  }, [tier]);
+
+  return (
+    <AnimatePresence>
+      {show && (
+        <motion.div
+          initial={{ opacity: 0, y: -50, scale: 0.8 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, scale: 1.2, filter: 'blur(10px)' }}
+          style={{
+            position: 'absolute',
+            top: '20%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 300,
+            pointerEvents: 'none',
+            background: 'rgba(20, 255, 0, 0.15)',
+            border: '2px solid #14FF00',
+            boxShadow: '0 0 20px rgba(20, 255, 0, 0.4), inset 0 0 15px rgba(20, 255, 0, 0.2)',
+            padding: '16px 32px',
+            borderRadius: '12px',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px'
+          }}
+        >
+          <div style={{ fontSize: '28px' }}>🛡️</div>
+          <div>
+            <div style={{ color: '#14FF00', fontWeight: 900, fontSize: '1.4rem', letterSpacing: '2px', textShadow: '0 0 10px #14FF00', margin: 0, lineHeight: 1 }}>
+              TIER CLEARED
+            </div>
+            <div style={{ color: '#fff', fontWeight: 700, fontSize: '1rem', letterSpacing: '1px', marginTop: '4px' }}>
+              +1 LIFE RESTORED
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 // --- Main Arena Container ---
 
 export default function GameArena() {
@@ -795,6 +850,8 @@ export default function GameArena() {
           resetGame();
         }} />
       )}
+
+      <TierBanner />
 
       <div className="portrait-overlay">
         <div style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '20px' }}>⚠️</div>

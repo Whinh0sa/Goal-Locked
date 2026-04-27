@@ -129,6 +129,11 @@ export const useGameStore = create<GameState>((set, get) => ({
       gameStartTime: Date.now(),
       score: 0,
       playerKills: 0,
+      lastStriker: null,
+      eliminationLog: [],
+      remainingPlayers: GOAL_COUNT,
+      victory: false,
+      gameOver: false,
       eliminated: new Array(GOAL_COUNT).fill(false)
     });
   },
@@ -280,6 +285,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       currentRadius: ARENA_RADIUS,
       lastStriker: null,
       gameStartTime: Date.now(),
+      playerShields: Math.min(state.playerShields + 1, 3),
       // score, tier, playerKills are INHERITED/PERSISTED
     }));
   },
