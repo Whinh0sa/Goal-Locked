@@ -295,7 +295,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       return [clamp(x), y, clamp(z)];
     };
     return {
-      playerPosition: [clamp(ARENA_RADIUS - 3), 1, 0], // Fixed start for player
+      playerPosition: [0, 1, (state.currentRadius || ARENA_RADIUS) * 0.4], // Fixed dynamic start for player
       ballPosition: [0, 5, 0],    // Fixed start for ball
       impactPosition: null,
       impactColor: '#FFBF00',

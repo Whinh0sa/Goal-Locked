@@ -70,8 +70,10 @@ export const Player = () => {
     };
   }, [world, isEliminated]);
 
+  const currentRadius = useGameStore(state => state.currentRadius);
+  
   // Cinematic "Attract Mode" formation
-  const cinematicPos = useMemo(() => new CANNON.Vec3(ARENA_RADIUS - 3, 1.0, 0), []);
+  const cinematicPos = useMemo(() => new CANNON.Vec3(0, 1.0, currentRadius * 0.4), [currentRadius]);
 
   useEffect(() => {
     if (bodyRef.current && gameStartTime === 0) {
@@ -191,6 +193,7 @@ export const Player = () => {
         const dist = dp.length();
         if (dist < 5) {
           ballBodyP.applyImpulse(dp.scale(250 / Math.max(dist, 0.1)), ballBodyP.position);
+          setLastStriker(0); // Player legally claims possession via Shockwave
         }
       }
     }
