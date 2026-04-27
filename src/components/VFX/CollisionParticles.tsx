@@ -17,20 +17,17 @@ interface Particle {
 export function CollisionParticles() {
   const meshRef = useRef<THREE.InstancedMesh>(null!);
   const impactPosition = useGameStore(state => state.impactPosition);
+  const impactColor = useGameStore(state => state.impactColor);
   const setImpactPosition = useGameStore(state => state.setImpactPosition);
 
   const particles = useMemo<Particle[]>(() => {
     const temp: Particle[] = [];
     for (let i = 0; i < PARTICLE_COUNT; i++) {
       temp.push({
-        t: PARTICLE_LIFETIME, // start as expired (inactive)
-        speed: 0.1 + Math.random() * 0.5,
-        dir: new THREE.Vector3(
-          Math.random() - 0.5,
-          Math.random() * 0.5 + 0.3, // bias upward
-          Math.random() - 0.5
-        ).normalize(),
-        pos: new THREE.Vector3(0, -100, 0), // hidden
+        t: PARTICLE_LIFETIME, 
+        speed: 0,
+        dir: new THREE.Vector3(),
+        pos: new THREE.Vector3(0, -100, 0),
         active: false,
       });
     }
@@ -38,12 +35,14 @@ export function CollisionParticles() {
   }, []);
 
   const dummy = useMemo(() => new THREE.Object3D(), []);
+  const colorObj = useMemo(() => new THREE.Color(), []);
 
-  // FIX: watch impactPosition from the store and burst all particles at that point
+  // watch impactPosition and burst all particles with current color
   useEffect(() => {
     if (!impactPosition) return;
     const [ix, iy, iz] = impactPosition;
-    particles.forEach(p => {
+    
+    particles.forEach((p, i) => {
       p.active = true;
       p.t = 0;
       p.pos.set(ix, iy, iz);
@@ -53,16 +52,20 @@ export function CollisionParticles() {
         Math.random() - 0.5
       ).normalize();
       p.speed = 4 + Math.random() * 6;
+
+      // Apply instance color
+      colorObj.set(impactColor);
+      meshRef.current.setColorAt(i, colorObj);
     });
-    // Clear the trigger so the same position doesn't re-fire
+    
+    meshRef.current.instanceColor!.needsUpdate = true;
     setImpactPosition(null);
-  }, [impactPosition, particles, setImpactPosition]);
+  }, [impactPosition, impactColor, particles, setImpactPosition, colorObj]);
 
   useFrame((_state, delta) => {
     if (!meshRef.current) return;
     particles.forEach((p, i) => {
       if (!p.active) {
-        // Keep hidden
         dummy.position.set(0, -100, 0);
         dummy.scale.setScalar(0);
         dummy.updateMatrix();
@@ -91,7 +94,7 @@ export function CollisionParticles() {
   return (
     <instancedMesh ref={meshRef} args={[undefined, undefined, PARTICLE_COUNT]}>
       <sphereGeometry args={[1, 8, 8]} />
-      <meshBasicMaterial color="#FFBF00" />
+      <meshBasicMaterial />
     </instancedMesh>
   );
 }

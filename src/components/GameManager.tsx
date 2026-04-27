@@ -51,8 +51,14 @@ export const GameManager = () => {
       if (vel < 4) return; // Only fire on meaningful impacts
 
       const pos = ballBody.position;
-      // S = √(vx² + vy² + vz²) — AudioManager scales volume/pitch to this
-      setImpactPosition([pos.x, pos.y, pos.z], vel);
+      const { lastStriker } = useGameStore.getState();
+      
+      // Reactive Possession Color Logic
+      let impactColor = '#FF8C00'; // Neutral Gold
+      if (lastStriker === 0) impactColor = '#32CD32'; // Player Neon Lime
+      else if (lastStriker !== null && lastStriker > 0) impactColor = '#FF0033'; // Bot Hostile Red
+
+      setImpactPosition([pos.x, pos.y, pos.z], vel, impactColor);
     };
 
     // Listen on every body added to the world (ball body added asynchronously)

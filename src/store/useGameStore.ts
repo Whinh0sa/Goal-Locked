@@ -23,6 +23,8 @@ interface GameState {
   moveDirection: [number, number];
   pulseTrigger: boolean;
   impactPosition: [number, number, number] | null;
+  impactColor: string;
+  impactVelocity: number;
   impactStrength: number;
   eliminationLog: EliminationEntry[];
   currentRadius: number;
@@ -52,7 +54,7 @@ interface GameState {
   updatePlayerPosition: (pos: [number, number, number]) => void;
   setMoveDirection: (dir: [number, number]) => void;
   triggerPulse: () => void;
-  setImpactPosition: (pos: [number, number, number] | null, strength?: number) => void;
+  setImpactPosition: (pos: [number, number, number] | null, vel?: number, color?: string) => void;
   setSpeedMultiplier: (m: number) => void;
   setPlayerRingColor: (color: string | null) => void;
   triggerEntryPortal: () => void;
@@ -105,6 +107,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   moveDirection: [0, 0],
   pulseTrigger: false,
   impactPosition: null,
+  impactColor: '#FFBF00',
+  impactVelocity: 0,
   impactStrength: 0,
   eliminationLog: [],
   currentRadius: ARENA_RADIUS,
@@ -234,6 +238,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       moveDirection: [0, 0] as [number, number],
     pulseTrigger: false,
     impactPosition: null,
+    impactColor: '#FFBF00',
+    impactVelocity: 0,
     impactStrength: 0,
     eliminationLog: [],
     currentRadius: ARENA_RADIUS,
@@ -276,6 +282,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     return {
       playerPosition: [ARENA_RADIUS - 3, 1, 0], // Fixed start for player
       ballPosition: [0, 5, 0],    // Fixed start for ball
+      impactPosition: null,
+      impactColor: '#FFBF00',
       botPositions: Array.from({ length: GOAL_COUNT }, () => getPos(30)), // Wider scatter for bots
     };
   }),
@@ -287,7 +295,11 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ pulseTrigger: true });
     setTimeout(() => set({ pulseTrigger: false }), 100);
   },
-  setImpactPosition: (pos, strength = 0) => set({ impactPosition: pos, impactStrength: strength }),
+  setImpactPosition: (pos, vel = 0, color = '#FFBF00') => set({ 
+    impactPosition: pos, 
+    impactVelocity: vel,
+    impactColor: color 
+  }),
   setSpeedMultiplier: (m) => set({ playerSpeedUntil: m > 1 ? Date.now() + 5000 : 0 }),
   triggerDash: () => set(state => {
     const now = Date.now();

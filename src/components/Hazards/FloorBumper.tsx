@@ -41,10 +41,21 @@ export const FloorBumper = () => {
   useEffect(() => {
     if (phase === 'rising') {
       const body = new CANNON.Body({
-        mass: 0,
-        shape: new CANNON.Box(new CANNON.Vec3(BUMPER_SIZE, 0.3, BUMPER_SIZE)),
+        mass: 0, // Kinematic-like behavior via manual Y updates
+        shape: new CANNON.Box(new CANNON.Vec3(BUMPER_SIZE, 0.5, BUMPER_SIZE)),
         position: new CANNON.Vec3(pos[0], 0, pos[1]),
       });
+
+      // Massive Upthrust Logic for 50-mass entities
+      body.addEventListener('collide', (e: any) => {
+        const target = e.body as CANNON.Body;
+        // Launch players (50), bots (50), or the ball (5)
+        if (target.mass >= 5) {
+          const impulseStrength = target.mass >= 50 ? 1500 : 150;
+          target.applyImpulse(new CANNON.Vec3(0, impulseStrength, 0), new CANNON.Vec3(0, 0, 0));
+        }
+      });
+
       world.addBody(body);
       bodyRef.current = body;
     }
