@@ -104,6 +104,7 @@ export const Player = () => {
   }, [gameStartTime, isEliminated]);
 
   useFrame(() => {
+    if (useGameStore.getState().isPaused) return;
     // ── ELIMINATED: freeze ghost at last known position ───────────────
     if (isEliminated) {
       groupRef.current.visible = false;

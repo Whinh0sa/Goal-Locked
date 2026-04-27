@@ -554,13 +554,16 @@ function CanvasFallback({ error, resetErrorBoundary }: { error: Error; resetErro
 }
 
 function HUDToggleButton() {
-  const { isHudOpen, toggleHud, gameStarted } = useGameStore();
+  const { isHudOpen, toggleHud, togglePause, gameStarted } = useGameStore();
 
   if (!gameStarted) return null;
 
   return (
     <div
-      onClick={toggleHud}
+      onClick={() => {
+        toggleHud();
+        togglePause();
+      }}
       style={{
         position: 'fixed',
         top: '24px',

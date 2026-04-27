@@ -48,6 +48,7 @@ interface GameState {
   cameraMode: 'DYNAMIC' | 'TACTICAL' | 'ORBIT';
   zoomOffset: number;
   isHudOpen: boolean;
+  isPaused: boolean;
 
   // Actions
   startGame: () => void;
@@ -76,6 +77,7 @@ interface GameState {
   cycleCameraMode: () => void;
   setZoomOffset: (val: number) => void;
   toggleHud: () => void;
+  togglePause: () => void;
 }
 
 const GOAL_COUNT = 8;
@@ -106,6 +108,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   cameraMode: 'DYNAMIC',
   zoomOffset: 0,
   isHudOpen: window.innerWidth >= 768,
+  isPaused: false,
   lastGoal: null,
   victory: false,
   gameOver: false,
@@ -394,4 +397,5 @@ export const useGameStore = create<GameState>((set, get) => ({
   }),
   setZoomOffset: (val) => set({ zoomOffset: val }),
   toggleHud: () => set(state => ({ isHudOpen: !state.isHudOpen })),
+  togglePause: () => set(state => ({ isPaused: !state.isPaused })),
 }));

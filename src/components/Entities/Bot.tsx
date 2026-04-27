@@ -111,6 +111,7 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
   }, [gameStartTime, id]);
 
   useFrame((_, delta) => {
+    if (useGameStore.getState().isPaused) return;
     if (isEliminated || !bodyRef.current) return;
     const body = bodyRef.current;
 
