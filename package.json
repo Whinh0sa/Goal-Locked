@@ -29,6 +29,7 @@
     "motion": "^12.38.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-error-boundary": "^6.1.1",
     "three": "^0.183.2",
     "vite": "^6.2.0",
     "zustand": "^5.0.12"

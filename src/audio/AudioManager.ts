@@ -7,12 +7,12 @@
  */
 import { Howl, Howler } from 'howler';
 
-const BGM_COUNT = 7; 
+const BGM_COUNT = 5;
 
 // ── Sound dictionary (SFX) ──────────────────────────────────────────────────
 const sounds: Record<string, Howl> = {
   bounce: new Howl({ src: ['/sounds/bounce.mp3'], volume: 0.5, preload: true }),
-  pulse:  new Howl({ src: ['/sounds/pulse.mp3'],  volume: 0.8, preload: true }),
+  pulse: new Howl({ src: ['/sounds/pulse.mp3'], volume: 0.8, preload: true }),
   elimination: new Howl({ src: ['/sounds/elimination.mp3'], volume: 0.9, preload: true }),
   shield: new Howl({ src: ['/sounds/shield.mp3'], volume: 0.7, preload: true }),
 };
@@ -33,24 +33,40 @@ class AudioManagerClass {
     sounds.bounce.volume(vol, id);
   }
 
-  playPulse()       { sounds.pulse.play(); }
+  playPulse() { sounds.pulse.play(); }
   playElimination() { sounds.elimination.play(); }
   playShieldBreak() { sounds.shield.play(); }
 
   // ── BGM ──────────────────────────────────────────────────────────────────
-  startAmbient() {
+  startAmbient(forcedIndex?: number) {
     this.stopAmbient();
     this.stopped = false;
 
-    // Pick a truly random track
-    const randomIdx = Math.floor(Math.random() * BGM_COUNT) + 1;
-    
+    // Pick a truly random track or use forced
+    const idx = forcedIndex ?? (Math.floor(Math.random() * BGM_COUNT) + 1);
+
+    Howler.mute(false);
+
     this.currentBgm = new Howl({
-      src: [`/sounds/bgm${randomIdx}.mp3`],
+      src: [`/sounds/bgm${idx}.mp3`],
       volume: 0, // start silent for fade
       loop: true,
-      html5: true,
+      html5: true, // Use streaming to prevent massive memory loads
       autoplay: false,
+      onloaderror: () => {
+        console.warn(`AudioManager: Failed to load bgm${idx}.mp3, cycling...`);
+        if (this.stopped) return;
+        setTimeout(() => this.startAmbient((idx % BGM_COUNT) + 1), 1000);
+      },
+      onplayerror: () => {
+        console.warn(`AudioManager: Failed to play bgm${idx}.mp3, cycling...`);
+        if (this.stopped) return;
+        setTimeout(() => this.startAmbient((idx % BGM_COUNT) + 1), 1000);
+        // Force unlock via howl.once
+        this.currentBgm?.once('unlock', () => {
+           if (!this.stopped) this.currentBgm?.play();
+        });
+      }
     });
 
     const id = this.currentBgm.play();

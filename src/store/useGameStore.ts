@@ -46,6 +46,7 @@ interface GameState {
   activePowerUp: { position: [number, number, number], type: string } | null;
   cameraMode: 'DYNAMIC' | 'TACTICAL' | 'ORBIT';
   zoomOffset: number;
+  isHudOpen: boolean;
 
   // Actions
   startGame: () => void;
@@ -70,6 +71,7 @@ interface GameState {
   triggerPowerUp: (type: 'speed' | 'ghost' | 'freeze' | 'juggernaut', entityId: number) => void;
   cycleCameraMode: () => void;
   setZoomOffset: (val: number) => void;
+  toggleHud: () => void;
 }
 
 const GOAL_COUNT = 8;
@@ -98,6 +100,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   activePowerUp: null,
   cameraMode: 'DYNAMIC',
   zoomOffset: 0,
+  isHudOpen: window.innerWidth >= 768,
   lastGoal: null,
   victory: false,
   gameOver: false,
@@ -121,7 +124,13 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   startGame: () => {
     get().resetPositions();
-    set({ gameStarted: true, gameStartTime: Date.now() });
+    set({ 
+      gameStarted: true, 
+      gameStartTime: Date.now(),
+      score: 0,
+      playerKills: 0,
+      eliminated: new Array(GOAL_COUNT).fill(false)
+    });
   },
 
   registerGoal: (playerIndex: number) => set((state) => {
@@ -275,15 +284,18 @@ export const useGameStore = create<GameState>((set, get) => ({
     }));
   },
 
-  resetPositions: () => set(() => {
+  resetPositions: () => set((state) => {
+    const safeRadius = (state.currentRadius || ARENA_RADIUS) * 0.8;
+    const clamp = (val: number) => Math.sign(val) * Math.min(Math.abs(val), safeRadius);
+
     const getPos = (scatter = 20): [number, number, number] => {
       const x = (Math.random() - 0.5) * scatter;
       const z = (Math.random() - 0.5) * scatter;
       const y = 10 + Math.random() * 5; // Drop from height
-      return [x, y, z];
+      return [clamp(x), y, clamp(z)];
     };
     return {
-      playerPosition: [ARENA_RADIUS - 3, 1, 0], // Fixed start for player
+      playerPosition: [clamp(ARENA_RADIUS - 3), 1, 0], // Fixed start for player
       ballPosition: [0, 5, 0],    // Fixed start for ball
       impactPosition: null,
       impactColor: '#FFBF00',
@@ -366,4 +378,5 @@ export const useGameStore = create<GameState>((set, get) => ({
     return { cameraMode: modes[nextIdx] };
   }),
   setZoomOffset: (val) => set({ zoomOffset: val }),
+  toggleHud: () => set(state => ({ isHudOpen: !state.isHudOpen })),
 }));

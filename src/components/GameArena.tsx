@@ -1,4 +1,5 @@
 import React, { Suspense, useMemo, useEffect, useRef } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Sky, Stars, Environment, ContactShadows, Html } from '@react-three/drei';
 import { EffectComposer, Bloom, ChromaticAberration, Noise, Vignette } from '@react-three/postprocessing';
@@ -612,10 +613,121 @@ function ZoomSliderHUD() {
   );
 }
 
+// --- Canvas Error Fallback ---
+
+function CanvasFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
+  return (
+    <div style={{
+      position: 'absolute',
+      inset: 0,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'radial-gradient(ellipse at center, rgba(80,0,0,0.4) 0%, rgba(0,0,0,0.95) 70%)',
+      fontFamily: '"Poppins", sans-serif',
+      zIndex: 200,
+    }}>
+      <div style={{ textAlign: 'center', maxWidth: 480, padding: '0 24px' }}>
+        {/* Icon */}
+        <div style={{ fontSize: '3rem', marginBottom: 12 }}>⚠️</div>
+
+        {/* Headline */}
+        <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#ff3b3b', letterSpacing: '0.05em' }}>
+          SYSTEM GLITCH
+        </div>
+        <div style={{ fontSize: '0.9rem', color: '#cbd5e1', marginTop: 8, lineHeight: 1.6 }}>
+          A hazard caused an unexpected engine fault.
+          <br />The 3D context has been safely contained.
+        </div>
+
+        {/* Error detail */}
+        <div style={{
+          marginTop: 16,
+          padding: '10px 14px',
+          background: 'rgba(255,59,59,0.08)',
+          border: '1px solid rgba(255,59,59,0.2)',
+          borderRadius: 8,
+          fontSize: '0.65rem',
+          color: 'rgba(255,180,180,0.7)',
+          textAlign: 'left',
+          fontFamily: 'monospace',
+          wordBreak: 'break-all',
+        }}>
+          {error?.message ?? 'Unknown error'}
+        </div>
+
+        {/* Reset button */}
+        <button
+          onClick={resetErrorBoundary}
+          style={{
+            marginTop: 24,
+            padding: '14px 48px',
+            background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+            border: 'none',
+            borderRadius: 12,
+            color: '#fff',
+            fontFamily: '"Poppins", sans-serif',
+            fontWeight: 700,
+            fontSize: '1rem',
+            cursor: 'pointer',
+            boxShadow: '0 0 30px rgba(239,68,68,0.5)',
+            touchAction: 'manipulation',
+          }}
+        >
+          Restart Arena
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// --- HUD Toggle UI ---
+
+function HUDToggleButton() {
+  const { isHudOpen, toggleHud, gameStarted } = useGameStore();
+
+  if (!gameStarted) return null;
+
+  return (
+    <div
+      onClick={toggleHud}
+      style={{
+        position: 'fixed',
+        top: '64px',
+        right: '16px',
+        padding: '8px 12px',
+        backgroundColor: isHudOpen ? 'rgba(0, 238, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        border: `1px solid ${isHudOpen ? 'rgba(0, 238, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
+        borderRadius: '8px',
+        color: isHudOpen ? '#00eeff' : '#fff',
+        fontFamily: '"Poppins", sans-serif',
+        fontSize: '0.65rem',
+        fontWeight: 700,
+        letterSpacing: '0.1em',
+        cursor: 'pointer',
+        pointerEvents: 'auto',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        zIndex: 1000,
+        transition: 'all 0.3s ease',
+        userSelect: 'none',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+      }}
+    >
+      <span style={{ fontSize: '0.8rem' }}>☰</span>
+      HUD
+    </div>
+  );
+}
+
 // --- Main Arena Container ---
 
 export default function GameArena() {
-  const { gameStarted, startGame, resetGame, victory, gameOver, score, highScore, tier, setPlayerRingColor, triggerEntryPortal, eliminated, advanceToNextTier } = useGameStore();
+  const { gameStarted, startGame, resetGame, victory, gameOver, score, highScore, tier, setPlayerRingColor, triggerEntryPortal, eliminated, advanceToNextTier, isHudOpen } = useGameStore();
   const worldConf = getWorldConfig(tier);
 
   // Portal auto-start logic
@@ -646,20 +758,26 @@ export default function GameArena() {
       {/* Keyboard input bridge — must be outside Canvas */}
       <KeyboardBridge />
 
-      <Canvas
-        style={{ width: '100%', height: '100%', display: 'block' }}
-        shadows
-        dpr={[1, 1.5]}
-        gl={{ antialias: true, alpha: false, stencil: false, depth: true }}
-        camera={{ position: [0, 50, 50], fov: 50 }}
-      >
-        <color attach="background" args={[worldConf.bg]} />
-        <CrucibleScene />
-      </Canvas>
+      <ErrorBoundary FallbackComponent={CanvasFallback}>
+        <Canvas
+          style={{ width: '100%', height: '100%', display: 'block' }}
+          shadows
+          dpr={[1, 1.5]}
+          gl={{ antialias: true, alpha: false, stencil: false, depth: true }}
+          camera={{ position: [0, 50, 50], fov: 50 }}
+        >
+          <color attach="background" args={[worldConf.bg]} />
+          <CrucibleScene />
+        </Canvas>
+      </ErrorBoundary>
 
       <AudioController />
-      <LeaderboardUI />
-      <EliminationFeed />
+      {isHudOpen && (
+        <>
+          <LeaderboardUI />
+          <EliminationFeed />
+        </>
+      )}
 
       {/* ── 2D Game-State Overlays ─────────────────────────────────────────── */}
       {!gameStarted && (
@@ -686,6 +804,7 @@ export default function GameArena() {
       <DashCooldownHUD />
       <ZoomSliderHUD />
       <CameraModeUI />
+      <HUDToggleButton />
       <MobileControls />
     </div>
   );

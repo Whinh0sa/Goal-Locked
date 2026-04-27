@@ -51,7 +51,7 @@ export const CameraManager = () => {
 
     // ── GAMEPLAY CAMERA MODES ────────────────────────────────────────────
     const stateStore = useGameStore.getState();
-    const { ballPosition, currentRadius, cameraMode, eliminated } = stateStore;
+    const { ballPosition, currentRadius, cameraMode, eliminated, zoomOffset } = stateStore;
     const isPlayerDead = eliminated[0];
     const livePlayerPos = stateStore.playerPosition;
     const isPortrait = window.innerHeight > window.innerWidth;
@@ -60,14 +60,30 @@ export const CameraManager = () => {
     let targetLookAt = new THREE.Vector3();
     let targetFov = FOV_ACTION;
 
+    // 1. Global Midpoint Tracking
+    let anchorX = 0;
+    let anchorZ = 0;
+    if (!isPlayerDead) {
+      anchorX = (livePlayerPos[0] + ballPosition[0]) / 2;
+      anchorZ = (livePlayerPos[2] + ballPosition[2]) / 2;
+    } else {
+      anchorX = ballPosition[0];
+      anchorZ = ballPosition[2];
+    }
+
     if (cameraMode === 'TACTICAL') {
       // High-altitude top-down overview
-      const height = isPortrait ? 90 : 70;
-      targetPosition.set(0, height, 0.01); // Small Z offset to avoid gimbal lock/direction issues
-      targetLookAt.set(0, 0, 0);
+      const height = 75 + zoomOffset; // Apply Zoom globally
+      // Fixed offset to avoid gimbal lock, looking slightly South
+      targetPosition.set(anchorX, height, anchorZ + 0.01);
+      targetLookAt.set(anchorX, 0, anchorZ);
+      // Force "North" to be "Up" on the screen to prevent compass flip
+      pCam.up.set(0, 0, -1);
       targetFov = isPortrait ? 60 : 50;
     } 
     else if (cameraMode === 'ORBIT') {
+      pCam.up.set(0, 1, 0); // Restore normal up vector
+
       // Wider trailing "Action Cam" or rotating spectator view
       const orbitTarget = isPlayerDead ? ballPosition : livePlayerPos;
       orbitAngle.current += delta * 0.2;
@@ -82,20 +98,9 @@ export const CameraManager = () => {
       targetFov = 40;
     }
     else {
+      pCam.up.set(0, 1, 0); // Restore normal up vector
+
       // DYNAMIC: Tracks midpoint between Player and Ball
-      let anchorX = 0;
-      let anchorZ = 0;
-
-      if (!isPlayerDead) {
-        anchorX = (livePlayerPos[0] + ballPosition[0]) / 2;
-        anchorZ = (livePlayerPos[2] + ballPosition[2]) / 2;
-      } else {
-        anchorX = ballPosition[0];
-        anchorZ = ballPosition[2];
-      }
-
-      const { zoomOffset } = stateStore;
-
       // Higher base altitude for mobile landscape so goals stay visible
       const isMobileLandscape = !isPortrait && window.innerWidth < 900;
       const baseHeight = isPortrait ? 60 : (isMobileLandscape ? 55 : 45);

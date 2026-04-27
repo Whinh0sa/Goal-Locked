@@ -128,3 +128,35 @@ canvas {
     left: 12px !important;
   }
 }
+
+/* ── Mobile Controls Scaling (@media max-width: 768px) ── */
+@media (max-width: 768px) {
+  .mobile-joystick-zone {
+    width: 153px !important;
+    height: 153px !important;
+    bottom: 24px !important;
+    left: 24px !important;
+  }
+  .mobile-joystick-knob {
+    width: 51px !important;
+    height: 51px !important;
+  }
+  .mobile-actions-zone {
+    padding: 24px !important;
+    gap: 16px !important;
+  }
+  .mobile-pulse-btn {
+    width: 102px !important;
+    height: 102px !important;
+  }
+  .mobile-pulse-btn span {
+    font-size: 19px !important;
+  }
+  .mobile-dash-btn {
+    width: 76px !important;
+    height: 76px !important;
+  }
+  .mobile-dash-btn span {
+    font-size: 14px !important;
+  }
+}

@@ -57,6 +57,7 @@ export const MobileControls = () => {
         >
             {/* Left Zone: Joystick — only show on small screens */}
             <div
+                className="mobile-joystick-zone"
                 style={{
                     position: 'absolute',
                     bottom: 48,
@@ -78,6 +79,7 @@ export const MobileControls = () => {
                 onTouchStart={handleJoystickMove}
             >
                 <motion.div
+                    className="mobile-joystick-knob"
                     animate={{ x: knobPos.x, y: knobPos.y }}
                     transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                     style={{
@@ -98,6 +100,7 @@ export const MobileControls = () => {
 
             {/* Right Zone: Actions */}
             <div
+                className="mobile-actions-zone"
                 style={{
                     position: 'absolute',
                     top: 0,
@@ -119,6 +122,7 @@ export const MobileControls = () => {
                     onTouchStart={() => triggerPulse()}
                 >
                     <motion.div
+                        className="mobile-pulse-btn"
                         whileTap={{ scale: 0.9, backgroundColor: 'rgba(0,255,255,0.4)' }}
                         style={{
                             width: 128,
@@ -142,6 +146,7 @@ export const MobileControls = () => {
                     onTouchStart={() => triggerDash()}
                 >
                     <motion.div
+                        className="mobile-dash-btn"
                         whileTap={{ scale: 0.9, backgroundColor: 'rgba(255,165,0,0.4)' }}
                         style={{
                             width: 96,

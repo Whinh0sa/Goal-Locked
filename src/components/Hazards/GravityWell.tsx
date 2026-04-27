@@ -9,7 +9,6 @@ import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { usePhysics } from '../../hooks/usePhysics';
 import { useGameStore } from '../../store/useGameStore';
-import { ARENA_RADIUS } from '../../constants';
 
 const PULL_FORCE = 400; // Force multiplier
 const EFFECT_RADIUS = 15; // Max distance for attraction
@@ -26,15 +25,18 @@ function randomArenaPos(radius: number): [number, number] {
 
 export const GravityWell = () => {
   const { world } = usePhysics();
-  const gameStarted = useGameStore(s => s.gameStarted);
+  const gameStarted   = useGameStore(s => s.gameStarted);
   const currentRadius = useGameStore(s => s.currentRadius);
 
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // --- State & Refs (previously missing — this was the crash origin) ---
+  const [active, setActive] = useState(false);
+  const [pos, setPos]       = useState<[number, number]>([0, 0]);
+  const meshRef             = useRef<THREE.Mesh>(null!);
+  const intervalRef         = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Random Initial Offset to desynchronize multiple wells
+  // Lifecycle: arm/disarm well based on game state
   useEffect(() => {
     if (!gameStarted) {
-      // Clean up on game reset
       if (intervalRef.current) clearInterval(intervalRef.current);
       intervalRef.current = null;
       setActive(false);
@@ -42,12 +44,11 @@ export const GravityWell = () => {
     }
 
     const initialDelay = 5000 + Math.random() * 10000;
+
     const run = () => {
       setPos(randomArenaPos(useGameStore.getState().currentRadius));
       setActive(true);
-      setTimeout(() => {
-        setActive(false);
-      }, CYCLE_DURATION);
+      setTimeout(() => setActive(false), CYCLE_DURATION);
     };
 
     const timer = setTimeout(() => {
@@ -62,30 +63,27 @@ export const GravityWell = () => {
     };
   }, [gameStarted]);
 
+  useFrame((state) => {
+    // Safety guard: bail if inactive, game stopped, or mesh not yet mounted
+    if (!active || !gameStarted || !meshRef.current) return;
 
-  useFrame((state, delta) => {
-    if (!active || !gameStarted) return;
-
-    // --- OOB Sweeper ---
+    // OOB Sweeper
     const distFromCenter = Math.sqrt(pos[0] * pos[0] + pos[1] * pos[1]);
     if (distFromCenter > currentRadius - 2) {
       setActive(false);
       return;
     }
 
-    // Apply Radial Force
+    // Apply radial attraction force to all dynamic bodies
     const wellPos = new CANNON.Vec3(pos[0], 1, pos[1]);
     for (const body of world.bodies) {
-      // Only pull Ball (mass 1 or 5), Players (id 0), or Bots (id > 0)
       const isDynamic = body.mass > 0 && body.type !== CANNON.Body.STATIC;
       if (isDynamic) {
-        const diff = wellPos.vsub(body.position);
+        const diff     = wellPos.vsub(body.position);
         const distance = diff.length();
-        
         if (distance < EFFECT_RADIUS && distance > 0.5) {
           const forceMag = (1 - distance / EFFECT_RADIUS) * PULL_FORCE * (body.mass / 50 + 1);
-          const force = diff.unit().scale(forceMag);
-          body.applyForce(force, body.position);
+          body.applyForce(diff.unit().scale(forceMag), body.position);
         }
       }
     }
@@ -118,7 +116,7 @@ export const GravityWell = () => {
           />
         </mesh>
       </Float>
-      {/* Attraction Field visualizer / Area effect */}
+      {/* Attraction field visualiser */}
       <mesh rotation-x={-Math.PI / 2} position={[0, -1.45, 0]}>
         <ringGeometry args={[0, 5, 32]} />
         <meshBasicMaterial color="#9400d3" transparent opacity={0.1} />

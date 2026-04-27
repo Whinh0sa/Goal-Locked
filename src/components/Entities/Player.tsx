@@ -43,11 +43,17 @@ export const Player = () => {
     }
 
     if (!bodyRef.current) {
-      const [spawnX, spawnY, spawnZ] = useGameStore.getState().playerPosition;
+      const stateStore = useGameStore.getState();
+      const [spawnX, spawnY, spawnZ] = stateStore.playerPosition;
+      const safeRadius = stateStore.currentRadius * 0.8;
+      
+      const safeX = Math.sign(spawnX) * Math.min(Math.abs(spawnX), safeRadius);
+      const safeZ = Math.sign(spawnZ) * Math.min(Math.abs(spawnZ), safeRadius);
+
       const body = new CANNON.Body({
         mass: 50,
         shape: new CANNON.Sphere(0.8),
-        position: new CANNON.Vec3(spawnX, 15, spawnZ), // Drop from sky
+        position: new CANNON.Vec3(safeX, 15, safeZ), // Drop from sky
         fixedRotation: true,
         linearDamping: 0.4,
       });
@@ -79,9 +85,15 @@ export const Player = () => {
   // Reset Listener
   useEffect(() => {
     if (bodyRef.current && gameStartTime > 0 && !isEliminated) {
-      const spawnX = (Math.random() - 0.5) * 15;
-      const spawnZ = (Math.random() - 0.5) * 15;
+      const stateStore = useGameStore.getState();
+      const safeRadius = stateStore.currentRadius * 0.8;
+
+      let spawnX = (Math.random() - 0.5) * 15;
+      let spawnZ = (Math.random() - 0.5) * 15;
       
+      spawnX = Math.sign(spawnX) * Math.min(Math.abs(spawnX), safeRadius);
+      spawnZ = Math.sign(spawnZ) * Math.min(Math.abs(spawnZ), safeRadius);
+
       bodyRef.current.position.set(spawnX, 15, spawnZ);
       bodyRef.current.velocity.set(0, 0, 0);
       bodyRef.current.angularVelocity.set(0, 0, 0);
