@@ -45,6 +45,7 @@ interface GameState {
   botBuffs: Record<number, { speedUntil: number, juggernautUntil: number, ghostUntil: number }>;
   activePowerUp: { position: [number, number, number], type: string } | null;
   cameraMode: 'DYNAMIC' | 'TACTICAL' | 'ORBIT';
+  zoomOffset: number;
 
   // Actions
   startGame: () => void;
@@ -68,6 +69,7 @@ interface GameState {
   setActivePowerUp: (powerUp: { position: [number, number, number], type: string } | null) => void;
   triggerPowerUp: (type: 'speed' | 'ghost' | 'freeze' | 'juggernaut', entityId: number) => void;
   cycleCameraMode: () => void;
+  setZoomOffset: (val: number) => void;
 }
 
 const GOAL_COUNT = 8;
@@ -95,6 +97,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   botBuffs: {},
   activePowerUp: null,
   cameraMode: 'DYNAMIC',
+  zoomOffset: 0,
   lastGoal: null,
   victory: false,
   gameOver: false,
@@ -361,5 +364,6 @@ export const useGameStore = create<GameState>((set, get) => ({
     const modes: ('DYNAMIC' | 'TACTICAL' | 'ORBIT')[] = ['DYNAMIC', 'TACTICAL', 'ORBIT'];
     const nextIdx = (modes.indexOf(state.cameraMode) + 1) % modes.length;
     return { cameraMode: modes[nextIdx] };
-  })
+  }),
+  setZoomOffset: (val) => set({ zoomOffset: val }),
 }));

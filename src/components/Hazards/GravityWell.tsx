@@ -29,35 +29,39 @@ export const GravityWell = () => {
   const gameStarted = useGameStore(s => s.gameStarted);
   const currentRadius = useGameStore(s => s.currentRadius);
 
-  const [active, setActive] = useState(false);
-  const [pos, setPos] = useState<[number, number]>([0, 0]);
-  const meshRef = useRef<THREE.Mesh>(null!);
-  
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   // Random Initial Offset to desynchronize multiple wells
   useEffect(() => {
-    if (!gameStarted) return;
-    
+    if (!gameStarted) {
+      // Clean up on game reset
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      intervalRef.current = null;
+      setActive(false);
+      return;
+    }
+
     const initialDelay = 5000 + Math.random() * 10000;
-    const startCycle = () => {
-      const run = () => {
-        setPos(randomArenaPos(useGameStore.getState().currentRadius));
-        setActive(true);
-        setTimeout(() => {
-          setActive(false);
-        }, CYCLE_DURATION);
-      };
-      
-      run();
-      return setInterval(run, CYCLE_DURATION + RESPAWN_DELAY);
+    const run = () => {
+      setPos(randomArenaPos(useGameStore.getState().currentRadius));
+      setActive(true);
+      setTimeout(() => {
+        setActive(false);
+      }, CYCLE_DURATION);
     };
 
     const timer = setTimeout(() => {
-      const interval = startCycle();
-      return () => clearInterval(interval);
+      run();
+      intervalRef.current = setInterval(run, CYCLE_DURATION + RESPAWN_DELAY);
     }, initialDelay);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    };
   }, [gameStarted]);
+
 
   useFrame((state, delta) => {
     if (!active || !gameStarted) return;

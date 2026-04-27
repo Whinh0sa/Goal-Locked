@@ -94,11 +94,15 @@ export const CameraManager = () => {
         anchorZ = ballPosition[2];
       }
 
-      // Mobile scaling: pull back further on portrait
-      const zOffset = isPortrait ? 65 : 42;
-      const yOffset = isPortrait ? 55 : 45;
+      const { zoomOffset } = stateStore;
 
-      targetPosition.set(anchorX, yOffset, anchorZ + zOffset);
+      // Higher base altitude for mobile landscape so goals stay visible
+      const isMobileLandscape = !isPortrait && window.innerWidth < 900;
+      const baseHeight = isPortrait ? 60 : (isMobileLandscape ? 55 : 45);
+      const targetYVal = baseHeight + zoomOffset;
+      const targetZVal = anchorZ + (isPortrait ? 60 : 40) + (zoomOffset * 0.8);
+
+      targetPosition.set(anchorX, targetYVal, targetZVal);
       targetLookAt.set(anchorX, 0, anchorZ);
       targetFov = isPortrait ? 40 : 35;
     }

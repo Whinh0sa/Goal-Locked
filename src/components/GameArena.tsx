@@ -1,6 +1,6 @@
 import React, { Suspense, useMemo, useEffect, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Sky, Stars, Environment, ContactShadows, Html, Float, Text } from '@react-three/drei';
+import { Sky, Stars, Environment, ContactShadows, Html } from '@react-three/drei';
 import { EffectComposer, Bloom, ChromaticAberration, Noise, Vignette } from '@react-three/postprocessing';
 import { PhysicsProvider } from '../hooks/usePhysics';
 import { useGameStore } from '../store/useGameStore';
@@ -48,190 +48,171 @@ const getWorldConfig = (tier: number) => {
 
 // --- Diegetic 3D HUD Components ---
 
-function DiegeticStartUI({ onStart, tier }: { onStart: () => void, tier: number }) {
+// ─── Overlay Styles (shared) ────────────────────────────────────────────────
+const OVERLAY_BASE: React.CSSProperties = {
+    position: 'absolute',
+    inset: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontFamily: '"Poppins", sans-serif',
+    zIndex: 50,
+    // Let touches through to the canvas when this overlay is transparent
+    pointerEvents: 'none',
+};
+
+function StartScreen({ onStart, tier }: { onStart: () => void; tier: number }) {
     const stats = Stats.load();
     return (
-        <Html fullscreen zIndexRange={[100, 0]} pointerEvents="none">
-            <div style={{
-                position: 'absolute', inset: 0,
-                display: 'flex', flexDirection: 'column',
-                alignItems: 'center', justifyContent: 'center',
-                background: 'radial-gradient(ellipse at center, rgba(0,100,255,0.12) 0%, transparent 70%)',
-                fontFamily: '"Poppins", sans-serif',
-            }}>
-                <div style={{ textAlign: 'center' }}>
-                    {tier > 1 && (
-                        <div style={{
-                            display: 'inline-block',
-                            background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
-                            color: '#000',
-                            fontWeight: 900,
-                            fontSize: '0.75rem',
-                            letterSpacing: '0.15em',
-                            padding: '4px 16px',
-                            borderRadius: 999,
-                            marginBottom: 12,
-                            boxShadow: '0 0 20px rgba(251,191,36,0.6)',
-                        }}>⚔️ TIER {tier} — ESCALATED DIFFICULTY</div>
-                    )}
-
-                    <div style={{ 
-                        fontSize: '5rem', fontWeight: 900, color: '#fff', lineHeight: 1, 
-                        textShadow: '0 0 60px rgba(100,180,255,0.6)',
-                        pointerEvents: 'auto'
-                    }}>
-                        ⚽ Goal-Locked
-                    </div>
-                    <div style={{ fontSize: '1.1rem', color: '#7dd3fc', marginTop: 12, fontWeight: 600, letterSpacing: '0.1em' }}>
-                        Football Battle Royale
-                    </div>
-
+        <div style={{
+            ...OVERLAY_BASE,
+            background: 'radial-gradient(ellipse at center, rgba(0,100,255,0.15) 0%, rgba(0,0,0,0.75) 60%)',
+        }}>
+            <div style={{ textAlign: 'center', pointerEvents: 'auto' }}>
+                {tier > 1 && (
                     <div style={{
-                        display: 'flex', gap: 24, justifyContent: 'center',
-                        marginTop: 24,
-                    }}>
-                        {[
-                            { label: 'BEST SCORE', value: stats.highestScore.toString() },
-                            { label: 'BOTS DELETED', value: stats.totalBotsDeleted.toString() },
-                            { label: 'BEST TIER', value: `T${stats.highestTier}` },
-                        ].map(s => (
-                            <div key={s.label} style={{
-                                background: 'rgba(255,255,255,0.05)',
-                                border: '1px solid rgba(255,255,255,0.1)',
-                                borderRadius: 10,
-                                padding: '10px 20px',
-                                minWidth: 90,
-                                pointerEvents: 'auto'
-                            }}>
-                                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>{s.value}</div>
-                                <div style={{ fontSize: '0.55rem', color: 'rgba(180,220,255,0.5)', letterSpacing: '0.12em', marginTop: 2 }}>{s.label}</div>
-                            </div>
-                        ))}
-                    </div>
-
-                    <button
-                        onClick={onStart}
-                        style={{
-                            marginTop: 28,
-                            padding: '16px 56px',
-                            background: tier > 1
-                                ? 'linear-gradient(135deg, #f59e0b, #ef4444)'
-                                : 'linear-gradient(135deg, #3b82f6, #06b6d4)',
-                            border: 'none',
-                            borderRadius: 12,
-                            color: '#fff',
-                            fontFamily: '"Poppins", sans-serif',
-                            fontWeight: 700,
-                            fontSize: '1.1rem',
-                            letterSpacing: '0.05em',
-                            cursor: 'pointer',
-                            pointerEvents: 'auto',
-                            boxShadow: tier > 1
-                                ? '0 0 40px rgba(245,158,11,0.5)'
-                                : '0 0 40px rgba(59,130,246,0.5)',
-                            transition: 'transform 0.1s, box-shadow 0.2s',
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; }}
-                        onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-                    >
-                        {tier > 1 ? `⚔️ Enter Tier ${tier}` : 'Play Now'}
-                    </button>
-                    <div style={{ marginTop: 20, fontSize: '0.8rem', color: 'rgba(180,220,255,0.5)', letterSpacing: '0.08em' }}>
-                        WASD to move &nbsp;·&nbsp; Space to shoot &nbsp;·&nbsp; Shift to DASH
-                    </div>
+                        display: 'inline-block',
+                        background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+                        color: '#000',
+                        fontWeight: 900,
+                        fontSize: '0.75rem',
+                        letterSpacing: '0.15em',
+                        padding: '4px 16px',
+                        borderRadius: 999,
+                        marginBottom: 12,
+                        boxShadow: '0 0 20px rgba(251,191,36,0.6)',
+                    }}>⚔️ TIER {tier} — ESCALATED DIFFICULTY</div>
+                )}
+                <div style={{ fontSize: '5rem', fontWeight: 900, color: '#fff', lineHeight: 1, textShadow: '0 0 60px rgba(100,180,255,0.6)' }}>
+                    ⚽ Goal-Locked
+                </div>
+                <div style={{ fontSize: '1.1rem', color: '#7dd3fc', marginTop: 12, fontWeight: 600, letterSpacing: '0.1em' }}>
+                    Football Battle Royale
+                </div>
+                <div style={{ display: 'flex', gap: 24, justifyContent: 'center', marginTop: 24 }}>
+                    {[
+                        { label: 'BEST SCORE', value: stats.highestScore.toString() },
+                        { label: 'BOTS DELETED', value: stats.totalBotsDeleted.toString() },
+                        { label: 'BEST TIER', value: `T${stats.highestTier}` },
+                    ].map(s => (
+                        <div key={s.label} style={{
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: 10,
+                            padding: '10px 20px',
+                            minWidth: 90,
+                        }}>
+                            <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>{s.value}</div>
+                            <div style={{ fontSize: '0.55rem', color: 'rgba(180,220,255,0.5)', letterSpacing: '0.12em', marginTop: 2 }}>{s.label}</div>
+                        </div>
+                    ))}
+                </div>
+                <button
+                    onClick={onStart}
+                    style={{
+                        marginTop: 28,
+                        padding: '16px 56px',
+                        background: tier > 1
+                            ? 'linear-gradient(135deg, #f59e0b, #ef4444)'
+                            : 'linear-gradient(135deg, #3b82f6, #06b6d4)',
+                        border: 'none',
+                        borderRadius: 12,
+                        color: '#fff',
+                        fontFamily: '"Poppins", sans-serif',
+                        fontWeight: 700,
+                        fontSize: '1.1rem',
+                        letterSpacing: '0.05em',
+                        cursor: 'pointer',
+                        boxShadow: tier > 1
+                            ? '0 0 40px rgba(245,158,11,0.5)'
+                            : '0 0 40px rgba(59,130,246,0.5)',
+                        transition: 'transform 0.1s, box-shadow 0.2s',
+                        // Explicit touch action for mobile
+                        touchAction: 'manipulation',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                >
+                    {tier > 1 ? `⚔️ Enter Tier ${tier}` : 'Play Now'}
+                </button>
+                <div style={{ marginTop: 20, fontSize: '0.8rem', color: 'rgba(180,220,255,0.5)', letterSpacing: '0.08em' }}>
+                    WASD to move &nbsp;·&nbsp; Space to shoot &nbsp;·&nbsp; Shift to DASH
                 </div>
             </div>
-        </Html>
+        </div>
     );
 }
 
-function DiegeticVictoryUI({ onReset, score }: { onReset: () => void, score: number }) {
+function VictoryScreen({ onReset, score }: { onReset: () => void; score: number }) {
     return (
-        <Html fullscreen zIndexRange={[100, 0]} pointerEvents="none">
-            <div style={{
-                position: 'absolute', inset: 0,
-                display: 'flex', flexDirection: 'column',
-                alignItems: 'center', justifyContent: 'center',
-                background: 'radial-gradient(ellipse at center, rgba(0,100,255,0.12) 0%, transparent 70%)',
-                fontFamily: '"Poppins", sans-serif',
-            }}>
-                <div style={{ textAlign: 'center' }}>
-                    <div style={{ 
-                        fontSize: '3.5rem', fontWeight: 900, color: '#fbbf24', 
-                        textShadow: '0 0 60px rgba(251,191,36,0.8)',
-                        pointerEvents: 'auto'
-                    }}>
-                        🏆 You Win!
-                    </div>
-                    <div style={{ color: '#cbd5e1', fontSize: '1.2rem', marginTop: 8 }}>Tier Upgrade: Entrance Level Cleared</div>
-                    <div style={{ color: '#fbbf24', fontSize: '1.8rem', fontWeight: 900, marginTop: 12 }}>SCORE: {score}</div>
-                    <button
-                        onClick={onReset}
-                        style={{
-                            marginTop: 32,
-                            padding: '16px 56px',
-                            background: 'linear-gradient(135deg, #3b82f6, #06b6d4)',
-                            border: 'none',
-                            borderRadius: 12,
-                            color: '#fff',
-                            fontFamily: '"Poppins", sans-serif',
-                            fontWeight: 700,
-                            fontSize: '1.1rem',
-                            cursor: 'pointer',
-                            pointerEvents: 'auto',
-                            boxShadow: '0 0 40px rgba(59,130,246,0.5)',
-                        }}
-                    >
-                        Play Again
-                    </button>
+        <div style={{
+            ...OVERLAY_BASE,
+            background: 'radial-gradient(ellipse at center, rgba(0,100,255,0.15) 0%, rgba(0,0,0,0.80) 60%)',
+        }}>
+            <div style={{ textAlign: 'center', pointerEvents: 'auto' }}>
+                <div style={{ fontSize: '3.5rem', fontWeight: 900, color: '#fbbf24', textShadow: '0 0 60px rgba(251,191,36,0.8)' }}>
+                    🏆 You Win!
                 </div>
+                <div style={{ color: '#cbd5e1', fontSize: '1.2rem', marginTop: 8 }}>Tier Upgrade: Entrance Level Cleared</div>
+                <div style={{ color: '#fbbf24', fontSize: '1.8rem', fontWeight: 900, marginTop: 12 }}>SCORE: {score}</div>
+                <button
+                    onClick={onReset}
+                    style={{
+                        marginTop: 32,
+                        padding: '16px 56px',
+                        background: 'linear-gradient(135deg, #3b82f6, #06b6d4)',
+                        border: 'none',
+                        borderRadius: 12,
+                        color: '#fff',
+                        fontFamily: '"Poppins", sans-serif',
+                        fontWeight: 700,
+                        fontSize: '1.1rem',
+                        cursor: 'pointer',
+                        boxShadow: '0 0 40px rgba(59,130,246,0.5)',
+                        touchAction: 'manipulation',
+                    }}
+                >
+                    Play Again
+                </button>
             </div>
-        </Html>
+        </div>
     );
 }
 
-function DiegeticDefeatUI({ onReset, score }: { onReset: () => void, score: number }) {
+function DefeatScreen({ onReset, score }: { onReset: () => void; score: number }) {
     return (
-        <Html fullscreen zIndexRange={[100, 0]} pointerEvents="none">
-            <div style={{
-                position: 'absolute', inset: 0,
-                display: 'flex', flexDirection: 'column',
-                alignItems: 'center', justifyContent: 'center',
-                background: 'radial-gradient(ellipse at center, rgba(255,0,0,0.1) 0%, transparent 70%)',
-                fontFamily: '"Poppins", sans-serif',
-            }}>
-                <div style={{ textAlign: 'center' }}>
-                    <div style={{ 
-                        fontSize: '3rem', fontWeight: 900, color: '#ff3b3b', 
-                        textShadow: '0 0 40px rgba(255,59,59,0.5)',
-                        pointerEvents: 'auto'
-                    }}>
-                        ELIMINATED
-                    </div>
-                    <div style={{ color: '#cbd5e1', fontSize: '1rem', marginTop: 8 }}>Tier Progress Halted</div>
-                    <div style={{ color: '#ff3b3b', fontSize: '1.8rem', fontWeight: 900, marginTop: 12 }}>SCORE: {score}</div>
-                    <button
-                        onClick={onReset}
-                        style={{
-                            marginTop: 32,
-                            padding: '16px 56px',
-                            background: 'rgba(255, 255, 255, 0.1)',
-                            border: '1px solid rgba(255, 255, 255, 0.2)',
-                            borderRadius: 12,
-                            color: '#fff',
-                            fontFamily: '"Poppins", sans-serif',
-                            fontWeight: 700,
-                            fontSize: '1.1rem',
-                            cursor: 'pointer',
-                            pointerEvents: 'auto',
-                            backdropFilter: 'blur(10px)',
-                        }}
-                    >
-                        Try Again
-                    </button>
+        <div style={{
+            ...OVERLAY_BASE,
+            background: 'radial-gradient(ellipse at center, rgba(255,0,0,0.12) 0%, rgba(0,0,0,0.82) 60%)',
+        }}>
+            <div style={{ textAlign: 'center', pointerEvents: 'auto' }}>
+                <div style={{ fontSize: '3rem', fontWeight: 900, color: '#ff3b3b', textShadow: '0 0 40px rgba(255,59,59,0.5)' }}>
+                    ELIMINATED
                 </div>
+                <div style={{ color: '#cbd5e1', fontSize: '1rem', marginTop: 8 }}>Tier Progress Halted</div>
+                <div style={{ color: '#ff3b3b', fontSize: '1.8rem', fontWeight: 900, marginTop: 12 }}>SCORE: {score}</div>
+                <button
+                    onClick={onReset}
+                    style={{
+                        marginTop: 32,
+                        padding: '16px 56px',
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        borderRadius: 12,
+                        color: '#fff',
+                        fontFamily: '"Poppins", sans-serif',
+                        fontWeight: 700,
+                        fontSize: '1.1rem',
+                        cursor: 'pointer',
+                        backdropFilter: 'blur(10px)',
+                        touchAction: 'manipulation',
+                    }}
+                >
+                    Try Again
+                </button>
             </div>
-        </Html>
+        </div>
     );
 }
 
@@ -344,15 +325,7 @@ function CrucibleScene() {
                 <PowerUp />
                 <ConfettiExplosion />
 
-                {!gameStarted && <DiegeticStartUI tier={tier} onStart={() => {
-                    AudioManager.startAmbient();
-                    startGame();
-                }} />}
-                {gameOver && victory && <DiegeticVictoryUI score={score} onReset={advanceToNextTier} />}
-                {(gameOver || eliminated[0]) && !victory && <DiegeticDefeatUI score={score} onReset={() => {
-                    AudioManager.startAmbient();
-                    resetGame();
-                }} />}
+                {/* All game-state menus have been moved outside the Canvas — see GameArena() below */}
 
                 {botGoalPositions.map((pos, i) => (
                     i !== 0 && <Bot key={i} id={i} goalPos={pos} />
@@ -397,11 +370,11 @@ function KeyboardBridge() {
       // Normalise diagonal
       const len = Math.sqrt(x * x + z * z);
       if (len > 0) { x /= len; z /= len; }
-      console.log('Update direction:', [x, z]);
       useGameStore.getState().setMoveDirection([x, z]);
     };
 
     const onDown = (e: KeyboardEvent) => {
+      if (!useGameStore.getState().gameStarted) return; // Bug 5 fix: ignore pre-game input
       const key = e.key.toLowerCase();
       if (['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(key)) {
         e.preventDefault();
@@ -419,6 +392,7 @@ function KeyboardBridge() {
     };
 
     const onUp = (e: KeyboardEvent) => {
+      if (!useGameStore.getState().gameStarted) return; // Bug 5 fix: ignore pre-game input
       const key = e.key.toLowerCase();
       keys[key] = false;
       updateDirection(); // recalculate — axis resets to 0 on key release
@@ -558,6 +532,86 @@ function CameraModeUI() {
   );
 }
 
+// --- Zoom Slider HUD ---
+
+function ZoomSliderHUD() {
+  const gameStarted   = useGameStore(s => s.gameStarted);
+  const zoomOffset    = useGameStore(s => s.zoomOffset);
+  const setZoomOffset = useGameStore(s => s.setZoomOffset);
+
+  if (!gameStarted) return null;
+
+  return (
+    <div style={{
+      position: 'fixed',
+      left: 16,
+      top: '50%',
+      transform: 'translateY(-50%)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 8,
+      zIndex: 100,
+      pointerEvents: 'auto',
+    }}>
+      {/* Card wrapper */}
+      <div style={{
+        background: 'rgba(255,255,255,0.08)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        border: '1px solid rgba(255,255,255,0.15)',
+        borderRadius: 16,
+        padding: '14px 10px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 8,
+        boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+      }}>
+        {/* Label */}
+        <span style={{
+          fontSize: '0.5rem',
+          fontFamily: '"Poppins", sans-serif',
+          fontWeight: 700,
+          letterSpacing: '0.12em',
+          color: 'rgba(0,238,255,0.7)',
+          textTransform: 'uppercase',
+          writingMode: 'vertical-rl',
+          transform: 'rotate(180deg)',
+        }}>ZOOM</span>
+
+        {/* Vertical slider */}
+        <input
+          type="range"
+          min={0}
+          max={50}
+          step={1}
+          value={zoomOffset}
+          onChange={e => setZoomOffset(Number(e.target.value))}
+          style={{
+            writingMode: 'vertical-lr',
+            direction: 'rtl',
+            WebkitAppearance: 'slider-vertical',
+            width: 28,
+            height: 110,
+            cursor: 'pointer',
+            accentColor: '#00eeff',
+            background: 'transparent',
+          }}
+        />
+
+        {/* Value readout */}
+        <span style={{
+          fontSize: '0.55rem',
+          fontFamily: '"Poppins", sans-serif',
+          fontWeight: 700,
+          color: 'rgba(255,255,255,0.4)',
+        }}>{zoomOffset.toFixed(0)}</span>
+      </div>
+    </div>
+  );
+}
+
 // --- Main Arena Container ---
 
 export default function GameArena() {
@@ -607,12 +661,30 @@ export default function GameArena() {
       <LeaderboardUI />
       <EliminationFeed />
 
+      {/* ── 2D Game-State Overlays ─────────────────────────────────────────── */}
+      {!gameStarted && (
+        <StartScreen tier={tier} onStart={() => {
+          AudioManager.startAmbient();
+          startGame();
+        }} />
+      )}
+      {gameOver && victory && (
+        <VictoryScreen score={score} onReset={advanceToNextTier} />
+      )}
+      {(gameOver || eliminated[0]) && !victory && (
+        <DefeatScreen score={score} onReset={() => {
+          AudioManager.startAmbient();
+          resetGame();
+        }} />
+      )}
+
       <div className="portrait-overlay">
         <div style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '20px' }}>⚠️</div>
         <div style={{ fontSize: '1.8rem', fontWeight: 900 }}>LANDSCAPE MODE REQUIRED</div>
         <div style={{ fontSize: '1rem', marginTop: '10px', color: '#cbd5e1' }}>Please rotate your device to play the game.</div>
       </div>
       <DashCooldownHUD />
+      <ZoomSliderHUD />
       <CameraModeUI />
       <MobileControls />
     </div>

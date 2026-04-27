@@ -7,6 +7,7 @@ import { useFrame } from '@react-three/fiber';
 import { Float } from '@react-three/drei';
 import * as THREE from 'three';
 import { useGameStore } from '../../store/useGameStore';
+import { usePhysics } from '../../hooks/usePhysics';
 import { ARENA_RADIUS } from '../../constants';
 
 const PICKUP_RADIUS   = 2.2;     // world-units — how close to trigger pickup
@@ -43,7 +44,7 @@ export const PowerUp = () => {
   const gameStarted    = useGameStore(s => s.gameStarted);
   const triggerPowerUp = useGameStore(s => s.triggerPowerUp);
   const currentRadius  = useGameStore(s => s.currentRadius);
-  const { world }      = useGameStore.getState() as any;
+  const { world }      = usePhysics(); // Bug fix: world from usePhysics, not Zustand
 
   const setActivePowerUp = useGameStore(s => s.setActivePowerUp);
 
@@ -104,7 +105,7 @@ export const PowerUp = () => {
 
     const orbPos = spawnPos;
     const state = useGameStore.getState();
-    const { playerPosition, eliminated, world } = state as any;
+    const { playerPosition, eliminated } = state;
 
     // 1. Check Player
     if (!eliminated[0]) {
@@ -120,9 +121,9 @@ export const PowerUp = () => {
     }
 
     // 2. Check Bots via physics bodies
-    const bodies = world?.bodies || [];
+    const bodies = world.bodies;
     for (const body of bodies) {
-      const userData = body.userData;
+      const userData = (body as any).userData;
       if (userData && userData.id !== undefined && userData.id > 0) {
         // Only check bots that aren't eliminated (implied by body being in world)
         const dx = body.position.x - orbPos.x;

@@ -82,7 +82,7 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
 
   // Cinematic "Attract Mode" formation
   const cinematicPos = useMemo(() => {
-    const angle = (id / 8) * Math.PI * 2;
+    const angle = (id / GOALS) * Math.PI * 2;
     return new CANNON.Vec3(Math.cos(angle) * 10, 1.0, Math.sin(angle) * 10);
   }, [id]);
 

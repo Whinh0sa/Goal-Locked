@@ -40,7 +40,7 @@ export const EntryPortal = () => {
                 depthWrite={false}
             />
         </mesh>
-        <pointLight color={color} intensity={5} distance={15} position={[pos[0], pos[1]+5, pos[2]]} />
+        <pointLight color={color} intensity={5} distance={15} position={[0, 5, 0]} />
     </group>
   );
 };
