@@ -112,57 +112,113 @@ function ZoomSliderHUD() {
 }
 
 export function CommandCenter() {
-  const isHudOpen = useGameStore(s => s.isHudOpen);
+  const { isHudOpen, isPaused, togglePause, toggleHud } = useGameStore();
+  const [isMobile, setIsMobile] = React.useState(typeof window !== 'undefined' && window.innerWidth < 1024);
+
+  React.useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
-  if (!isHudOpen) return null;
-  
+  // Logic Bifurcation
+  const shouldRender = isMobile ? isPaused : isHudOpen;
+  if (!shouldRender) return null;
+
+  const desktopStyle: React.CSSProperties = {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: '320px',
+    background: 'rgba(11, 11, 11, 0.85)',
+    borderLeft: '2px solid #32CD32',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1rem',
+    padding: '80px 16px 16px 16px',
+    overflowY: 'auto',
+    zIndex: 400,
+    backdropFilter: 'blur(12px)',
+    boxShadow: '-10px 0 50px rgba(50, 205, 50, 0.1)',
+    pointerEvents: 'auto'
+  };
+
+  const mobileStyle: React.CSSProperties = {
+    position: 'fixed',
+    inset: 0,
+    width: '100vw',
+    height: '100vh',
+    backgroundColor: 'rgba(11, 11, 11, 0.95)',
+    zIndex: 9999,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '2rem',
+    padding: '24px',
+    overflowY: 'auto',
+    pointerEvents: 'auto'
+  };
+
   return (
-    <div style={{
-      position: 'absolute',
-      right: 0,
-      top: 0,
-      bottom: 0,
-      width: '320px',
-      background: 'rgba(11, 11, 11, 0.85)',
-      borderLeft: '2px solid #32CD32',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '1rem',
-      padding: '80px 16px 16px 16px',
-      overflowY: 'auto',
-      zIndex: 400,
-      backdropFilter: 'blur(12px)',
-      boxShadow: '-10px 0 50px rgba(50, 205, 50, 0.1)',
-      pointerEvents: 'auto'
-    }}>
+    <div style={isMobile ? mobileStyle : desktopStyle}>
       <h2 style={{
         marginTop: 0,
-        marginBottom: 8,
+        marginBottom: isMobile ? 0 : 8,
         color: '#fff',
         fontFamily: '"Poppins", sans-serif',
-        fontSize: '1rem',
+        fontSize: isMobile ? '2rem' : '1rem',
         textTransform: 'uppercase',
         letterSpacing: '0.1em',
-        borderBottom: '1px solid rgba(255,255,255,0.1)',
-        paddingBottom: 8
+        borderBottom: isMobile ? 'none' : '1px solid rgba(255,255,255,0.1)',
+        paddingBottom: 8,
+        textAlign: isMobile ? 'center' : 'left'
       }}>
-        Command Center
+        {isMobile ? 'PAUSED' : 'Command Center'}
       </h2>
       
-      <div style={{ position: 'relative', width: '100%', minHeight: '150px' }}>
-        {/* We strip 'fixed' positions from these if needed inside their files, 
-            or position them relatively inside this container via CSS classes 
-            if they use fixed positioning. For now we will render them and then 
-            update LeaderboardUI/EliminationFeed if necessary. */}
+      <div style={{ position: 'relative', width: '100%', maxWidth: isMobile ? '400px' : 'none', minHeight: '120px' }}>
         <LeaderboardUI />
       </div>
       
-      <div style={{ position: 'relative', width: '100%', minHeight: '150px' }}>
+      <div style={{ position: 'relative', width: '100%', maxWidth: isMobile ? '400px' : 'none', minHeight: '120px' }}>
         <EliminationFeed />
       </div>
       
-      <CameraModeUI />
-      <ZoomSliderHUD />
+      <div style={{ width: '100%', maxWidth: isMobile ? '400px' : 'none' }}>
+        <CameraModeUI />
+      </div>
+      <div style={{ width: '100%', maxWidth: isMobile ? '400px' : 'none' }}>
+        <ZoomSliderHUD />
+      </div>
+
+      {isMobile && (
+        <button
+          onClick={() => {
+            togglePause();
+            toggleHud();
+          }}
+          style={{
+            marginTop: '1rem',
+            padding: '16px 48px',
+            background: '#32CD32',
+            border: 'none',
+            borderRadius: '12px',
+            color: '#000',
+            fontFamily: '"Poppins", sans-serif',
+            fontWeight: 900,
+            fontSize: '1.2rem',
+            letterSpacing: '0.1em',
+            cursor: 'pointer',
+            boxShadow: '0 0 30px rgba(50, 205, 50, 0.4)',
+            width: '100%',
+            maxWidth: '400px'
+          }}
+        >
+          RESUME GAME
+        </button>
+      )}
     </div>
   );
 }

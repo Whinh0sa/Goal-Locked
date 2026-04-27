@@ -554,9 +554,69 @@ function CanvasFallback({ error, resetErrorBoundary }: { error: Error; resetErro
 }
 
 function HUDToggleButton() {
-  const { isHudOpen, toggleHud, togglePause, gameStarted } = useGameStore();
+  const { isHudOpen, isPaused, toggleHud, togglePause, gameStarted } = useGameStore();
+  const [isMobile, setIsMobile] = React.useState(typeof window !== 'undefined' && window.innerWidth < 1024);
+
+  React.useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   if (!gameStarted) return null;
+
+  // On Mobile, we hide the pause button if we're already paused (the modal takes over)
+  if (isMobile && isPaused) return null;
+
+  const mobileStyle: React.CSSProperties = {
+    position: 'fixed',
+    top: '15px',
+    right: '15px',
+    width: '44px',
+    height: '44px',
+    backgroundColor: 'rgba(50, 205, 50, 0.2)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    border: '1px solid rgba(50, 205, 50, 0.4)',
+    borderRadius: '50%',
+    color: '#32CD32',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '20px',
+    cursor: 'pointer',
+    pointerEvents: 'auto',
+    zIndex: 50,
+    boxShadow: '0 0 15px rgba(50, 205, 50, 0.2)',
+    transition: 'all 0.2s ease',
+    userSelect: 'none',
+  };
+
+  const desktopStyle: React.CSSProperties = {
+    position: 'fixed',
+    top: '24px',
+    right: '24px',
+    padding: '8px 12px',
+    backgroundColor: isHudOpen ? 'rgba(0, 238, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    border: `1px solid ${isHudOpen ? 'rgba(0, 238, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
+    borderRadius: '8px',
+    color: isHudOpen ? '#00eeff' : '#fff',
+    fontFamily: '"Poppins", sans-serif',
+    fontSize: '0.65rem',
+    fontWeight: 700,
+    letterSpacing: '0.1em',
+    cursor: 'pointer',
+    pointerEvents: 'auto',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    zIndex: 1000,
+    transition: 'all 0.3s ease',
+    userSelect: 'none',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+  };
 
   return (
     <div
@@ -564,34 +624,16 @@ function HUDToggleButton() {
         toggleHud();
         togglePause();
       }}
-      style={{
-        position: 'fixed',
-        top: '24px',
-        right: '24px',
-        padding: '8px 12px',
-        backgroundColor: isHudOpen ? 'rgba(0, 238, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-        border: `1px solid ${isHudOpen ? 'rgba(0, 238, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
-        borderRadius: '8px',
-        color: isHudOpen ? '#00eeff' : '#fff',
-        fontFamily: '"Poppins", sans-serif',
-        fontSize: '0.65rem',
-        fontWeight: 700,
-        letterSpacing: '0.1em',
-        cursor: 'pointer',
-        pointerEvents: 'auto',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '6px',
-        zIndex: 1000,
-        transition: 'all 0.3s ease',
-        userSelect: 'none',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-      }}
+      style={isMobile ? mobileStyle : desktopStyle}
     >
-      <span style={{ fontSize: '0.8rem' }}>☰</span>
-      HUD
+      {isMobile ? (
+        <span>⏸</span>
+      ) : (
+        <>
+          <span style={{ fontSize: '0.8rem' }}>☰</span>
+          HUD
+        </>
+      )}
     </div>
   );
 }
