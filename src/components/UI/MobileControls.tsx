@@ -5,11 +5,17 @@ import { useGameStore } from '../../store/useGameStore';
 export const MobileControls = () => {
     const { setMoveDirection, triggerPulse, triggerDash, gameStarted } = useGameStore();
     const [knobPos, setKnobPos] = useState({ x: 0, y: 0 });
+    const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 1024);
 
-    // Render on ALL screens when game is started — no touch detection gate.
-    // This lets desktop mobile-view testing work immediately.
-    // Controls are hidden at > 768px via CSS media query approach (pointer-events still null on desktop).
-    if (!gameStarted) return null;
+    React.useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 1024);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    // Only render on mobile/tablet — keyboard controls are used on desktop
+    if (!gameStarted || !isMobile) return null;
+
 
     const handleJoystickMove = (e: React.TouchEvent | React.MouseEvent) => {
         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();

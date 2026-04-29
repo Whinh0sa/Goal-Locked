@@ -19,6 +19,7 @@ import { Trophy, RefreshCw, AlertTriangle } from 'lucide-react';
 import * as THREE from 'three';
 import { MobileControls } from './UI/MobileControls';
 import { FadingText } from './UI/FadingText';
+import { EliminationFeed } from './UI/EliminationFeed';
 import { GOALS, ARENA_RADIUS } from '../constants';
 import { AudioController } from './UI/AudioController';
 import { CommandCenter } from './UI/CommandCenter';
@@ -332,7 +333,10 @@ function CrucibleScene() {
                         );
                     });
                 })()}
-                <PowerUp />
+                {/* Multi-drop Power-Ups: 1 at T1, 2 at T3, 3 at T5+ */}
+                {Array.from({ length: Math.min(1 + Math.floor(tier / 2), 3) }).map((_, i) => (
+                  <PowerUp key={`powerup-${i}`} />
+                ))}
                 <ConfettiExplosion />
 
                 {/* All game-state menus have been moved outside the Canvas — see GameArena() below */}
@@ -566,12 +570,26 @@ function CanvasFallback({ error, resetErrorBoundary }: { error: Error; resetErro
 function HUDToggleButton() {
   const { isHudOpen, isPaused, toggleHud, togglePause, gameStarted } = useGameStore();
   const [isMobile, setIsMobile] = React.useState(typeof window !== 'undefined' && window.innerWidth < 1024);
+  const autoCollapseTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   React.useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 1024);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Auto-collapse desktop HUD after 5s of inactivity
+  React.useEffect(() => {
+    if (!isMobile && isHudOpen) {
+      if (autoCollapseTimer.current) clearTimeout(autoCollapseTimer.current);
+      autoCollapseTimer.current = setTimeout(() => {
+        if (useGameStore.getState().isHudOpen) toggleHud();
+      }, 5000);
+    }
+    return () => {
+      if (autoCollapseTimer.current) clearTimeout(autoCollapseTimer.current);
+    };
+  }, [isHudOpen, isMobile, toggleHud]);
 
   if (!gameStarted) return null;
 
@@ -628,12 +646,18 @@ function HUDToggleButton() {
     boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
   };
 
+  const handleClick = () => {
+    if (isMobile) {
+      toggleHud();
+      togglePause();
+    } else {
+      toggleHud();
+    }
+  };
+
   return (
     <div
-      onClick={() => {
-        toggleHud();
-        togglePause();
-      }}
+      onClick={handleClick}
       style={isMobile ? mobileStyle : desktopStyle}
     >
       {isMobile ? (
@@ -648,20 +672,10 @@ function HUDToggleButton() {
   );
 }
 
-// --- Tier Cleared Banner ---
+// --- +1 Life Banner — fires when player presses "Enter Next Tier" ---
 function TierBanner() {
-  const tier = useGameStore(s => s.tier);
-  const [show, setShow] = React.useState(false);
-  const prevTier = React.useRef(tier);
-
-  React.useEffect(() => {
-    if (tier > prevTier.current && tier > 1) {
-      setShow(true);
-      const t = setTimeout(() => setShow(false), 3500);
-      return () => clearTimeout(t);
-    }
-    prevTier.current = tier;
-  }, [tier]);
+  const show = useGameStore(s => s.showLifeBanner);
+  const tier  = useGameStore(s => s.tier);
 
   return (
     <AnimatePresence>
@@ -691,7 +705,7 @@ function TierBanner() {
           <div style={{ fontSize: '28px' }}>🛡️</div>
           <div>
             <div style={{ color: '#14FF00', fontWeight: 900, fontSize: '1.4rem', letterSpacing: '2px', textShadow: '0 0 10px #14FF00', margin: 0, lineHeight: 1 }}>
-              TIER CLEARED
+              TIER {tier} ENTERED
             </div>
             <div style={{ color: '#fff', fontWeight: 700, fontSize: '1rem', letterSpacing: '1px', marginTop: '4px' }}>
               +1 LIFE RESTORED
@@ -754,6 +768,13 @@ export default function GameArena() {
 
       <AudioController />
       <CommandCenter />
+
+      {/* ── Persistent Kill Feed — always visible, top-left ───────────────── */}
+      {gameStarted && (
+        <div className="kill-feed-overlay">
+          <EliminationFeed />
+        </div>
+      )}
 
       {/* ── 2D Game-State Overlays ─────────────────────────────────────────── */}
       {!gameStarted && (

@@ -38,8 +38,11 @@ export const Ball = () => {
 
     world.addBody(body);
     bodyRef.current = body;
+    // Cache reference in store — eliminates per-frame world.bodies.find() scans
+    useGameStore.getState().setBallBodyRef(body);
     return () => {
       if (bodyRef.current) world.removeBody(bodyRef.current);
+      useGameStore.getState().setBallBodyRef(null);
     };
   }, [world]); // Mount once
 

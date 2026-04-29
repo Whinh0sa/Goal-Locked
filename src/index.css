@@ -129,6 +129,29 @@ canvas {
   }
 }
 
+/* ── Persistent Kill Feed Overlay ── */
+.kill-feed-overlay {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 200;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 300px;
+}
+
+@media (max-width: 768px) {
+  .kill-feed-overlay {
+    top: 10px;
+    left: 10px;
+    transform: scale(0.8);
+    transform-origin: top left;
+    max-width: 240px;
+  }
+}
+
 /* ── Mobile Controls Scaling (@media max-width: 768px) ── */
 @media (max-width: 768px) {
   .mobile-joystick-zone {

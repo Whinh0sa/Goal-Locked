@@ -49,6 +49,8 @@ interface GameState {
   zoomOffset: number;
   isHudOpen: boolean;
   isPaused: boolean;
+  ballBodyRef: any; // Cached CANNON.Body reference — avoids per-frame linear scan
+  showLifeBanner: boolean;
 
   // Actions
   startGame: () => void;
@@ -78,6 +80,7 @@ interface GameState {
   setZoomOffset: (val: number) => void;
   toggleHud: () => void;
   togglePause: () => void;
+  setBallBodyRef: (body: any) => void;
 }
 
 const GOAL_COUNT = 8;
@@ -109,6 +112,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   zoomOffset: 0,
   isHudOpen: window.innerWidth >= 768,
   isPaused: false,
+  ballBodyRef: null,
+  showLifeBanner: false,
   lastGoal: null,
   victory: false,
   gameOver: false,
@@ -219,12 +224,6 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (isVictory) {
       const survivalMs = Date.now() - state.gameStartTime;
       Stats.recordVictory(survivalMs, state.tier + 1);
-      
-      // Update max tier
-      if (state.tier + 1 > state.maxTier) {
-        localStorage.setItem('crucible_maxtier', (state.tier + 1).toString());
-        state.maxTier = state.tier + 1;
-      }
     }
 
     // Persistence on game over (Win or Loss)
@@ -242,6 +241,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       gameOver: isVictory || isPlayer || state.eliminated[0],
       score: newScore,
       tier: isVictory ? state.tier + 1 : state.tier,
+      maxTier: isVictory ? Math.max(state.maxTier, state.tier + 1) : state.maxTier,
       eliminationLog: [...state.eliminationLog, newEntry],
       currentRadius: state.currentRadius * 0.9,
       playerKills: newPlayerKills,
@@ -295,8 +295,11 @@ export const useGameStore = create<GameState>((set, get) => ({
       lastStriker: null,
       gameStartTime: Date.now(),
       playerShields: Math.min(state.playerShields + 1, 3),
+      showLifeBanner: true, // Trigger +1 Life banner on button press
       // score, tier, playerKills are INHERITED/PERSISTED
     }));
+    // Auto-dismiss banner after 3 seconds
+    setTimeout(() => set({ showLifeBanner: false }), 3000);
   },
 
   resetPositions: () => set((state) => {
@@ -398,4 +401,5 @@ export const useGameStore = create<GameState>((set, get) => ({
   setZoomOffset: (val) => set({ zoomOffset: val }),
   toggleHud: () => set(state => ({ isHudOpen: !state.isHudOpen })),
   togglePause: () => set(state => ({ isPaused: !state.isPaused })),
+  setBallBodyRef: (body) => set({ ballBodyRef: body }),
 }));

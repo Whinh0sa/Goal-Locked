@@ -1,80 +1,60 @@
-import { useRef, useEffect, useMemo } from 'react';
+import { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Float, Text } from '@react-three/drei';
 import * as THREE from 'three';
-import * as CANNON from 'cannon-es';
-import { usePhysics } from '../../hooks/usePhysics';
 import { useGameStore } from '../../store/useGameStore';
-import { PLAYER_BODY_TAG, ARENA_RADIUS } from '../../constants';
 
 interface ExitPortalProps {
-    angle?: number; // Target angle on the perimeter
+    angle?: number;
     destinationUrl?: string;
 }
+
+const PORTAL_TRIGGER_RADIUS = 2.8; // world units
 
 export const ExitPortal = ({ 
     angle = 0.111, 
     destinationUrl = 'https://vibejam.cc/portal/2026?username=Whinhosa&color=32CD32&ref=goal-locked.vercel.app' 
 }: ExitPortalProps) => {
-    const { world } = usePhysics();
-    const meshRef = useRef<THREE.Mesh>(null!);
     const groupRef = useRef<THREE.Group>(null!);
-    const bodyRef = useRef<CANNON.Body | null>(null);
+    const meshRef  = useRef<THREE.Mesh>(null!);
+    const triggered = useRef(false);
 
-    // Create physics trigger volume (sensor)
-    useEffect(() => {
-        const shape = new CANNON.Box(new CANNON.Vec3(1, 3, 3));
-        const body = new CANNON.Body({
-            mass: 0,
-            isTrigger: true, // sensor only
-            shape,
-        });
+    useFrame((_, delta) => {
+        const state = useGameStore.getState();
+        const radius = state.currentRadius;
 
-        body.addEventListener('collide', (e: any) => {
-            if (e.body.userData?.isPlayer) {
-                console.log('PORTAL TRIGGERED - EXITING TO VIBEVERSE');
-                window.location.href = destinationUrl;
-            }
-        });
+        // Keep portal flush with the shrinking wall
+        const x = Math.cos(angle) * (radius - 0.5);
+        const z = Math.sin(angle) * (radius - 0.5);
 
-        world.addBody(body);
-        bodyRef.current = body;
-
-        return () => {
-            world.removeBody(body);
-            bodyRef.current = null;
-        };
-    }, [world, destinationUrl]);
-
-    // Track boundary radius to stay flush with walls
-    useFrame((state, delta) => {
-        const radius = useGameStore.getState().currentRadius;
-        
-        // Position on perimeter
-        const x = Math.cos(angle) * (radius - 0.2); // Slightly inside the wall
-        const z = Math.sin(angle) * (radius - 0.2);
-        
         if (groupRef.current) {
             groupRef.current.position.set(x, 2.5, z);
             groupRef.current.rotation.y = -angle + Math.PI / 2;
         }
 
-        if (bodyRef.current) {
-            bodyRef.current.position.set(x, 2.5, z);
-            const quat = new CANNON.Quaternion();
-            quat.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), -angle + Math.PI / 2);
-            bodyRef.current.quaternion.copy(quat);
-        }
-
         if (meshRef.current) {
             meshRef.current.rotation.z += delta * 1.5;
+        }
+
+        // Position-based proximity trigger (reliable vs. cannon isTrigger)
+        if (!triggered.current && !state.eliminated[0]) {
+            const [px, py, pz] = state.playerPosition;
+            const dx = px - x;
+            const dz = pz - z;
+            const dist = Math.sqrt(dx * dx + dz * dz);
+
+            if (dist < PORTAL_TRIGGER_RADIUS) {
+                triggered.current = true;
+                console.log('PORTAL TRIGGERED — EXITING TO VIBEVERSE');
+                window.location.href = destinationUrl;
+            }
         }
     });
 
     return (
         <group ref={groupRef}>
             <Float speed={1.5} rotationIntensity={0.2} floatIntensity={0.5}>
-                {/* Torus Gateway - flattened as requested */}
+                {/* Torus Gateway */}
                 <mesh ref={meshRef} scale={[0.1, 1, 1]}>
                     <torusGeometry args={[3, 0.25, 16, 100]} />
                     <meshStandardMaterial 
@@ -87,7 +67,7 @@ export const ExitPortal = ({
                     />
                 </mesh>
 
-                {/* Event Horizon effect */}
+                {/* Event Horizon */}
                 <mesh scale={[1, 1, 0.1]} position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
                     <cylinderGeometry args={[2.9, 2.9, 0.1, 32]} />
                     <meshBasicMaterial color="#00ffff" opacity={0.3} transparent />

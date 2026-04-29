@@ -28,10 +28,7 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
   const lightRef = useRef<THREE.PointLight>(null!);
   const botBuffs = useGameStore(state => state.botBuffs);
 
-  useEffect(() => {
-    const nm = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
-    setBotName(id, `${nm}_${id + 1}`);
-  }, [id, setBotName]);
+  // Bot name is set once in the mount useEffect below
 
   // --- Randomised AI Profile (stable per bot instance) ---
   const profile = useMemo(() => ({
@@ -219,7 +216,8 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
 
       let direction = new THREE.Vector3();
       let speed = BASE_SPEED;
-      const tierMult = 1 + (tier - 1) * 0.2;
+      // Smooth difficulty curve: 70% at Tier 1 → 100% at Tier 4 → hyper at Tier 5+
+      const tierMult = 0.6 + (tier * 0.1);
 
       if (stateRef.current === 'SLAM') {
         direction.subVectors(ballPos, botPos);
@@ -273,8 +271,8 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
       if (botToBallDist < 3.5 && facingTarget && canShoot) {
         stateRef.current = 'SHOOT';
         
-        // Find ball and pulse it
-        const ballBody = world.bodies.find(b => b.mass === 5 && b.shapes[0] instanceof CANNON.Sphere);
+        // Use cached O(1) ball body reference
+        const ballBody = useGameStore.getState().ballBodyRef;
         if (ballBody) {
           const shootDir = new THREE.Vector3().subVectors(targetGoal, ballPos).normalize();
           ballBody.applyImpulse(

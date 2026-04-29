@@ -1,7 +1,6 @@
 import React from 'react';
 import { useGameStore } from '../../store/useGameStore';
 import { LeaderboardUI } from './LeaderboardUI';
-import { EliminationFeed } from './EliminationFeed';
 
 function CameraModeUI() {
   const { cameraMode, cycleCameraMode, gameStarted } = useGameStore();
@@ -154,9 +153,10 @@ export function CommandCenter() {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: '2rem',
-    padding: '24px',
+    justifyContent: 'flex-start',
+    gap: '1rem',
+    padding: '32px 24px 24px',
+    boxSizing: 'border-box',
     overflowY: 'auto',
     pointerEvents: 'auto'
   };
@@ -165,7 +165,7 @@ export function CommandCenter() {
     <div style={isMobile ? mobileStyle : desktopStyle}>
       <h2 style={{
         marginTop: 0,
-        marginBottom: isMobile ? '1.5rem' : 8,
+        marginBottom: isMobile ? '0.75rem' : 8,
         color: '#fff',
         fontFamily: '"Poppins", sans-serif',
         fontSize: isMobile ? '1.8rem' : '1rem',
@@ -181,47 +181,26 @@ export function CommandCenter() {
       
       {isMobile ? (
         <>
-          {/* Bifurcated Content Container */}
-          <div style={{ 
-            display: 'flex', 
-            flexDirection: 'row', 
-            width: '95%', 
-            maxWidth: '900px', 
-            justifyContent: 'center',
-            gap: '2rem',
-            marginBottom: '2rem',
-            alignItems: 'flex-start'
-          }}>
-            {/* LEFT COLUMN: Data */}
-            <div style={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: '0' }}>
-              <div style={{ position: 'relative', width: '100%', minHeight: '120px' }}>
-                <LeaderboardUI />
-              </div>
-              <div style={{ position: 'relative', width: '100%', minHeight: '100px' }}>
-                <EliminationFeed />
-              </div>
-            </div>
-
-            {/* RIGHT COLUMN: Controls */}
-            <div style={{ flex: 0.8, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1.5rem', minWidth: '0' }}>
-              <div style={{ width: '100%' }}>
-                <CameraModeUI />
-              </div>
-              <div style={{ width: '100%' }}>
-                <ZoomSliderHUD />
-              </div>
-            </div>
+          {/* Leaderboard */}
+          <div style={{ position: 'relative', width: '100%', maxWidth: 480 }}>
+            <LeaderboardUI />
           </div>
 
-          {/* Bottom Full-Width Button */}
+          {/* Camera & Zoom Controls */}
+          <div style={{ width: '100%', maxWidth: 480, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <CameraModeUI />
+            <ZoomSliderHUD />
+          </div>
+
+          {/* RESUME GAME button — anchored directly below stats, easy thumb reach */}
           <button
             onClick={() => {
               togglePause();
               toggleHud();
             }}
             style={{
-              width: '80%',
-              maxWidth: '350px',
+              width: '100%',
+              maxWidth: 480,
               padding: '1rem',
               backgroundColor: '#32CD32',
               color: '#0B0B0B',
@@ -233,20 +212,19 @@ export function CommandCenter() {
               fontSize: '1.1rem',
               letterSpacing: '0.1em',
               cursor: 'pointer',
-              boxShadow: '0 0 30px rgba(50, 205, 50, 0.3)',
-              marginTop: 'auto'
+              boxShadow: '0 0 30px rgba(50, 205, 50, 0.4)',
+              marginTop: '2rem',
+              pointerEvents: 'auto',
+              flexShrink: 0,
             }}
           >
-            Resume Game
+            ▶ RESUME GAME
           </button>
         </>
       ) : (
         <>
           <div style={{ position: 'relative', width: '100%', minHeight: '120px' }}>
             <LeaderboardUI />
-          </div>
-          <div style={{ position: 'relative', width: '100%', minHeight: '120px' }}>
-            <EliminationFeed />
           </div>
           <div style={{ width: '100%' }}>
             <CameraModeUI />

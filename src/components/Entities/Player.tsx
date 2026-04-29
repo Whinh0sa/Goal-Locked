@@ -148,9 +148,10 @@ export const Player = () => {
     // ── DASH ──────────────────────────────────────────────────────────
     if (dashCooldownUntil !== prevDashCooldown.current && dashCooldownUntil > Date.now() - 100) {
       prevDashCooldown.current = dashCooldownUntil;
-      const dx = x !== 0 || z !== 0 ? x : 1;
-      const dz = x !== 0 || z !== 0 ? z : 0;
-      bodyRef.current.applyImpulse(new CANNON.Vec3(dx * 400, 0, dz * 400), bodyRef.current.position);
+      // Default to "forward" (-Z) when standing still instead of drifting right
+      const dx = x !== 0 || z !== 0 ? x : 0;
+      const dz = x !== 0 || z !== 0 ? z : -1;
+      bodyRef.current.applyImpulse(new CANNON.Vec3(dx * 800, 0, dz * 800), bodyRef.current.position);
     }
 
     // Publish player position
@@ -158,8 +159,8 @@ export const Player = () => {
     lastPos.current.set(pos.x, pos.y, pos.z);
     updatePlayerPos([pos.x, pos.y, pos.z]);
 
-    // ── BALL SPIN ─────────────────────────────────────────────────────
-    const ballBody = world.bodies.find(b => b.mass === 5 && b.shapes[0] instanceof CANNON.Sphere);
+    // ── BALL SPIN — O(1) cached lookup ────────────────────────────────────
+    const ballBody = useGameStore.getState().ballBodyRef;
     if (ballBody) {
       const dx2 = ballBody.position.x - pos.x;
       const dz2 = ballBody.position.z - pos.z;
@@ -186,9 +187,9 @@ export const Player = () => {
       }
     }
 
-    // ── PULSE ─────────────────────────────────────────────────────────
+    // ── PULSE — O(1) cached lookup ───────────────────────────────────────────
     if (pulseTrigger) {
-      const ballBodyP = world.bodies.find(b => b.mass === 5 && b.shapes[0] instanceof CANNON.Sphere);
+      const ballBodyP = useGameStore.getState().ballBodyRef;
       if (ballBodyP) {
         const dp   = ballBodyP.position.vsub(body.position);
         const dist = dp.length();

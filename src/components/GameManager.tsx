@@ -36,7 +36,8 @@ export const GameManager = () => {
   // We attach the listener once after the physics world is available
   useEffect(() => {
     const handleCollision = (event: any) => {
-      const ballBody = world.bodies.find(b => b.mass === 5 && b.shapes[0] instanceof CANNON.Sphere);
+      // O(1) cached lookup — no linear scan
+      const ballBody = useGameStore.getState().ballBodyRef;
       if (!ballBody) return;
       // Only trigger if the ball is involved in this collision
       const body = event.target as CANNON.Body;
@@ -79,7 +80,8 @@ export const GameManager = () => {
   }, [world, setImpactPosition]);
 
   useFrame(() => {
-    const ballBody = world.bodies.find(b => b.mass === 5 && b.shapes[0] instanceof CANNON.Sphere);
+    // O(1) cached lookup — no linear scan
+    const ballBody = useGameStore.getState().ballBodyRef;
     if (!ballBody) return;
 
     const ballPos = new THREE.Vector3().copy(ballBody.position as any);
