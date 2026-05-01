@@ -337,9 +337,10 @@ function WorldSpaceHUD() {
 // --- Crucible Scene (Inner R3F Context) ---
 
 function CrucibleScene() {
-  const { gameStarted, startGame, victory, gameOver, resetGame, advanceToNextTier, tier, eliminated, score } = useGameStore();
+  const { gameStarted, startGame, victory, gameOver, resetGame, advanceToNextTier, tier, eliminated, score, graphicsMode } = useGameStore();
   const timer = useMemo(() => new THREE.Timer(), []);
   const worldConf = getWorldConfig(tier);
+  const isQuality = graphicsMode === 'QUALITY';
 
   useFrame(() => {
     timer.update();
@@ -378,7 +379,7 @@ function CrucibleScene() {
                     position={[40, 60, 40]} 
                     intensity={1.5} 
                     castShadow 
-                    shadow-mapSize={[2048, 2048]} 
+                    shadow-mapSize={isQuality ? [2048, 2048] : [512, 512]} 
                     shadow-camera-far={200}
                 />
                 <pointLight position={[0, 8, 0]} intensity={1} color="#00eeff" />
@@ -410,8 +411,8 @@ function CrucibleScene() {
                         );
                     });
                 })()}
-                {/* Multi-drop Power-Ups: 1 at T1, 2 at T3, 3 at T5+ */}
-                {Array.from({ length: Math.min(1 + Math.floor(tier / 2), 3) }).map((_, i) => (
+                {/* Multi-drop Power-Ups: Tier scaled saturation */}
+                {Array.from({ length: Math.min(1 + tier, 5) }).map((_, i) => (
                   <PowerUp key={`powerup-${i}`} />
                 ))}
                 <ConfettiExplosion />
@@ -431,17 +432,19 @@ function CrucibleScene() {
                 />
             </PhysicsProvider>
 
-            <EffectComposer multisampling={8}>
-                <Bloom 
-                    luminanceThreshold={1.0} 
-                    mipmapBlur 
-                    intensity={1.5} 
-                    radius={0.4}
-                />
-                <Vignette eskil={false} offset={0.1} darkness={1.1} />
-                <ChromaticAberration offset={new THREE.Vector2(0.002, 0.002)} radialModulation={true} modulationOffset={0.5} />
-                <Noise opacity={0.05} />
-            </EffectComposer>
+            {isQuality && (
+              <EffectComposer multisampling={8}>
+                  <Bloom 
+                      luminanceThreshold={1.0} 
+                      mipmapBlur 
+                      intensity={1.5} 
+                      radius={0.4}
+                  />
+                  <Vignette eskil={false} offset={0.1} darkness={1.1} />
+                  <ChromaticAberration offset={new THREE.Vector2(0.002, 0.002)} radialModulation={true} modulationOffset={0.5} />
+                  <Noise opacity={0.05} />
+              </EffectComposer>
+            )}
         </Suspense>
     </>
   );
@@ -814,6 +817,8 @@ export default function GameArena() {
 
 
 
+  const graphicsMode = useGameStore(s => s.graphicsMode);
+
   return (
     <div
       style={{
@@ -834,7 +839,7 @@ export default function GameArena() {
         <Canvas
           style={{ width: '100%', height: '100%', display: 'block' }}
           shadows
-          dpr={[1, 1.5]}
+          dpr={graphicsMode === 'QUALITY' ? [1, 1.5] : [1, 1]}
           gl={{ antialias: true, alpha: false, stencil: false, depth: true }}
           camera={{ position: [0, 50, 50], fov: 50 }}
         >

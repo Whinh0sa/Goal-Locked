@@ -44,13 +44,14 @@ interface GameState {
   botPositions: [number, number, number][];
   lastStriker: number | null;
   botBuffs: Record<number, { speedUntil: number, juggernautUntil: number, ghostUntil: number }>;
-  activePowerUp: { position: [number, number, number], type: string } | null;
+  activePowerUps: Record<string, { position: [number, number, number], type: string }>;
   cameraMode: 'DYNAMIC' | 'TACTICAL' | 'ORBIT';
   zoomOffset: number;
   isHudOpen: boolean;
   isPaused: boolean;
-  ballBodyRef: any; // Cached CANNON.Body reference — avoids per-frame linear scan
+  ballBodyRef: any; 
   showLifeBanner: boolean;
+  graphicsMode: 'QUALITY' | 'PERFORMANCE';
 
   // Actions
   startGame: () => void;
@@ -74,12 +75,14 @@ interface GameState {
   setLastStriker: (id: number | null) => void;
   advanceToNextTier: () => void;
   resetPositions: () => void;
-  setActivePowerUp: (powerUp: { position: [number, number, number], type: string } | null) => void;
+  registerPowerUp: (id: string, powerUp: { position: [number, number, number], type: string }) => void;
+  unregisterPowerUp: (id: string) => void;
   triggerPowerUp: (type: 'speed' | 'ghost' | 'freeze' | 'juggernaut', entityId: number) => void;
   cycleCameraMode: () => void;
   setZoomOffset: (val: number) => void;
   toggleHud: () => void;
   togglePause: () => void;
+  toggleGraphics: () => void;
   setBallBodyRef: (body: any) => void;
 }
 
@@ -107,13 +110,14 @@ export const useGameStore = create<GameState>((set, get) => ({
   botPositions: new Array(GOAL_COUNT).fill(null).map(() => [0, 10, 0] as [number, number, number]),
   lastStriker: null,
   botBuffs: {},
-  activePowerUp: null,
+  activePowerUps: {},
   cameraMode: 'DYNAMIC',
   zoomOffset: 0,
   isHudOpen: window.innerWidth >= 768,
   isPaused: false,
   ballBodyRef: null,
   showLifeBanner: false,
+  graphicsMode: 'QUALITY',
   lastGoal: null,
   victory: false,
   gameOver: false,
@@ -278,7 +282,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     playerKills: 0,
     lastStriker: null,
     botBuffs: {},
-    activePowerUp: null,
+    activePowerUps: {},
     }));
   },
 
@@ -333,7 +337,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     impactVelocity: vel,
     impactColor: color 
   }),
-  setSpeedMultiplier: (m) => set({ playerSpeedUntil: m > 1 ? Date.now() + 5000 : 0 }),
+  setSpeedMultiplier: (m) => set({ playerSpeedUntil: m > 1 ? Date.now() + 8000 : 0 }),
   triggerDash: () => set(state => {
     const now = Date.now();
     if (now < state.dashCooldownUntil) return state; // still on cooldown
@@ -344,10 +348,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ entryPortalActive: true });
     setTimeout(() => set({ entryPortalActive: false }), 3000); // Effect lasts 3s
   },
-  triggerBotFreeze: () => set({ freezeBotsUntil: Date.now() + 5000 }),
+  triggerBotFreeze: () => set({ freezeBotsUntil: Date.now() + 8000 }),
   triggerEMP: () => set({ empUntil: Date.now() + 10000 }),
   triggerDashCD: () => set({ dashCooldownUntil: Date.now() + 1000 }),
-  triggerGhostBall: () => set({ playerGhostUntil: Date.now() + 5000 }),
+  triggerGhostBall: () => set({ playerGhostUntil: Date.now() + 8000 }),
   triggerFreeze: () => set({ freezeBotsUntil: Date.now() + 3000 }),
   setBotName: (index, name) => set(state => {
     const newNames = [...state.botNames];
@@ -359,7 +363,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   triggerPowerUp: (type, entityId) => set(state => {
     const isPlayer = entityId === 0;
     const now = Date.now();
-    const duration = 5000;
+    const duration = 8000;
 
     if (type === 'speed') {
       if (isPlayer) return { playerSpeedUntil: now + duration };
@@ -392,7 +396,14 @@ export const useGameStore = create<GameState>((set, get) => ({
     return state;
   }),
 
-  setActivePowerUp: (powerUp) => set({ activePowerUp: powerUp }),
+  registerPowerUp: (id, powerUp) => set(state => ({ 
+    activePowerUps: { ...state.activePowerUps, [id]: powerUp } 
+  })),
+  unregisterPowerUp: (id) => set(state => {
+    const next = { ...state.activePowerUps };
+    delete next[id];
+    return { activePowerUps: next };
+  }),
   cycleCameraMode: () => set(state => {
     const modes: ('DYNAMIC' | 'TACTICAL' | 'ORBIT')[] = ['DYNAMIC', 'TACTICAL', 'ORBIT'];
     const nextIdx = (modes.indexOf(state.cameraMode) + 1) % modes.length;
@@ -401,5 +412,6 @@ export const useGameStore = create<GameState>((set, get) => ({
   setZoomOffset: (val) => set({ zoomOffset: val }),
   toggleHud: () => set(state => ({ isHudOpen: !state.isHudOpen })),
   togglePause: () => set(state => ({ isPaused: !state.isPaused })),
+  toggleGraphics: () => set(state => ({ graphicsMode: state.graphicsMode === 'QUALITY' ? 'PERFORMANCE' : 'QUALITY' })),
   setBallBodyRef: (body) => set({ ballBodyRef: body }),
 }));

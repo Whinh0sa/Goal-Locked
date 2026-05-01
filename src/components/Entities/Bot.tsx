@@ -182,16 +182,30 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => 
     if (shouldUpdate) {
       let targetGoal = goalPos2D; // fallback
       const stateStore = useGameStore.getState();
-      const { eliminated, activePowerUp } = stateStore;
+      const { eliminated } = stateStore;
       const playerAlive = !eliminated[0];
 
-      // ── Power-Up Hunting Logic (Heuristic: Near Pup < 12 && Ball Far > 15) ──
+      // ── Power-Up Hunting Logic (AI Intercept Matrix) ──
       let huntingPowerUp = false;
-      if (activePowerUp && botToBallDist > 15) {
-        const pupPos = new THREE.Vector3(activePowerUp.position[0], 0, activePowerUp.position[2]);
-        const distToPup = botPos.distanceTo(pupPos);
-        if (distToPup < 12) {
-          targetGoal = pupPos;
+      const activeOrbs = Object.values(stateStore.activePowerUps);
+      const hasBuff = isSpeedBoosted || isJuggernaut || myBuffs.ghostUntil > now;
+
+      if (activeOrbs.length > 0 && !hasBuff) {
+        let closestOrb = null;
+        let minDistToOrb = Infinity;
+
+        activeOrbs.forEach(orb => {
+          const orbX = orb.position[0];
+          const orbZ = orb.position[2];
+          const d = Math.sqrt((orbX - botPos.x)**2 + (orbZ - botPos.z)**2);
+          if (d < minDistToOrb) {
+            minDistToOrb = d;
+            closestOrb = { x: orbX, z: orbZ };
+          }
+        });
+
+        if (closestOrb && minDistToOrb < 15 && minDistToOrb < botToBallDist) {
+          targetGoal = new THREE.Vector3(closestOrb.x, 0, closestOrb.z);
           huntingPowerUp = true;
         }
       }

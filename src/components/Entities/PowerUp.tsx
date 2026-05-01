@@ -46,10 +46,11 @@ export const PowerUp = () => {
   const gameStarted    = useGameStore(s => s.gameStarted);
   const triggerPowerUp = useGameStore(s => s.triggerPowerUp);
   const currentRadius  = useGameStore(s => s.currentRadius);
-  const { world }      = usePhysics(); // Bug fix: world from usePhysics, not Zustand
+  const { world }      = usePhysics();
+  const registerPowerUp = useGameStore(s => s.registerPowerUp);
+  const unregisterPowerUp = useGameStore(s => s.unregisterPowerUp);
 
-  const setActivePowerUp = useGameStore(s => s.setActivePowerUp);
-
+  const [id]                   = useState(() => `pw-${Math.random().toString(36).substr(2, 9)}`);
   const [visible, setVisible]   = useState(false);
   const [spawnPos, setSpawnPos] = useState(() => randomSpawnPos(ARENA_RADIUS));
   const [type, setType]         = useState<PowerUpType>(() => randomPowerUpType());
@@ -61,7 +62,7 @@ export const PowerUp = () => {
     if (!gameStarted) {
       collected.current = false;
       setVisible(false);
-      setActivePowerUp(null);
+      unregisterPowerUp(id);
       return;
     }
 
@@ -71,14 +72,14 @@ export const PowerUp = () => {
       setSpawnPos(pos);
       setType(t);
       setVisible(true);
-      setActivePowerUp({ position: [pos.x, pos.y, pos.z], type: t });
+      registerPowerUp(id, { position: [pos.x, pos.y, pos.z], type: t });
     }, 5000);
 
     return () => {
       clearTimeout(initialTimer);
-      setActivePowerUp(null);
+      unregisterPowerUp(id);
     };
-  }, [gameStarted, setActivePowerUp]);
+  }, [gameStarted, id, registerPowerUp, unregisterPowerUp]);
 
   useFrame(() => {
     if (!visible || collected.current || !gameStarted) return;
@@ -89,7 +90,7 @@ export const PowerUp = () => {
       // Swallowed by wall! Forced respawn.
       collected.current = true;
       setVisible(false);
-      setActivePowerUp(null);
+      unregisterPowerUp(id);
       
       setTimeout(() => {
         if (useGameStore.getState().gameStarted) {
@@ -99,7 +100,7 @@ export const PowerUp = () => {
           setSpawnPos(nextPos);
           setType(nextType);
           setVisible(true);
-          setActivePowerUp({ position: [nextPos.x, nextPos.y, nextPos.z], type: nextType });
+          registerPowerUp(id, { position: [nextPos.x, nextPos.y, nextPos.z], type: nextType });
         }
       }, 2000); // Shorter retry if swallowed
       return;
@@ -142,7 +143,7 @@ export const PowerUp = () => {
   const handlePickup = (entityId: number) => {
     collected.current = true;
     setVisible(false);
-    setActivePowerUp(null);
+    unregisterPowerUp(id);
 
     const typeKey = type.toLowerCase() as any;
     triggerPowerUp(typeKey, entityId);
@@ -156,7 +157,7 @@ export const PowerUp = () => {
         setSpawnPos(nextPos);
         setType(nextType);
         setVisible(true);
-        setActivePowerUp({ position: [nextPos.x, nextPos.y, nextPos.z], type: nextType });
+        registerPowerUp(id, { position: [nextPos.x, nextPos.y, nextPos.z], type: nextType });
       }
     }, RESPAWN_DELAY);
   };

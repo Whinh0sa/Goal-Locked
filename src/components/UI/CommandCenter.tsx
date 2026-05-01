@@ -111,7 +111,7 @@ function ZoomSliderHUD() {
 }
 
 export function CommandCenter() {
-  const { isHudOpen, isPaused, togglePause, toggleHud, gameStarted } = useGameStore();
+  const { isHudOpen, isPaused, togglePause, toggleHud, gameStarted, graphicsMode, toggleGraphics } = useGameStore();
   const [isMobile, setIsMobile] = React.useState(typeof window !== 'undefined' && window.innerWidth < 1024);
   const [isShort, setIsShort] = React.useState(typeof window !== 'undefined' && window.innerHeight < 550);
 
@@ -156,27 +156,58 @@ export function CommandCenter() {
     zIndex: 9999,
     display: 'flex',
     flexDirection: 'column',
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: isShort ? 'center' : 'flex-start',
-    gap: isShort ? '0.5rem' : '1rem',
-    padding: isShort ? '16px 24px' : '32px 24px 24px',
+    pointerEvents: 'auto',
     boxSizing: 'border-box',
-    overflowY: isShort ? 'hidden' : 'auto',
-    pointerEvents: 'auto'
+    padding: '24px',
   };
+
+  const GraphicsButton = () => (
+    <div
+      onClick={toggleGraphics}
+      style={{
+        padding: '12px 24px',
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        borderRadius: '16px',
+        color: '#fff',
+        fontFamily: '"Poppins", sans-serif',
+        fontSize: '0.75rem',
+        fontWeight: 700,
+        letterSpacing: '0.1em',
+        cursor: 'pointer',
+        pointerEvents: 'auto',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '10px',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        userSelect: 'none',
+        boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+        width: '100%',
+        boxSizing: 'border-box'
+      }}
+    >
+      <span style={{ opacity: 0.5, fontSize: '0.65rem' }}>GRAPHICS:</span>
+      <span style={{ color: graphicsMode === 'QUALITY' ? '#00eeff' : '#32CD32' }}>{graphicsMode}</span>
+    </div>
+  );
 
   return (
     <div style={isMobile ? mobileStyle : desktopStyle}>
       <h2 style={{
         marginTop: 0,
-        marginBottom: isMobile ? (isShort ? '0.25rem' : '0.75rem') : 8,
+        marginBottom: isMobile ? '1.5rem' : 8,
         color: '#fff',
         fontFamily: '"Poppins", sans-serif',
-        fontSize: isMobile ? (isShort ? '1.2rem' : '1.8rem') : '1rem',
+        fontSize: isMobile ? '1.5rem' : '1rem',
         textTransform: 'uppercase',
         letterSpacing: '0.15em',
         borderBottom: isMobile ? 'none' : '1px solid rgba(255,255,255,0.1)',
-        paddingBottom: isShort ? 4 : 8,
+        paddingBottom: 8,
         textAlign: isMobile ? 'center' : 'left',
         width: '100%'
       }}>
@@ -185,15 +216,19 @@ export function CommandCenter() {
       
       {isMobile ? (
         <>
-          {/* Leaderboard */}
-          <div style={{ position: 'relative', width: '100%', maxWidth: isShort ? 400 : 480 }}>
-            <LeaderboardUI />
-          </div>
-
-          {/* Camera & Zoom Controls */}
-          <div style={{ width: '100%', maxWidth: isShort ? 400 : 480, display: 'flex', flexDirection: 'column', gap: isShort ? '0.4rem' : '0.75rem' }}>
-            <CameraModeUI />
-            <ZoomSliderHUD />
+          {/* Bifurcated Row: Stats (Left) and Controls (Right) */}
+          <div style={{ display: 'flex', flexDirection: 'row', width: '90%', gap: '1.5rem', alignItems: 'flex-start' }}>
+            <div style={{ flex: 1.2 }}> 
+               {/* Left: Stats/Score */}
+               <LeaderboardUI />
+            </div>
+            
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.8rem', alignItems: 'flex-end' }}> 
+                {/* Right: Zoom/Camera Toggles */}
+                <CameraModeUI />
+                <GraphicsButton />
+                <ZoomSliderHUD />
+            </div>
           </div>
 
           {/* RESUME GAME button */}
@@ -203,9 +238,8 @@ export function CommandCenter() {
               toggleHud();
             }}
             style={{
-              width: '100%',
-              maxWidth: isShort ? 400 : 480,
-              padding: isShort ? '0.75rem' : '1rem',
+              width: '90%',
+              padding: '1rem',
               backgroundColor: '#32CD32',
               color: '#0B0B0B',
               fontFamily: '"Poppins", sans-serif',
@@ -213,13 +247,12 @@ export function CommandCenter() {
               borderRadius: '12px',
               border: 'none',
               textTransform: 'uppercase',
-              fontSize: isShort ? '0.9rem' : '1.1rem',
+              fontSize: '1.1rem',
               letterSpacing: '0.1em',
               cursor: 'pointer',
               boxShadow: '0 0 30px rgba(50, 205, 50, 0.4)',
-              marginTop: isShort ? '0.5rem' : '2rem',
+              marginTop: '2rem',
               pointerEvents: 'auto',
-              flexShrink: 0,
             }}
           >
             ▶ RESUME GAME
@@ -232,6 +265,9 @@ export function CommandCenter() {
           </div>
           <div style={{ width: '100%' }}>
             <CameraModeUI />
+          </div>
+          <div style={{ width: '100%' }}>
+            <GraphicsButton />
           </div>
           <div style={{ width: '100%' }}>
             <ZoomSliderHUD />
