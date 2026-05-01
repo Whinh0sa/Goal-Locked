@@ -113,9 +113,13 @@ function ZoomSliderHUD() {
 export function CommandCenter() {
   const { isHudOpen, isPaused, togglePause, toggleHud, gameStarted } = useGameStore();
   const [isMobile, setIsMobile] = React.useState(typeof window !== 'undefined' && window.innerWidth < 1024);
+  const [isShort, setIsShort] = React.useState(typeof window !== 'undefined' && window.innerHeight < 550);
 
   React.useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024);
+      setIsShort(window.innerHeight < 550);
+    };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -153,11 +157,11 @@ export function CommandCenter() {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: '1rem',
-    padding: '32px 24px 24px',
+    justifyContent: isShort ? 'center' : 'flex-start',
+    gap: isShort ? '0.5rem' : '1rem',
+    padding: isShort ? '16px 24px' : '32px 24px 24px',
     boxSizing: 'border-box',
-    overflowY: 'auto',
+    overflowY: isShort ? 'hidden' : 'auto',
     pointerEvents: 'auto'
   };
 
@@ -165,14 +169,14 @@ export function CommandCenter() {
     <div style={isMobile ? mobileStyle : desktopStyle}>
       <h2 style={{
         marginTop: 0,
-        marginBottom: isMobile ? '0.75rem' : 8,
+        marginBottom: isMobile ? (isShort ? '0.25rem' : '0.75rem') : 8,
         color: '#fff',
         fontFamily: '"Poppins", sans-serif',
-        fontSize: isMobile ? '1.8rem' : '1rem',
+        fontSize: isMobile ? (isShort ? '1.2rem' : '1.8rem') : '1rem',
         textTransform: 'uppercase',
         letterSpacing: '0.15em',
         borderBottom: isMobile ? 'none' : '1px solid rgba(255,255,255,0.1)',
-        paddingBottom: 8,
+        paddingBottom: isShort ? 4 : 8,
         textAlign: isMobile ? 'center' : 'left',
         width: '100%'
       }}>
@@ -182,17 +186,17 @@ export function CommandCenter() {
       {isMobile ? (
         <>
           {/* Leaderboard */}
-          <div style={{ position: 'relative', width: '100%', maxWidth: 480 }}>
+          <div style={{ position: 'relative', width: '100%', maxWidth: isShort ? 400 : 480 }}>
             <LeaderboardUI />
           </div>
 
           {/* Camera & Zoom Controls */}
-          <div style={{ width: '100%', maxWidth: 480, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <div style={{ width: '100%', maxWidth: isShort ? 400 : 480, display: 'flex', flexDirection: 'column', gap: isShort ? '0.4rem' : '0.75rem' }}>
             <CameraModeUI />
             <ZoomSliderHUD />
           </div>
 
-          {/* RESUME GAME button — anchored directly below stats, easy thumb reach */}
+          {/* RESUME GAME button */}
           <button
             onClick={() => {
               togglePause();
@@ -200,8 +204,8 @@ export function CommandCenter() {
             }}
             style={{
               width: '100%',
-              maxWidth: 480,
-              padding: '1rem',
+              maxWidth: isShort ? 400 : 480,
+              padding: isShort ? '0.75rem' : '1rem',
               backgroundColor: '#32CD32',
               color: '#0B0B0B',
               fontFamily: '"Poppins", sans-serif',
@@ -209,11 +213,11 @@ export function CommandCenter() {
               borderRadius: '12px',
               border: 'none',
               textTransform: 'uppercase',
-              fontSize: '1.1rem',
+              fontSize: isShort ? '0.9rem' : '1.1rem',
               letterSpacing: '0.1em',
               cursor: 'pointer',
               boxShadow: '0 0 30px rgba(50, 205, 50, 0.4)',
-              marginTop: '2rem',
+              marginTop: isShort ? '0.5rem' : '2rem',
               pointerEvents: 'auto',
               flexShrink: 0,
             }}
@@ -237,3 +241,4 @@ export function CommandCenter() {
     </div>
   );
 }
+
