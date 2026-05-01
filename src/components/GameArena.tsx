@@ -53,12 +53,15 @@ const getWorldConfig = (tier: number) => {
 const OVERLAY_BASE: React.CSSProperties = {
     position: 'absolute',
     inset: 0,
+    width: '100vw',
+    height: '100dvh',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
     fontFamily: '"Poppins", sans-serif',
     zIndex: 50,
+    overflow: 'hidden',
     // Let touches through to the canvas when this overlay is transparent
     pointerEvents: 'none',
 };
@@ -66,9 +69,13 @@ const OVERLAY_BASE: React.CSSProperties = {
 function StartScreen({ onStart, tier }: { onStart: () => void; tier: number }) {
     const stats = Stats.load();
     const [isMobile, setIsMobile] = React.useState(typeof window !== 'undefined' && window.innerWidth < 1024);
+    const [isShort, setIsShort] = React.useState(typeof window !== 'undefined' && window.innerHeight < 550);
 
     React.useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth < 1024);
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 1024);
+            setIsShort(window.innerHeight < 550);
+        };
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
@@ -85,8 +92,19 @@ function StartScreen({ onStart, tier }: { onStart: () => void; tier: number }) {
             ...OVERLAY_BASE,
             background: 'radial-gradient(ellipse at center, rgba(0,100,255,0.15) 0%, rgba(0,0,0,0.75) 60%)',
         }}>
-            <div style={{ textAlign: 'center', pointerEvents: 'auto', width: '100%', maxWidth: '600px', padding: '0 20px' }}>
-                {tier > 1 && (
+            <div style={{ 
+                textAlign: 'center', 
+                pointerEvents: 'auto', 
+                width: '100%', 
+                maxWidth: '600px', 
+                padding: '0 20px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: isShort ? '8px' : '12px'
+            }}>
+                {tier > 1 && !isShort && (
                     <div style={{
                         display: 'inline-block',
                         background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
@@ -96,73 +114,83 @@ function StartScreen({ onStart, tier }: { onStart: () => void; tier: number }) {
                         letterSpacing: '0.15em',
                         padding: '4px 16px',
                         borderRadius: 999,
-                        marginBottom: 12,
+                        marginBottom: isShort ? 4 : 12,
                         boxShadow: '0 0 20px rgba(251,191,36,0.6)',
                     }}>⚔️ TIER {tier} — ESCALATED DIFFICULTY</div>
                 )}
                 <div style={{ 
-                    fontSize: isMobile ? 'clamp(2.2rem, 12vw, 3.5rem)' : 'clamp(3.5rem, 8vw, 5rem)', 
+                    fontSize: isShort ? '2.2rem' : (isMobile ? 'clamp(2.2rem, 12vw, 3.5rem)' : 'clamp(3.5rem, 8vw, 5rem)'), 
                     fontWeight: 900, 
                     color: '#fff', 
                     lineHeight: 1.1, 
                     textShadow: '0 0 60px rgba(100,180,255,0.6)',
                     whiteSpace: 'nowrap',
                     width: '100%',
-                    display: 'block'
+                    display: 'block',
+                    marginTop: 0,
+                    marginBottom: 0
                 }}>
                     ⚽ Goal-Locked
                 </div>
-                <div style={{ fontSize: isMobile ? '0.9rem' : '1.1rem', color: '#7dd3fc', marginTop: 12, fontWeight: 600, letterSpacing: '0.1em' }}>
-                    Football Battle Royale
-                </div>
+                {!isShort && (
+                    <div style={{ fontSize: isMobile ? '0.9rem' : '1.1rem', color: '#7dd3fc', marginTop: 4, fontWeight: 600, letterSpacing: '0.1em' }}>
+                        Football Battle Royale
+                    </div>
+                )}
 
                 {/* Instructions Overlay */}
                 <div style={{
-                    marginTop: 24,
-                    padding: '16px 24px',
+                    marginTop: isShort ? 4 : 16,
+                    padding: isShort ? '8px 16px' : '16px 24px',
                     background: 'rgba(255, 255, 255, 0.03)',
                     border: '1px solid rgba(255, 255, 255, 0.1)',
                     borderRadius: '16px',
                     backdropFilter: 'blur(12px)',
                     textAlign: 'left',
-                    margin: '24px auto',
-                    maxWidth: '440px',
+                    margin: isShort ? '4px auto' : '16px auto',
+                    maxWidth: isShort ? '400px' : '440px',
                     boxShadow: '0 8px 32px rgba(0,0,0,0.4)'
                 }}>
-                    <div style={{ fontSize: '1.3rem', color: '#00eeff', fontWeight: 900, letterSpacing: '0.05em', marginBottom: '16px' }}>
+                    <div style={{ 
+                        fontSize: isShort ? '0.9rem' : '1.3rem', 
+                        color: '#00eeff', 
+                        fontWeight: 900, 
+                        letterSpacing: '0.05em', 
+                        marginBottom: isShort ? '6px' : '16px' 
+                    }}>
                         INSTRUCTIONS
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        <div style={{ fontSize: '0.85rem', color: '#fff' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: isShort ? '4px' : '10px' }}>
+                        <div style={{ fontSize: isShort ? '0.75rem' : '0.85rem', color: '#fff' }}>
                             <span style={{ color: '#00eeff', fontWeight: 900, marginRight: '8px' }}>OBJECTIVE:</span> Be the last sphere standing.
                         </div>
-                        <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.8)' }}>
-                            <span style={{ color: '#00eeff', fontWeight: 700, marginRight: '8px' }}>TACTICS:</span> {isMobile ? "Tap [PULSE] to strike the ball." : "Use [SPACEBAR] to pulse the ball into enemies."}
+                        <div style={{ fontSize: isShort ? '0.7rem' : '0.8rem', color: 'rgba(255, 255, 255, 0.8)' }}>
+                            <span style={{ color: '#00eeff', fontWeight: 700, marginRight: '8px' }}>TACTICS:</span> {isMobile ? "Tap [PULSE] to strike." : "Use [SPACEBAR] to pulse."}
                         </div>
-                        <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.8)' }}>
-                            <span style={{ color: '#00eeff', fontWeight: 700, marginRight: '8px' }}>MOVE:</span> {isMobile ? "Use the Virtual Joystick." : "Use [WASD] or [ARROWS]."}
+                        <div style={{ fontSize: isShort ? '0.7rem' : '0.8rem', color: 'rgba(255, 255, 255, 0.8)' }}>
+                            <span style={{ color: '#00eeff', fontWeight: 700, marginRight: '8px' }}>MOVE:</span> {isMobile ? "Virtual Joystick." : "[WASD] or [ARROWS]."}
                         </div>
-                        <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.8)' }}>
-                            <span style={{ color: '#00eeff', fontWeight: 700, marginRight: '8px' }}>DASH:</span> {isMobile ? "Press the [DASH] button." : "Press [SHIFT] to Dash."}
+                        <div style={{ fontSize: isShort ? '0.7rem' : '0.8rem', color: 'rgba(255, 255, 255, 0.8)' }}>
+                            <span style={{ color: '#00eeff', fontWeight: 700, marginRight: '8px' }}>DASH:</span> {isMobile ? "Press [DASH]." : "Press [SHIFT]."}
                         </div>
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: isMobile ? 12 : 24, justifyContent: 'center', marginTop: 0 }}>
+                <div style={{ display: 'flex', gap: isShort ? 8 : (isMobile ? 12 : 24), justifyContent: 'center', marginTop: 0 }}>
                     {[
-                        { label: 'BEST SCORE', value: stats.highestScore.toString() },
-                        { label: 'BOTS DELETED', value: stats.totalBotsDeleted.toString() },
-                        { label: 'BEST TIER', value: `T${stats.highestTier}` },
+                        { label: 'BEST', value: stats.highestScore.toString() },
+                        { label: 'KILLS', value: stats.totalBotsDeleted.toString() },
+                        { label: 'TIER', value: `T${stats.highestTier}` },
                     ].map(s => (
                         <div key={s.label} style={{
                             background: 'rgba(255,255,255,0.05)',
                             border: '1px solid rgba(255,255,255,0.1)',
                             borderRadius: 10,
-                            padding: isMobile ? '8px 12px' : '10px 20px',
-                            minWidth: isMobile ? 70 : 90,
+                            padding: isShort ? '4px 10px' : (isMobile ? '8px 12px' : '10px 20px'),
+                            minWidth: isShort ? 60 : (isMobile ? 70 : 90),
                         }}>
-                            <div style={{ fontSize: isMobile ? '0.9rem' : '1.1rem', fontWeight: 700, color: '#fff' }}>{s.value}</div>
-                            <div style={{ fontSize: '0.55rem', color: 'rgba(180,220,255,0.5)', letterSpacing: '0.12em', marginTop: 2 }}>{s.label}</div>
+                            <div style={{ fontSize: isShort ? '0.8rem' : (isMobile ? '0.9rem' : '1.1rem'), fontWeight: 700, color: '#fff' }}>{s.value}</div>
+                            <div style={{ fontSize: '0.5rem', color: 'rgba(180,220,255,0.5)', letterSpacing: '0.12em', marginTop: 1 }}>{s.label}</div>
                         </div>
                     ))}
                 </div>
@@ -172,8 +200,8 @@ function StartScreen({ onStart, tier }: { onStart: () => void; tier: number }) {
                         onStart();
                     }}
                     style={{
-                        marginTop: 28,
-                        padding: isMobile ? '14px 40px' : '16px 56px',
+                        marginTop: isShort ? 8 : 20,
+                        padding: isShort ? '10px 32px' : (isMobile ? '14px 40px' : '16px 56px'),
                         background: tier > 1
                             ? 'linear-gradient(135deg, #f59e0b, #ef4444)'
                             : 'linear-gradient(135deg, #3b82f6, #06b6d4)',
@@ -182,7 +210,7 @@ function StartScreen({ onStart, tier }: { onStart: () => void; tier: number }) {
                         color: '#fff',
                         fontFamily: '"Poppins", sans-serif',
                         fontWeight: 700,
-                        fontSize: isMobile ? '1rem' : '1.1rem',
+                        fontSize: isShort ? '0.9rem' : (isMobile ? '1rem' : '1.1rem'),
                         letterSpacing: '0.05em',
                         cursor: 'pointer',
                         boxShadow: tier > 1
@@ -195,12 +223,13 @@ function StartScreen({ onStart, tier }: { onStart: () => void; tier: number }) {
                     onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; }}
                     onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
                 >
-                    {tier > 1 ? `⚔️ Enter Tier ${tier}` : 'Play Now'}
+                    {tier > 1 ? `⚔️ Tier ${tier}` : 'Play Now'}
                 </button>
             </div>
         </div>
     );
 }
+
 
 
 function VictoryScreen({ onReset, score }: { onReset: () => void; score: number }) {
