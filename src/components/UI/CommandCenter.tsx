@@ -111,7 +111,7 @@ function ZoomSliderHUD() {
 }
 
 export function CommandCenter() {
-  const { isHudOpen, isPaused, togglePause, toggleHud } = useGameStore();
+  const { isHudOpen, isPaused, togglePause, toggleHud, gameStarted } = useGameStore();
   const [isMobile, setIsMobile] = React.useState(typeof window !== 'undefined' && window.innerWidth < 1024);
 
   React.useEffect(() => {
@@ -121,7 +121,7 @@ export function CommandCenter() {
   }, []);
   
   // Logic Bifurcation
-  const shouldRender = isMobile ? isPaused : isHudOpen;
+  const shouldRender = (isMobile ? isPaused : isHudOpen) && gameStarted;
   if (!shouldRender) return null;
 
   const desktopStyle: React.CSSProperties = {

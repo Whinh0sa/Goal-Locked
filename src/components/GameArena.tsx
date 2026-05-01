@@ -65,6 +65,14 @@ const OVERLAY_BASE: React.CSSProperties = {
 
 function StartScreen({ onStart, tier }: { onStart: () => void; tier: number }) {
     const stats = Stats.load();
+    const [isMobile, setIsMobile] = React.useState(typeof window !== 'undefined' && window.innerWidth < 1024);
+
+    React.useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 1024);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     const enterFullscreen = () => {
         const elem = document.documentElement;
         if (elem.requestFullscreen) elem.requestFullscreen();
@@ -77,7 +85,7 @@ function StartScreen({ onStart, tier }: { onStart: () => void; tier: number }) {
             ...OVERLAY_BASE,
             background: 'radial-gradient(ellipse at center, rgba(0,100,255,0.15) 0%, rgba(0,0,0,0.75) 60%)',
         }}>
-            <div style={{ textAlign: 'center', pointerEvents: 'auto' }}>
+            <div style={{ textAlign: 'center', pointerEvents: 'auto', width: '100%', maxWidth: '600px', padding: '0 20px' }}>
                 {tier > 1 && (
                     <div style={{
                         display: 'inline-block',
@@ -92,13 +100,55 @@ function StartScreen({ onStart, tier }: { onStart: () => void; tier: number }) {
                         boxShadow: '0 0 20px rgba(251,191,36,0.6)',
                     }}>⚔️ TIER {tier} — ESCALATED DIFFICULTY</div>
                 )}
-                <div style={{ fontSize: '5rem', fontWeight: 900, color: '#fff', lineHeight: 1, textShadow: '0 0 60px rgba(100,180,255,0.6)' }}>
+                <div style={{ 
+                    fontSize: isMobile ? 'clamp(2.2rem, 12vw, 3.5rem)' : 'clamp(3.5rem, 8vw, 5rem)', 
+                    fontWeight: 900, 
+                    color: '#fff', 
+                    lineHeight: 1.1, 
+                    textShadow: '0 0 60px rgba(100,180,255,0.6)',
+                    whiteSpace: 'nowrap',
+                    width: '100%',
+                    display: 'block'
+                }}>
                     ⚽ Goal-Locked
                 </div>
-                <div style={{ fontSize: '1.1rem', color: '#7dd3fc', marginTop: 12, fontWeight: 600, letterSpacing: '0.1em' }}>
+                <div style={{ fontSize: isMobile ? '0.9rem' : '1.1rem', color: '#7dd3fc', marginTop: 12, fontWeight: 600, letterSpacing: '0.1em' }}>
                     Football Battle Royale
                 </div>
-                <div style={{ display: 'flex', gap: 24, justifyContent: 'center', marginTop: 24 }}>
+
+                {/* Instructions Overlay */}
+                <div style={{
+                    marginTop: 24,
+                    padding: '16px 24px',
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '16px',
+                    backdropFilter: 'blur(12px)',
+                    textAlign: 'left',
+                    margin: '24px auto',
+                    maxWidth: '440px',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.4)'
+                }}>
+                    <div style={{ fontSize: '1.3rem', color: '#00eeff', fontWeight: 900, letterSpacing: '0.05em', marginBottom: '16px' }}>
+                        INSTRUCTIONS
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div style={{ fontSize: '0.85rem', color: '#fff' }}>
+                            <span style={{ color: '#00eeff', fontWeight: 900, marginRight: '8px' }}>OBJECTIVE:</span> Be the last sphere standing.
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.8)' }}>
+                            <span style={{ color: '#00eeff', fontWeight: 700, marginRight: '8px' }}>TACTICS:</span> {isMobile ? "Tap [PULSE] to strike the ball." : "Use [SPACEBAR] to pulse the ball into enemies."}
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.8)' }}>
+                            <span style={{ color: '#00eeff', fontWeight: 700, marginRight: '8px' }}>MOVE:</span> {isMobile ? "Use the Virtual Joystick." : "Use [WASD] or [ARROWS]."}
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.8)' }}>
+                            <span style={{ color: '#00eeff', fontWeight: 700, marginRight: '8px' }}>DASH:</span> {isMobile ? "Press the [DASH] button." : "Press [SHIFT] to Dash."}
+                        </div>
+                    </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: isMobile ? 12 : 24, justifyContent: 'center', marginTop: 0 }}>
                     {[
                         { label: 'BEST SCORE', value: stats.highestScore.toString() },
                         { label: 'BOTS DELETED', value: stats.totalBotsDeleted.toString() },
@@ -108,10 +158,10 @@ function StartScreen({ onStart, tier }: { onStart: () => void; tier: number }) {
                             background: 'rgba(255,255,255,0.05)',
                             border: '1px solid rgba(255,255,255,0.1)',
                             borderRadius: 10,
-                            padding: '10px 20px',
-                            minWidth: 90,
+                            padding: isMobile ? '8px 12px' : '10px 20px',
+                            minWidth: isMobile ? 70 : 90,
                         }}>
-                            <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>{s.value}</div>
+                            <div style={{ fontSize: isMobile ? '0.9rem' : '1.1rem', fontWeight: 700, color: '#fff' }}>{s.value}</div>
                             <div style={{ fontSize: '0.55rem', color: 'rgba(180,220,255,0.5)', letterSpacing: '0.12em', marginTop: 2 }}>{s.label}</div>
                         </div>
                     ))}
@@ -123,7 +173,7 @@ function StartScreen({ onStart, tier }: { onStart: () => void; tier: number }) {
                     }}
                     style={{
                         marginTop: 28,
-                        padding: '16px 56px',
+                        padding: isMobile ? '14px 40px' : '16px 56px',
                         background: tier > 1
                             ? 'linear-gradient(135deg, #f59e0b, #ef4444)'
                             : 'linear-gradient(135deg, #3b82f6, #06b6d4)',
@@ -132,7 +182,7 @@ function StartScreen({ onStart, tier }: { onStart: () => void; tier: number }) {
                         color: '#fff',
                         fontFamily: '"Poppins", sans-serif',
                         fontWeight: 700,
-                        fontSize: '1.1rem',
+                        fontSize: isMobile ? '1rem' : '1.1rem',
                         letterSpacing: '0.05em',
                         cursor: 'pointer',
                         boxShadow: tier > 1
@@ -147,13 +197,11 @@ function StartScreen({ onStart, tier }: { onStart: () => void; tier: number }) {
                 >
                     {tier > 1 ? `⚔️ Enter Tier ${tier}` : 'Play Now'}
                 </button>
-                <div style={{ marginTop: 20, fontSize: '0.8rem', color: 'rgba(180,220,255,0.5)', letterSpacing: '0.08em' }}>
-                    WASD to move &nbsp;·&nbsp; Space to shoot &nbsp;·&nbsp; Shift to DASH
-                </div>
             </div>
         </div>
     );
 }
+
 
 function VictoryScreen({ onReset, score }: { onReset: () => void; score: number }) {
     return (
