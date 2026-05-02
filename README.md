@@ -1,6 +1,6 @@
 # Goal-Locked: The Crucible
 
-<img width="1200" height="475" alt="Crucible Banner" src="/preview.jpg" />
+<img width="1200" height="475" alt="Crucible Banner" src="public/preview.jpg" />
 
 **Goal-Locked: The Crucible** is a high-octane, physics-based 3D arcade battle royale. Compete against 7 lethal AI bots in a shrinking arena where the only way to survive is to knock the ball into your opponents' goals while defending your own.
 
