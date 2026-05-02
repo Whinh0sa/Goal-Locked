@@ -1,31 +1,46 @@
-<div align="center">
-<img width="1200" height="475" alt="Crucible Banner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
-
 # Goal-Locked: The Crucible
 
-**The Crucible** is a high-stakes, physics-driven "Football Battle Royale" that reimagines traditional soccer as a gladiator-style survival match. Unlike standard football where you score to win, in **Goal-Locked**, you score to *eliminate*.
+<img width="1200" height="475" alt="Crucible Banner" src="/preview.jpg" />
 
-Following a First Principles approach, we are stripping away teams and points, focusing entirely on the **bottleneck of survival**: protecting your space while exploiting the gaps of others.
+**Goal-Locked: The Crucible** is a high-octane, physics-based 3D arcade battle royale. Compete against 7 lethal AI bots in a shrinking arena where the only way to survive is to knock the ball into your opponents' goals while defending your own.
 
-## Core Loop: "Defend or Delete"
+## 🕹️ Gameplay Mechanics
 
-- **The Objective:** Be the last player whose Goal-Gate remains "Unlocked."
-- **The Elimination:** When the ball enters your goal, your gate is **Locked** (it physically transforms into a solid wall). Your player character is ejected from the arena, and you are out.
-- **Shrinking Arena:** As players are eliminated and their goals turn into walls, the arena becomes progressively more claustrophobic, increasing the pacing and intensity.
+- **Orbital Combat:** High-velocity physics-based ball manipulation.
+- **Dynamic Arena:** The arena radius physically shrinks as the game progresses (Tiers 1-5).
+- **Power-Up Economy:** Tactical orbs spawn throughout the match:
+  - ⚡ **Speed:** Turbocharge your movement.
+  - 🛡️ **Juggernaut:** Triple your mass to crush opponents and the ball.
+  - 👻 **Ghost:** Pass through the ball for deceptive positioning.
+  - ❄️ **Freeze:** Stop all bots in their tracks.
+- **AI Intercept Matrix:** Advanced bots that hunt power-ups and execute strategic shots.
 
-## Technical Architecture
+## 🛠️ Features
 
-- **Engine:** React Three Fiber (R3F)
-- **Physics:** Cannon-es (Integrated with custom material properties)
-- **State:** Zustand (High-performance reactive game state)
-- **Styles:** Vanilla CSS (Chrono-Tactical Aesthetic)
+- **Bifurcated Mobile UI:** Optimized two-column layout for landscape mobile play.
+- **Manual Graphics Toggles:** Switch between **QUALITY** (Bloom, 2x DPR, 2048px shadows) and **PERFORMANCE** (1x DPR, optimized shadows) modes.
+- **Cinematic Camera:** Multiple view modes including Dynamic, Tactical, and Orbit.
+- **3D Diegetic HUD:** Immersive in-world score tracking and elimination feeds.
 
-## Development
+## 🚀 Getting Started
 
-1. Install dependencies:
-   `npm install`
-2. Run the app:
-   `npm run dev`
-3. Build for production:
-   `npm run build`
+### Prerequisites
+- Node.js (v18+)
+- npm or yarn
+
+### Installation
+1. Clone the repository.
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+## 📜 License
+This project is provided for educational and entertainment purposes.
+
+---
+*Built with React, Three.js, React-Three-Fiber, and Cannon-es.*
