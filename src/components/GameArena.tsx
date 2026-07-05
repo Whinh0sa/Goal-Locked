@@ -809,7 +809,10 @@ export default function GameArena() {
     const isPortal = searchParams.get('portal');
     if (isPortal === 'true' && !gameStarted) {
       const color = searchParams.get('color');
-      if (color) setPlayerRingColor(`#${color}`);
+      // Validate color is a valid 6-character hex code to prevent injection
+      if (color && /^[0-9A-Fa-f]{6}$/.test(color)) {
+        setPlayerRingColor(`#${color}`);
+      }
       startGame();
       triggerEntryPortal();
     }
