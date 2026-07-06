@@ -1,0 +1,3 @@
+## 2026-07-06 - Ensure Accessible Interactive Controls
+**Learning:** Found several clickable elements (e.g. camera mode, graphics toggles, HUD controls) using generic `<div>` tags with `onClick` handlers. While they function for mouse users, they lack the necessary ARIA roles, implicit keyboard navigability, and descriptive accessible names required by screen readers.
+**Action:** Transitioned these elements to semantic `<button>` tags with appropriate `aria-label` attributes and hid purely decorative text/icons using `aria-hidden="true"` to improve keyboard navigation and assistive technology compatibility.

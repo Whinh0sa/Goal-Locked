@@ -736,19 +736,20 @@ function HUDToggleButton() {
   };
 
   return (
-    <div
+    <button
+      aria-label={isMobile ? "Pause Game" : "Toggle HUD"}
       onClick={handleClick}
       style={isMobile ? mobileStyle : desktopStyle}
     >
       {isMobile ? (
-        <span>⏸</span>
+        <span aria-hidden="true">⏸</span>
       ) : (
         <>
-          <span style={{ fontSize: '0.8rem' }}>☰</span>
-          HUD
+          <span aria-hidden="true" style={{ fontSize: '0.8rem' }}>☰</span>
+          <span aria-hidden="true">HUD</span>
         </>
       )}
-    </div>
+    </button>
   );
 }
 

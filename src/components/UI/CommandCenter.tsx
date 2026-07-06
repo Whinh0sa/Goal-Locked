@@ -8,7 +8,8 @@ function CameraModeUI() {
   if (!gameStarted) return null;
 
   return (
-    <div
+    <button
+      aria-label={`Cycle camera mode, current mode: ${cameraMode}`}
       onClick={cycleCameraMode}
       style={{
         padding: '12px 24px',
@@ -43,9 +44,9 @@ function CameraModeUI() {
         e.currentTarget.style.transform = 'scale(1)';
       }}
     >
-      <span style={{ opacity: 0.5, fontSize: '0.65rem' }}>VIEW:</span>
-      <span style={{ color: '#00eeff' }}>{cameraMode}</span>
-    </div>
+      <span aria-hidden="true" style={{ opacity: 0.5, fontSize: '0.65rem' }}>VIEW:</span>
+      <span aria-hidden="true" style={{ color: '#00eeff' }}>{cameraMode}</span>
+    </button>
   );
 }
 
@@ -82,16 +83,18 @@ function ZoomSliderHUD() {
         width: '100%',
         boxSizing: 'border-box'
       }}>
-        <span style={{
+        <label htmlFor="zoom-slider" style={{
           fontSize: '0.65rem',
           fontFamily: '"Poppins", sans-serif',
           fontWeight: 700,
           letterSpacing: '0.12em',
           color: 'rgba(0,238,255,0.7)',
           textTransform: 'uppercase',
-        }}>ZOOM</span>
+        }}>ZOOM</label>
 
         <input
+          id="zoom-slider"
+          aria-label="Zoom Level"
           type="range"
           min={0}
           max={50}
@@ -164,7 +167,8 @@ export function CommandCenter() {
   };
 
   const GraphicsButton = () => (
-    <div
+    <button
+      aria-label={`Toggle graphics mode, current mode: ${graphicsMode}`}
       onClick={toggleGraphics}
       style={{
         padding: '12px 24px',
@@ -191,9 +195,9 @@ export function CommandCenter() {
         boxSizing: 'border-box'
       }}
     >
-      <span style={{ opacity: 0.5, fontSize: '0.65rem' }}>GRAPHICS:</span>
-      <span style={{ color: graphicsMode === 'QUALITY' ? '#00eeff' : '#32CD32' }}>{graphicsMode}</span>
-    </div>
+      <span aria-hidden="true" style={{ opacity: 0.5, fontSize: '0.65rem' }}>GRAPHICS:</span>
+      <span aria-hidden="true" style={{ color: graphicsMode === 'QUALITY' ? '#00eeff' : '#32CD32' }}>{graphicsMode}</span>
+    </button>
   );
 
   return (
