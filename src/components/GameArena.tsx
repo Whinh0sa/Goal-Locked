@@ -736,9 +736,11 @@ function HUDToggleButton() {
   };
 
   return (
-    <div
+    <button
+      type="button"
       onClick={handleClick}
       style={isMobile ? mobileStyle : desktopStyle}
+      aria-label={isMobile ? "Pause Game" : "Toggle HUD"}
     >
       {isMobile ? (
         <span>⏸</span>
@@ -748,7 +750,7 @@ function HUDToggleButton() {
           HUD
         </>
       )}
-    </div>
+    </button>
   );
 }
 
