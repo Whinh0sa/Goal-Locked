@@ -1,12 +1,13 @@
 import { useRef, useEffect, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
-import type { ComponentProps } from 'react';
+import React, { type ComponentProps } from 'react';
 import * as THREE from 'three';
 
 type TextProps = ComponentProps<typeof Text>;
 
 interface FadingTextProps extends TextProps {
+  children?: React.ReactNode;
   /** Milliseconds before the text starts fading out. Default: 10000 (10s) */
   fadeDelay?: number;
 }

@@ -15,7 +15,7 @@ type BotState = 'ATTACK' | 'DEFEND' | 'REPOSITION' | 'SLAM' | 'SHOOT';
 
 const BOT_NAMES = ['Bot_Apex', 'Bot_Nova', 'Bot_Onyx', 'Bot_Flux', 'Bot_Rift', 'Bot_Echo', 'Bot_Vex', 'Bot_Zero'];
 
-export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3 }) => {
+export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3; key?: React.Key }) => {
   const { world } = usePhysics();
   const isEliminated = useGameStore(state => state.eliminated[id]);
   const tier = useGameStore(state => state.tier);

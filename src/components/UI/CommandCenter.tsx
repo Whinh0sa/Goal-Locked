@@ -8,8 +8,10 @@ function CameraModeUI() {
   if (!gameStarted) return null;
 
   return (
-    <div
+    <button
+      type="button"
       onClick={cycleCameraMode}
+      aria-label={`Switch camera mode. Current mode: ${cameraMode}`}
       style={{
         padding: '12px 24px',
         backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -45,7 +47,7 @@ function CameraModeUI() {
     >
       <span style={{ opacity: 0.5, fontSize: '0.65rem' }}>VIEW:</span>
       <span style={{ color: '#00eeff' }}>{cameraMode}</span>
-    </div>
+    </button>
   );
 }
 
@@ -164,8 +166,10 @@ export function CommandCenter() {
   };
 
   const GraphicsButton = () => (
-    <div
+    <button
+      type="button"
       onClick={toggleGraphics}
+      aria-label={`Switch graphics quality. Current quality: ${graphicsMode}`}
       style={{
         padding: '12px 24px',
         backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -193,7 +197,7 @@ export function CommandCenter() {
     >
       <span style={{ opacity: 0.5, fontSize: '0.65rem' }}>GRAPHICS:</span>
       <span style={{ color: graphicsMode === 'QUALITY' ? '#00eeff' : '#32CD32' }}>{graphicsMode}</span>
-    </div>
+    </button>
   );
 
   return (

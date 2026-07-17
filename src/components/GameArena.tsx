@@ -736,9 +736,12 @@ function HUDToggleButton() {
   };
 
   return (
-    <div
+    <button
+      type="button"
       onClick={handleClick}
       style={isMobile ? mobileStyle : desktopStyle}
+      aria-label={isHudOpen ? "Close HUD" : "Open HUD"}
+      aria-expanded={isHudOpen}
     >
       {isMobile ? (
         <span>⏸</span>
@@ -748,7 +751,7 @@ function HUDToggleButton() {
           HUD
         </>
       )}
-    </div>
+    </button>
   );
 }
 

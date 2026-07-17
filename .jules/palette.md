@@ -1,0 +1,3 @@
+## 2024-05-24 - Accessibility improvements for Diegetic Game Overlay
+**Learning:** Custom interactive UI elements (like HUD buttons and command center toggles) placed over canvas scenes were built using `<div>` elements without accessibility attributes. While this is common in game overlays, it makes the interface completely opaque to screen readers.
+**Action:** When building or maintaining UI overlays for canvas/WebGL content, convert interactive `<div>` blocks to semantic `<button type="button">` elements and provide dynamic `aria-label` attributes to ensure state (like current camera mode or graphics quality) is announced to assistive technologies.
