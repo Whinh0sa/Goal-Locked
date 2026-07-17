@@ -46,7 +46,16 @@ export const ExitPortal = ({
             if (dist < PORTAL_TRIGGER_RADIUS) {
                 triggered.current = true;
                 console.log('PORTAL TRIGGERED — EXITING TO VIBEVERSE');
-                window.location.href = destinationUrl;
+                try {
+                    const url = new URL(destinationUrl);
+                    if (url.protocol === 'http:' || url.protocol === 'https:') {
+                        window.location.href = destinationUrl;
+                    } else {
+                        console.error('PORTAL ERROR — Invalid destination protocol');
+                    }
+                } catch (e) {
+                    console.error('PORTAL ERROR — Invalid destination URL');
+                }
             }
         }
     });
