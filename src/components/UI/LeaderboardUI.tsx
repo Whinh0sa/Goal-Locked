@@ -1,8 +1,11 @@
 import React from 'react';
 import { useGameStore } from '../../store/useGameStore';
+import { useShallow } from 'zustand/react/shallow';
 
 export const LeaderboardUI = () => {
-    const { playerKills, remainingPlayers, gameStarted, score, highScore, tier } = useGameStore();
+    const { playerKills, remainingPlayers, gameStarted, score, highScore, tier } = useGameStore(useShallow(state => ({
+    playerKills: state.playerKills, remainingPlayers: state.remainingPlayers, gameStarted: state.gameStarted, score: state.score, highScore: state.highScore, tier: state.tier
+  })));
 
     if (!gameStarted) return null;
 

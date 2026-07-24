@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useGameStore } from '../../store/useGameStore';
+import { useShallow } from 'zustand/react/shallow';
 
 export const MobileControls = () => {
-    const { setMoveDirection, triggerPulse, triggerDash, gameStarted } = useGameStore();
+    const { setMoveDirection, triggerPulse, triggerDash, gameStarted } = useGameStore(useShallow(state => ({
+    setMoveDirection: state.setMoveDirection, triggerPulse: state.triggerPulse, triggerDash: state.triggerDash, gameStarted: state.gameStarted
+  })));
     const [knobPos, setKnobPos] = useState({ x: 0, y: 0 });
     const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 1024);
 

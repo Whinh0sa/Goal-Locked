@@ -1,9 +1,12 @@
 import React from 'react';
 import { useGameStore } from '../../store/useGameStore';
+import { useShallow } from 'zustand/react/shallow';
 import { LeaderboardUI } from './LeaderboardUI';
 
 function CameraModeUI() {
-  const { cameraMode, cycleCameraMode, gameStarted } = useGameStore();
+  const { cameraMode, cycleCameraMode, gameStarted } = useGameStore(useShallow(state => ({
+    cameraMode: state.cameraMode, cycleCameraMode: state.cycleCameraMode, gameStarted: state.gameStarted
+  })));
 
   if (!gameStarted) return null;
 
@@ -111,7 +114,9 @@ function ZoomSliderHUD() {
 }
 
 export function CommandCenter() {
-  const { isHudOpen, isPaused, togglePause, toggleHud, gameStarted, graphicsMode, toggleGraphics } = useGameStore();
+  const { isHudOpen, isPaused, togglePause, toggleHud, gameStarted, graphicsMode, toggleGraphics } = useGameStore(useShallow(state => ({
+    isHudOpen: state.isHudOpen, isPaused: state.isPaused, togglePause: state.togglePause, toggleHud: state.toggleHud, gameStarted: state.gameStarted, graphicsMode: state.graphicsMode, toggleGraphics: state.toggleGraphics
+  })));
   const [isMobile, setIsMobile] = React.useState(typeof window !== 'undefined' && window.innerWidth < 1024);
   const [isShort, setIsShort] = React.useState(typeof window !== 'undefined' && window.innerHeight < 550);
 
