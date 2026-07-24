@@ -46,7 +46,17 @@ export const ExitPortal = ({
             if (dist < PORTAL_TRIGGER_RADIUS) {
                 triggered.current = true;
                 console.log('PORTAL TRIGGERED — EXITING TO VIBEVERSE');
-                window.location.href = destinationUrl;
+                // 🛡️ Sentinel: Validate URL scheme to prevent javascript: or other malicious URI schemes
+                try {
+                    const parsedUrl = new URL(destinationUrl, window.location.origin);
+                    if (parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:') {
+                        window.location.href = parsedUrl.href;
+                    } else {
+                        console.error('Invalid portal destination protocol');
+                    }
+                } catch (e) {
+                    console.error('Invalid portal destination URL');
+                }
             }
         }
     });

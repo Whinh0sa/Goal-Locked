@@ -1,0 +1,4 @@
+## 2023-10-27 - [URL Protocol Validation and Input Sanitization]
+**Vulnerability:** The application was susceptible to potential XSS or open redirects due to unchecked parameters (`color` from URL query params) modifying application state and an `ExitPortal` destination URL being assigned directly to `window.location.href`.
+**Learning:** Hardcoded destination URLs in component props can still be hijacked or modified downstream, so we must validate the protocol before assigning to `window.location.href`. Moreover, query params injected directly into state via string interpolation (e.g., `#${color}`) should always be validated first using strict regexes.
+**Prevention:** Always validate parameters with strict regexes (e.g. `^([0-9A-Fa-f]{3}){1,2}$` for hex colors) and parse URLs using `new URL()` to check for `http:` or `https:` protocols before navigating to avoid `javascript:` URI attacks.
