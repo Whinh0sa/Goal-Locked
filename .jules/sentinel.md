@@ -1,0 +1,4 @@
+## 2023-10-27 - [URL Query Parameter Input Validation]
+**Vulnerability:** The application was reading user-supplied input directly from URL query parameters (e.g. `color=32CD32`) and setting it directly in application state (`setPlayerRingColor(`#${color}`)`) without any input validation. While not directly interpolating to `innerHTML` or evaluated code, it presented an uncontrolled input that could lead to invalid states, UI bugs, or potential injection vectors depending on how the color was processed downstream by Three.js/CSS.
+**Learning:** Even seemingly benign URL parameters used for styling should be treated as untrusted input and rigorously validated, as they are fully user-controlled.
+**Prevention:** Always validate URL query parameters against expected formats (e.g., using regex `/^([0-9A-Fa-f]{3}){1,2}$/` for hex colors) before trusting them or updating application state.
