@@ -1,0 +1,3 @@
+## 2024-08-01 - Zustand Anti-pattern in R3F with Frequent State Updates
+**Learning:** Destructuring directly from a Zustand store (e.g., `const { a, b } = useStore()`) without a selector causes the component to re-render whenever *any* state in the store changes. In a React Three Fiber application where game state (like ball/player positions) updates extremely frequently (every frame), this leads to severe performance degradation as UI components re-render constantly even if the specific states they care about haven't changed.
+**Action:** Always use `useShallow` (imported from `zustand/react/shallow`) or individual selectors when accessing multiple states from a Zustand store to prevent widespread, unnecessary re-renders triggered by rapidly changing game states.
