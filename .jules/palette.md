@@ -1,0 +1,3 @@
+## 2024-08-01 - [Interactive Elements and ARIA Labels]
+**Learning:** Found an icon-only interactive element (`HUDToggleButton`) implemented as a `<div>` with an `onClick` handler, lacking semantic meaning, proper keyboard support, and an `aria-label` for screen readers. Using `<div>`s for buttons is a common anti-pattern that significantly hurts accessibility.
+**Action:** Replaced the non-semantic `<div>` with a `<button>` element. Added dynamic `aria-label`s ("Pause Game" for mobile, "Toggle HUD" for desktop) to communicate the button's purpose to assistive technologies. Ensured decorative visual elements are hidden from screen readers using `aria-hidden="true"`.
