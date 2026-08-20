@@ -208,6 +208,15 @@ export const useGameStore = create<GameState>((set, get) => ({
       Stats.recordBotElimination();
     }
 
+    const isVictory = remainingCount === 1 && !newEliminated[0];
+
+    // Persistence on game over (Win or Loss)
+    if (isPlayer || isVictory) {
+      Stats.recordScore(newScore);
+      // Refresh highScore from disk
+      state.highScore = Stats.load().highestScore;
+    }
+
     // Condition A: player just got eliminated → game over, defeat
     if (isPlayer) {
       return {
@@ -224,17 +233,9 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
 
     // Condition B: a bot was eliminated — check if player is now the last one
-    const isVictory = remainingCount === 1 && !newEliminated[0];
     if (isVictory) {
       const survivalMs = Date.now() - state.gameStartTime;
       Stats.recordVictory(survivalMs, state.tier + 1);
-    }
-
-    // Persistence on game over (Win or Loss)
-    if (isPlayer || isVictory) {
-      Stats.recordScore(newScore);
-      // Refresh highScore from disk
-      state.highScore = Stats.load().highestScore;
     }
 
     return {
