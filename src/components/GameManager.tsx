@@ -98,9 +98,11 @@ export const GameManager = () => {
 
     // --- Slow-mo Focus Logic ---
     let nearGoal = false;
+    const slowMoDistSq = SLOW_MO_DIST * SLOW_MO_DIST;
     goalPositions.forEach((g, i) => {
         if (eliminated[i]) return;
-        if (ballPos.distanceTo(g) < SLOW_MO_DIST) nearGoal = true;
+        // Optimization: use squared distance to avoid expensive Math.sqrt()
+        if (ballPos.distanceToSquared(g) < slowMoDistSq) nearGoal = true;
     });
 
     if (nearGoal && !isSlowMo.current) {
