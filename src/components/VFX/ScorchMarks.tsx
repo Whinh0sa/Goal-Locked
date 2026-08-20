@@ -38,8 +38,7 @@ export const ScorchMarks = () => {
     });
     // Cap the pool — remove oldest first
     if (marksRef.current.length > MAX_MARKS) marksRef.current.shift();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [impactPosition]);
+  }, [impactPosition, impactStrength]);
 
   useFrame((_, delta) => {
     if (!meshRef.current) return;
