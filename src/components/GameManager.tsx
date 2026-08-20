@@ -7,6 +7,8 @@ import { useGameStore } from '../store/useGameStore';
 import { ARENA_RADIUS, GOALS, SLOW_MO_DIST } from '../constants';
 import { triggerShake } from '../hooks/useCameraShake';
 
+const tempBallPos = new THREE.Vector3();
+
 export const GameManager = () => {
   const { world, setTimeScale } = usePhysics();
   const registerGoal = useGameStore(state => state.registerGoal);
@@ -84,7 +86,8 @@ export const GameManager = () => {
     const ballBody = useGameStore.getState().ballBodyRef;
     if (!ballBody) return;
 
-    const ballPos = new THREE.Vector3().copy(ballBody.position as any);
+    // ⚡ Performance Optimization: Reusing tempBallPos to prevent GC pressure
+    const ballPos = tempBallPos.copy(ballBody.position as any);
     const { currentRadius } = useGameStore.getState();
 
     // --- Containment Field: hard border impulse ---
