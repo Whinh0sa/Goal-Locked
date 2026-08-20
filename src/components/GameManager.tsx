@@ -7,6 +7,10 @@ import { useGameStore } from '../store/useGameStore';
 import { ARENA_RADIUS, GOALS, SLOW_MO_DIST } from '../constants';
 import { triggerShake } from '../hooks/useCameraShake';
 
+// Hoisted vectors to avoid GC overhead in useFrame
+const sharedBallPos = new THREE.Vector3();
+const impulseVec = new CANNON.Vec3();
+
 export const GameManager = () => {
   const { world, setTimeScale } = usePhysics();
   const registerGoal = useGameStore(state => state.registerGoal);
@@ -84,14 +88,15 @@ export const GameManager = () => {
     const ballBody = useGameStore.getState().ballBodyRef;
     if (!ballBody) return;
 
-    const ballPos = new THREE.Vector3().copy(ballBody.position as any);
+    sharedBallPos.copy(ballBody.position as any);
     const { currentRadius } = useGameStore.getState();
 
     // --- Containment Field: hard border impulse ---
-    const distFromCenter = Math.sqrt(ballPos.x ** 2 + ballPos.z ** 2);
+    const distFromCenter = Math.sqrt(sharedBallPos.x ** 2 + sharedBallPos.z ** 2);
     if (distFromCenter > currentRadius + 1) {
+      impulseVec.set(-sharedBallPos.x * 2, 0, -sharedBallPos.z * 2);
       ballBody.applyImpulse(
-        new CANNON.Vec3(-ballPos.x * 2, 0, -ballPos.z * 2),
+        impulseVec,
         ballBody.position,
       );
     }
@@ -100,7 +105,7 @@ export const GameManager = () => {
     let nearGoal = false;
     goalPositions.forEach((g, i) => {
         if (eliminated[i]) return;
-        if (ballPos.distanceTo(g) < SLOW_MO_DIST) nearGoal = true;
+        if (sharedBallPos.distanceTo(g) < SLOW_MO_DIST) nearGoal = true;
     });
 
     if (nearGoal && !isSlowMo.current) {
@@ -113,8 +118,8 @@ export const GameManager = () => {
 
     // --- Goal Detection (dynamic radius + precise post arc + height check) ---
     // Height guard: ball must be below post height (y < 3.0) to count
-    if (distFromCenter > currentRadius && ballPos.y < 3.0 && !isProcessingGoal.current) {
-        const ballAngle = Math.atan2(ballPos.z, ballPos.x);
+    if (distFromCenter > currentRadius && sharedBallPos.y < 3.0 && !isProcessingGoal.current) {
+        const ballAngle = Math.atan2(sharedBallPos.z, sharedBallPos.x);
         const angleStep = (Math.PI * 2) / GOALS;
 
         let hitGoalIdx = -1;
