@@ -15,6 +15,11 @@ const EFFECT_RADIUS = 15; // Max distance for attraction
 const CYCLE_DURATION = 6000; // How long it stays active
 const RESPAWN_DELAY = 12000; // Delay between appearances
 
+// Pre-allocate CANNON.Vec3 objects to avoid garbage collection overhead in useFrame loop
+const _wellPos = new CANNON.Vec3();
+const _diff = new CANNON.Vec3();
+const _force = new CANNON.Vec3();
+
 function randomArenaPos(radius: number): [number, number] {
   const safetyBuffer = 8;
   const maxR = Math.max(5, radius - safetyBuffer);
@@ -75,15 +80,17 @@ export const GravityWell = () => {
     }
 
     // Apply radial attraction force to all dynamic bodies
-    const wellPos = new CANNON.Vec3(pos[0], 1, pos[1]);
+    _wellPos.set(pos[0], 1, pos[1]);
     for (const body of world.bodies) {
       const isDynamic = body.mass > 0 && body.type !== CANNON.Body.STATIC;
       if (isDynamic) {
-        const diff     = wellPos.vsub(body.position);
-        const distance = diff.length();
+        _wellPos.vsub(body.position, _diff);
+        const distance = _diff.length();
         if (distance < EFFECT_RADIUS && distance > 0.5) {
           const forceMag = (1 - distance / EFFECT_RADIUS) * PULL_FORCE * (body.mass / 50 + 1);
-          body.applyForce(diff.unit().scale(forceMag), body.position);
+          _diff.unit(_force);
+          _force.scale(forceMag, _force);
+          body.applyForce(_force, body.position);
         }
       }
     }
