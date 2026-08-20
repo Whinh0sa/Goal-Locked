@@ -11,6 +11,7 @@ import { usePhysics } from '../../hooks/usePhysics';
 import { ARENA_RADIUS } from '../../constants';
 
 const PICKUP_RADIUS   = 2.2;     // world-units — how close to trigger pickup
+const PICKUP_RADIUS_SQ = PICKUP_RADIUS * PICKUP_RADIUS;
 const BOOST_DURATION  = 5000;   // ms
 const RESPAWN_DELAY   = 12000;  // ms after pickup before a new orb appears
 
@@ -115,9 +116,9 @@ export const PowerUp = () => {
       const dx = playerPosition[0] - orbPos.x;
       const dy = playerPosition[1] - orbPos.y;
       const dz = playerPosition[2] - orbPos.z;
-      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      const distSq = dx * dx + dy * dy + dz * dz;
 
-      if (dist < PICKUP_RADIUS) {
+      if (distSq < PICKUP_RADIUS_SQ) {
         handlePickup(0);
         return;
       }
@@ -131,8 +132,8 @@ export const PowerUp = () => {
         // Only check bots that aren't eliminated (implied by body being in world)
         const dx = body.position.x - orbPos.x;
         const dz = body.position.z - orbPos.z;
-        const dist = Math.sqrt(dx * dx + dz * dz);
-        if (dist < PICKUP_RADIUS) {
+        const distSq = dx * dx + dz * dz;
+        if (distSq < PICKUP_RADIUS_SQ) {
           handlePickup(userData.id);
           return;
         }
