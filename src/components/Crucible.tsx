@@ -87,6 +87,7 @@ const BoundarySegment = ({
     index,
     sharedRadius,
 }: {
+    key?: React.Key;
     index: number;
     sharedRadius: React.MutableRefObject<number>;
 }) => {

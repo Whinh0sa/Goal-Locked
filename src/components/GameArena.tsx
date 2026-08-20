@@ -452,29 +452,41 @@ function CrucibleScene() {
 
 // --- Keyboard Bridge (lives OUTSIDE Canvas so DOM focus is guaranteed) ---
 function KeyboardBridge() {
+  const gameStarted = useGameStore(s => s.gameStarted);
+  const keys = useRef<Record<string, boolean>>({});
+
+  const updateDirection = React.useCallback(() => {
+    if (!useGameStore.getState().gameStarted) {
+      useGameStore.getState().setMoveDirection([0, 0]);
+      return;
+    }
+    let x = 0, z = 0;
+    const currentKeys = keys.current;
+    if (currentKeys['w'] || currentKeys['arrowup'])    z -= 1;
+    if (currentKeys['s'] || currentKeys['arrowdown'])  z += 1;
+    if (currentKeys['a'] || currentKeys['arrowleft'])  x -= 1;
+    if (currentKeys['d'] || currentKeys['arrowright']) x += 1;
+    // Normalise diagonal
+    const len = Math.sqrt(x * x + z * z);
+    if (len > 0) { x /= len; z /= len; }
+    useGameStore.getState().setMoveDirection([x, z]);
+  }, []);
+
   useEffect(() => {
-    const keys: Record<string, boolean> = {};
+    updateDirection();
+  }, [gameStarted, updateDirection]);
 
-    const updateDirection = () => {
-      let x = 0, z = 0;
-      if (keys['w'] || keys['arrowup'])    z -= 1;
-      if (keys['s'] || keys['arrowdown'])  z += 1;
-      if (keys['a'] || keys['arrowleft'])  x -= 1;
-      if (keys['d'] || keys['arrowright']) x += 1;
-      // Normalise diagonal
-      const len = Math.sqrt(x * x + z * z);
-      if (len > 0) { x /= len; z /= len; }
-      useGameStore.getState().setMoveDirection([x, z]);
-    };
-
+  useEffect(() => {
     const onDown = (e: KeyboardEvent) => {
-      if (!useGameStore.getState().gameStarted) return; // Bug 5 fix: ignore pre-game input
       const key = e.key.toLowerCase();
       if (['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(key)) {
         e.preventDefault();
-        keys[key] = true;
+        keys.current[key] = true;
         updateDirection();
       }
+
+      if (!useGameStore.getState().gameStarted) return; // Bug 5 fix: ignore pre-game input for actions
+
       if (e.code === 'Space') {
         e.preventDefault();
         useGameStore.getState().triggerPulse();
@@ -486,9 +498,8 @@ function KeyboardBridge() {
     };
 
     const onUp = (e: KeyboardEvent) => {
-      if (!useGameStore.getState().gameStarted) return; // Bug 5 fix: ignore pre-game input
       const key = e.key.toLowerCase();
-      keys[key] = false;
+      keys.current[key] = false;
       updateDirection(); // recalculate — axis resets to 0 on key release
     };
 
@@ -498,7 +509,7 @@ function KeyboardBridge() {
       window.removeEventListener('keydown', onDown);
       window.removeEventListener('keyup', onUp);
     };
-  }, []);
+  }, [updateDirection]);
 
   return null;
 }
