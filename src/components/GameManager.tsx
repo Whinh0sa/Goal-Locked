@@ -35,7 +35,7 @@ export const GameManager = () => {
   // Wire up collision particles: fire whenever the ball hits any physics body
   // We attach the listener once after the physics world is available
   useEffect(() => {
-    const handleCollision = (event: any) => {
+    const handleCollision = (event: { type: string; body: CANNON.Body; contact: CANNON.ContactEquation; target: CANNON.EventTarget }) => {
       // O(1) cached lookup — no linear scan
       const ballBody = useGameStore.getState().ballBodyRef;
       if (!ballBody) return;
