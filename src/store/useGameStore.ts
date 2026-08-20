@@ -335,6 +335,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   setImpactPosition: (pos, vel = 0, color = '#FFBF00') => set({ 
     impactPosition: pos, 
     impactVelocity: vel,
+    impactStrength: vel,
     impactColor: color 
   }),
   setSpeedMultiplier: (m) => set({ playerSpeedUntil: m > 1 ? Date.now() + 8000 : 0 }),
