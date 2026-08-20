@@ -12,6 +12,7 @@ import { useGameStore } from '../../store/useGameStore';
 
 const PULL_FORCE = 400; // Force multiplier
 const EFFECT_RADIUS = 15; // Max distance for attraction
+const EFFECT_RADIUS_SQ = EFFECT_RADIUS * EFFECT_RADIUS;
 const CYCLE_DURATION = 6000; // How long it stays active
 const RESPAWN_DELAY = 12000; // Delay between appearances
 
@@ -79,9 +80,10 @@ export const GravityWell = () => {
     for (const body of world.bodies) {
       const isDynamic = body.mass > 0 && body.type !== CANNON.Body.STATIC;
       if (isDynamic) {
-        const diff     = wellPos.vsub(body.position);
-        const distance = diff.length();
-        if (distance < EFFECT_RADIUS && distance > 0.5) {
+        const distanceSq = wellPos.distanceSquared(body.position);
+        if (distanceSq < EFFECT_RADIUS_SQ && distanceSq > 0.25) {
+          const diff = wellPos.vsub(body.position);
+          const distance = Math.sqrt(distanceSq);
           const forceMag = (1 - distance / EFFECT_RADIUS) * PULL_FORCE * (body.mass / 50 + 1);
           body.applyForce(diff.unit().scale(forceMag), body.position);
         }
