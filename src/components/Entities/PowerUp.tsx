@@ -50,7 +50,7 @@ export const PowerUp = () => {
   const registerPowerUp = useGameStore(s => s.registerPowerUp);
   const unregisterPowerUp = useGameStore(s => s.unregisterPowerUp);
 
-  const [id]                   = useState(() => `pw-${Math.random().toString(36).substr(2, 9)}`);
+  const [id]                   = useState(() => `pw-${crypto.randomUUID()}`);
   const [visible, setVisible]   = useState(false);
   const [spawnPos, setSpawnPos] = useState(() => randomSpawnPos(ARENA_RADIUS));
   const [type, setType]         = useState<PowerUpType>(() => randomPowerUpType());
