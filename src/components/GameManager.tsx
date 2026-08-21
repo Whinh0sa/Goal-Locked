@@ -16,6 +16,8 @@ export const GameManager = () => {
   const isSlowMo = useRef(false);
   const lastImpactTime = useRef(0);
   const isProcessingGoal = useRef(false);
+  const ballPosRef = useRef(new THREE.Vector3());
+  const impulseRef = useRef(new CANNON.Vec3());
 
   // Goal locations — computed once from shared constants
   const goalPositions = useMemo(() => {
@@ -84,23 +86,26 @@ export const GameManager = () => {
     const ballBody = useGameStore.getState().ballBodyRef;
     if (!ballBody) return;
 
-    const ballPos = new THREE.Vector3().copy(ballBody.position as any);
+    const ballPos = ballPosRef.current.copy(ballBody.position as any);
     const { currentRadius } = useGameStore.getState();
 
     // --- Containment Field: hard border impulse ---
-    const distFromCenter = Math.sqrt(ballPos.x ** 2 + ballPos.z ** 2);
-    if (distFromCenter > currentRadius + 1) {
+    const distFromCenterSq = ballPos.x ** 2 + ballPos.z ** 2;
+    const boundarySq = (currentRadius + 1) ** 2;
+    if (distFromCenterSq > boundarySq) {
+      impulseRef.current.set(-ballPos.x * 2, 0, -ballPos.z * 2);
       ballBody.applyImpulse(
-        new CANNON.Vec3(-ballPos.x * 2, 0, -ballPos.z * 2),
+        impulseRef.current,
         ballBody.position,
       );
     }
 
     // --- Slow-mo Focus Logic ---
     let nearGoal = false;
+    const slowMoDistSq = SLOW_MO_DIST * SLOW_MO_DIST;
     goalPositions.forEach((g, i) => {
         if (eliminated[i]) return;
-        if (ballPos.distanceTo(g) < SLOW_MO_DIST) nearGoal = true;
+        if (ballPos.distanceToSquared(g) < slowMoDistSq) nearGoal = true;
     });
 
     if (nearGoal && !isSlowMo.current) {
@@ -113,7 +118,8 @@ export const GameManager = () => {
 
     // --- Goal Detection (dynamic radius + precise post arc + height check) ---
     // Height guard: ball must be below post height (y < 3.0) to count
-    if (distFromCenter > currentRadius && ballPos.y < 3.0 && !isProcessingGoal.current) {
+    const currentRadiusSq = currentRadius * currentRadius;
+    if (distFromCenterSq > currentRadiusSq && ballPos.y < 3.0 && !isProcessingGoal.current) {
         const ballAngle = Math.atan2(ballPos.z, ballPos.x);
         const angleStep = (Math.PI * 2) / GOALS;
 
