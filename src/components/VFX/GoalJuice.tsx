@@ -35,6 +35,9 @@ export function GoalJuice() {
     if (lastGoal !== null) {
       pulseActive.current = true;
       pulseTimer.current = 0;
+      if (particles.current) {
+        particles.current.visible = true;
+      }
     }
   }, [lastGoal]);
 
@@ -64,12 +67,13 @@ export function GoalJuice() {
       if (pulseTimer.current > 1.5) {
         pulseActive.current = false;
         particles.current.scale.setScalar(1);
+        particles.current.visible = false;
       }
     }
   });
 
   return (
-    <points ref={particles}>
+    <points ref={particles} visible={false}>
       <bufferGeometry>
         <bufferAttribute
           attach="attributes-position"
