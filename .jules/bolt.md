@@ -13,3 +13,7 @@
 ## 2024-05-18 - Avoid new THREE.Vector3() allocations inside useFrame
 **Learning:** Instantiating new `THREE.Vector3` objects inside high-frequency loops like `useFrame` causes excessive garbage collection, leading to frame drops.
 **Action:** Pre-allocate vectors outside the loop or use `useRef` and mutate them in place (e.g., `vecRef.current.copy(source)` or `vecRef.current.set(x,y,z)`).
+
+## 2025-03-09 - React Three Fiber (useFrame) memory allocation
+**Learning:** Avoid instantiating new objects (like `new THREE.Vector3()`) inside the `useFrame` loop. This leads to continuous memory allocation each frame, which degrades performance and triggers garbage collection pauses.
+**Action:** Always hoist object instantiations out of `useFrame` (either to module-level constants or via `useRef`) and mutate them in-place using methods like `.set()` or `.copy()`.
