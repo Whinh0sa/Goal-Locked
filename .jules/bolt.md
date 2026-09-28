@@ -17,3 +17,7 @@
 ## 2025-03-09 - React Three Fiber (useFrame) memory allocation
 **Learning:** Avoid instantiating new objects (like `new THREE.Vector3()`) inside the `useFrame` loop. This leads to continuous memory allocation each frame, which degrades performance and triggers garbage collection pauses.
 **Action:** Always hoist object instantiations out of `useFrame` (either to module-level constants or via `useRef`) and mutate them in-place using methods like `.set()` or `.copy()`.
+
+## 2024-05-18 - Avoid Math.sqrt for Distance Checks in Game Loops
+**Learning:** `Math.sqrt` is computationally expensive to use in high-frequency game loops (like `useFrame` which runs every frame, typically 60fps). In `src/components/Entities/PowerUp.tsx`, calculating the Euclidean distance using `Math.sqrt(dx * dx + dz * dz)` against every single bot in the arena caused unnecessary CPU load and framedrops.
+**Action:** Replaced `Math.sqrt()` distance calculations with squared distance comparisons (`distSq < PICKUP_RADIUS_SQ`) for both player and bots power-up pickup checking logic to improve overall framerate performance.
