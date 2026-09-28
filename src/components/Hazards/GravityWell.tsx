@@ -23,6 +23,12 @@ function randomArenaPos(radius: number): [number, number] {
   return [Math.cos(a) * r, Math.sin(a) * r];
 }
 
+
+// Pre-allocate vectors outside the component to prevent GC in high-frequency loops
+const tmpWellPos = new CANNON.Vec3();
+const tmpDiff = new CANNON.Vec3();
+const tmpForce = new CANNON.Vec3();
+
 export const GravityWell = () => {
   const { world } = usePhysics();
   const gameStarted   = useGameStore(s => s.gameStarted);
@@ -67,23 +73,38 @@ export const GravityWell = () => {
     // Safety guard: bail if inactive, game stopped, or mesh not yet mounted
     if (!active || !gameStarted || !meshRef.current) return;
 
-    // OOB Sweeper
-    const distFromCenter = Math.sqrt(pos[0] * pos[0] + pos[1] * pos[1]);
-    if (distFromCenter > currentRadius - 2) {
+    // OOB Sweeper (Optimized: avoiding Math.sqrt)
+    const distFromCenterSq = pos[0] * pos[0] + pos[1] * pos[1];
+    const maxRadius = currentRadius - 2;
+    if (distFromCenterSq > maxRadius * maxRadius) {
       setActive(false);
       return;
     }
 
     // Apply radial attraction force to all dynamic bodies
-    const wellPos = new CANNON.Vec3(pos[0], 1, pos[1]);
+    // Optimized: using pre-allocated vectors and lengthSquared to avoid allocations and Math.sqrt
+    tmpWellPos.set(pos[0], 1, pos[1]);
+    const effectRadiusSq = EFFECT_RADIUS * EFFECT_RADIUS;
+
     for (const body of world.bodies) {
       const isDynamic = body.mass > 0 && body.type !== CANNON.Body.STATIC;
       if (isDynamic) {
-        const diff     = wellPos.vsub(body.position);
-        const distance = diff.length();
-        if (distance < EFFECT_RADIUS && distance > 0.5) {
+        tmpWellPos.vsub(body.position, tmpDiff);
+        const distanceSq = tmpDiff.lengthSquared();
+
+        if (distanceSq < effectRadiusSq && distanceSq > 0.25) {
+          const distance = Math.sqrt(distanceSq); // Need actual distance for falloff
           const forceMag = (1 - distance / EFFECT_RADIUS) * PULL_FORCE * (body.mass / 50 + 1);
-          body.applyForce(diff.unit().scale(forceMag), body.position);
+
+          // Manually calculate unit vector and scale in-place to avoid .unit() and .scale() object allocation
+          const invDist = 1 / distance;
+          tmpForce.set(
+            tmpDiff.x * invDist * forceMag,
+            tmpDiff.y * invDist * forceMag,
+            tmpDiff.z * invDist * forceMag
+          );
+
+          body.applyForce(tmpForce, body.position);
         }
       }
     }
