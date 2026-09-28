@@ -45,7 +45,6 @@ export const ExitPortal = ({
 
             if (dist < PORTAL_TRIGGER_RADIUS) {
                 triggered.current = true;
-                console.log('PORTAL TRIGGERED — EXITING TO VIBEVERSE');
                 window.location.href = destinationUrl;
             }
         }
