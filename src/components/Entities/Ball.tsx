@@ -6,6 +6,10 @@ import { Trail } from '@react-three/drei';
 import { usePhysics } from '../../hooks/usePhysics';
 import { useGameStore } from '../../store/useGameStore';
 
+const DOWNWARD_IMPULSE = new CANNON.Vec3(0, -30, 0);
+const MAX_SPEED = 35;
+const MAX_SPEED_SQ = MAX_SPEED * MAX_SPEED;
+
 export const Ball = () => {
   const { world } = usePhysics();
   const groupRef = useRef<THREE.Group>(null!);
@@ -73,7 +77,8 @@ export const Ball = () => {
 
     // ── Ceiling Guard: ball must stay on the pitch ──────────────────
     if (pos.y > 10) {
-      body.applyImpulse(new CANNON.Vec3(0, -30, 0), body.position);
+      // PERF: use pre-allocated vector to avoid GC overhead in useFrame
+      body.applyImpulse(DOWNWARD_IMPULSE, body.position);
     }
 
     // ── High Damping for natural feel (0.5 baseline) ──────────────────
@@ -82,9 +87,10 @@ export const Ball = () => {
 
     // ── Velocity Clamp ──
     const v = body.velocity;
-    const speed = Math.sqrt(v.x**2 + v.y**2 + v.z**2);
-    const MAX_SPEED = 35;
-    if (speed > MAX_SPEED) {
+    // PERF: use squared distance check to avoid Math.sqrt on every frame
+    const speedSq = v.x*v.x + v.y*v.y + v.z*v.z;
+    if (speedSq > MAX_SPEED_SQ) {
+      const speed = Math.sqrt(speedSq);
       const factor = MAX_SPEED / speed;
       body.velocity.set(v.x * factor, v.y * factor, v.z * factor);
     }
