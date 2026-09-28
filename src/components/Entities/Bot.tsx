@@ -15,6 +15,16 @@ type BotState = 'ATTACK' | 'DEFEND' | 'REPOSITION' | 'SLAM' | 'SHOOT';
 
 const BOT_NAMES = ['Bot_Apex', 'Bot_Nova', 'Bot_Onyx', 'Bot_Flux', 'Bot_Rift', 'Bot_Echo', 'Bot_Vex', 'Bot_Zero'];
 
+const _botPos = new THREE.Vector3();
+const _ballPos = new THREE.Vector3();
+const _goalPos2D = new THREE.Vector3();
+const _targetGoal = new THREE.Vector3();
+const _direction = new THREE.Vector3();
+const _interceptPos = new THREE.Vector3();
+const _tempVec1 = new THREE.Vector3();
+const _shootDir = new THREE.Vector3();
+const _impulseVec = new CANNON.Vec3();
+
 export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3; key?: React.Key }) => {
   const { world } = usePhysics();
   const isEliminated = useGameStore(state => state.eliminated[id]);
@@ -138,9 +148,9 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3; key?:
       body.updateMassProperties();
     }
 
-    const botPos = new THREE.Vector3(body.position.x, 0, body.position.z);
-    const ballPos = new THREE.Vector3(ballPos3[0], 0, ballPos3[2]);
-    const goalPos2D = new THREE.Vector3(goalPos.x, 0, goalPos.z);
+    const botPos = _botPos.set(body.position.x, 0, body.position.z);
+    const ballPos = _ballPos.set(ballPos3[0], 0, ballPos3[2]);
+    const goalPos2D = _goalPos2D.set(goalPos.x, 0, goalPos.z);
 
     const ballToGoalDist = ballPos.distanceTo(goalPos2D);
     const botToBallDist = botPos.distanceTo(ballPos);
@@ -180,7 +190,7 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3; key?:
     const shouldUpdate = frameCount.current % 5 === 0;
 
     if (shouldUpdate) {
-      let targetGoal = goalPos2D; // fallback
+      let targetGoal = _targetGoal.copy(goalPos2D); // fallback
       const stateStore = useGameStore.getState();
       const { eliminated } = stateStore;
       const playerAlive = !eliminated[0];
@@ -205,7 +215,7 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3; key?:
         });
 
         if (closestOrb && minDistToOrb < 15 && minDistToOrb < botToBallDist) {
-          targetGoal = new THREE.Vector3(closestOrb.x, 0, closestOrb.z);
+          targetGoal.set(closestOrb.x, 0, closestOrb.z);
           huntingPowerUp = true;
         }
       }
@@ -213,7 +223,7 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3; key?:
       if (!huntingPowerUp) {
         // Normal AI Targeting
         if (playerAlive && profile.prefersPlayer) {
-          targetGoal = playerGoalPos;
+          targetGoal.copy(playerGoalPos);
         } else {
           // Target a random alive bot's goal
           const aliveIndices = eliminated
@@ -223,12 +233,12 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3; key?:
           if (aliveIndices.length > 0) {
             const randomIndex = aliveIndices[Math.floor(Math.random() * aliveIndices.length)];
             const angle = (randomIndex / 8) * Math.PI * 2;
-            targetGoal = new THREE.Vector3(Math.cos(angle) * ARENA_RADIUS, 0, Math.sin(angle) * ARENA_RADIUS);
+            targetGoal.set(Math.cos(angle) * ARENA_RADIUS, 0, Math.sin(angle) * ARENA_RADIUS);
           }
         }
       }
 
-      let direction = new THREE.Vector3();
+      let direction = _direction.set(0, 0, 0);
       let speed = BASE_SPEED;
       // Smooth difficulty curve: 70% at Tier 1 → 100% at Tier 4 → hyper at Tier 5+
       const tierMult = 0.6 + (tier * 0.1);
@@ -241,7 +251,7 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3; key?:
         direction.subVectors(chaseTarget, botPos);
         speed = BASE_SPEED * profile.aggression * tierMult;
       } else if (stateRef.current === 'DEFEND') {
-        const interceptPos = new THREE.Vector3((ballPos.x + goalPos2D.x) / 2, 0, (ballPos.z + goalPos2D.z) / 2);
+        const interceptPos = _interceptPos.set((ballPos.x + goalPos2D.x) / 2, 0, (ballPos.z + goalPos2D.z) / 2);
         direction.subVectors(interceptPos, botPos);
         speed = BASE_SPEED * profile.aggression * tierMult;
       } else if (stateRef.current === 'SHOOT') {
@@ -280,7 +290,7 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3; key?:
       lastSpeed.current = speed;
 
       // ── SHOOT TRIGGER ──────────────────────────────────────────────
-      const facingTarget = direction.dot(new THREE.Vector3().subVectors(targetGoal, botPos).normalize()) > 0.8;
+      const facingTarget = direction.dot(_tempVec1.subVectors(targetGoal, botPos).normalize()) > 0.8;
       const canShoot = Date.now() - lastShotTime.current > 2000;
       if (botToBallDist < 3.5 && facingTarget && canShoot) {
         stateRef.current = 'SHOOT';
@@ -288,9 +298,9 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3; key?:
         // Use cached O(1) ball body reference
         const ballBody = useGameStore.getState().ballBodyRef;
         if (ballBody) {
-          const shootDir = new THREE.Vector3().subVectors(targetGoal, ballPos).normalize();
+          const shootDir = _shootDir.subVectors(targetGoal, ballPos).normalize();
           ballBody.applyImpulse(
-            new CANNON.Vec3(shootDir.x * 300, 0, shootDir.z * 300),
+            _impulseVec.set(shootDir.x * 300, 0, shootDir.z * 300),
             ballBody.position
           );
           setLastStriker(id);
