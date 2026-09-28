@@ -228,7 +228,7 @@ function KeyboardBridge() {
     };
 
     const onDown = (e: KeyboardEvent) => {
-      if (!useGameStore.getState().gameStarted) return; // Bug 5 fix: ignore pre-game input
+      if (!useGameStore.getState().gameStarted) return;
       const key = e.key.toLowerCase();
       if (['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(key)) {
         e.preventDefault();
@@ -248,7 +248,7 @@ function KeyboardBridge() {
     const onUp = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
       keys[key] = false;
-      if (!useGameStore.getState().gameStarted) return; // Bug 5 fix: ignore pre-game input
+      if (!useGameStore.getState().gameStarted) return;
       updateDirection(); // recalculate — axis resets to 0 on key release
     };
 
