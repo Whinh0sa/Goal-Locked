@@ -15,6 +15,8 @@ const DECOY_SPAWN_POSITIONS: [number, number, number][] = [
   [6, 6, 4],
 ];
 
+const DOWNWARD_IMPULSE = new CANNON.Vec3(0, -20, 0);
+
 const DecoyBall = ({ spawnPos }: { spawnPos: [number, number, number] }) => {
   const { world } = usePhysics();
   const meshRef = useRef<THREE.Mesh>(null!);
@@ -46,7 +48,7 @@ const DecoyBall = ({ spawnPos }: { spawnPos: [number, number, number] }) => {
 
     // Ceiling guard (same as main ball)
     if (p.y > 10) {
-      bodyRef.current.applyImpulse(new CANNON.Vec3(0, -20, 0), bodyRef.current.position);
+      bodyRef.current.applyImpulse(DOWNWARD_IMPULSE, bodyRef.current.position);
     }
 
     // Pulse emissive intensity for the "alive" look
