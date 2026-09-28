@@ -9,6 +9,7 @@ import * as CANNON from 'cannon-es';
 import { usePhysics } from '../../hooks/usePhysics';
 import { useGameStore } from '../../store/useGameStore';
 import { ARENA_RADIUS } from '../../constants';
+import { randomArenaPos as getSharedArenaPos } from '../../utils/position';
 
 type Phase = 'idle' | 'warning' | 'rising' | 'retracting';
 
@@ -16,14 +17,6 @@ const CYCLE_INTERVAL = 15_000;  // ms between bumper events
 const WARNING_DURATION = 1500;  // ms red warning stays visible
 const RISE_TARGET = 5;          // world-units height the bumper reaches
 const BUMPER_SIZE = 2.5;        // half-size of the bumper square
-
-function randomArenaPos(radius: number): [number, number] {
-  const safetyBuffer = 6;
-  const maxR = Math.max(5, radius - safetyBuffer);
-  const r = maxR * Math.sqrt(Math.random());
-  const a = Math.random() * Math.PI * 2;
-  return [Math.cos(a) * r, Math.sin(a) * r];
-}
 
 export const FloorBumper = () => {
   const { world } = usePhysics();
@@ -69,7 +62,7 @@ export const FloorBumper = () => {
   useEffect(() => {
     if (!gameStarted) return;
     const kick = () => {
-      const newPos = randomArenaPos(useGameStore.getState().currentRadius);
+      const newPos = getSharedArenaPos(useGameStore.getState().currentRadius, 6, 5);
       setPos(newPos);
       setPhase('warning');
       bumperY.current = -0.3;

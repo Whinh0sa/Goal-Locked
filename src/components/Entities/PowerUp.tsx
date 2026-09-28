@@ -9,6 +9,7 @@ import * as THREE from 'three';
 import { useGameStore } from '../../store/useGameStore';
 import { usePhysics } from '../../hooks/usePhysics';
 import { ARENA_RADIUS } from '../../constants';
+import { randomSpawnPos as getSharedSpawnPos } from '../../utils/position';
 
 const PICKUP_RADIUS   = 2.2;     // world-units — how close to trigger pickup
 const PICKUP_RADIUS_SQ = PICKUP_RADIUS * PICKUP_RADIUS;
@@ -35,12 +36,9 @@ const TYPE_CONFIG = {
 };
 
 function randomSpawnPos(radius: number): THREE.Vector3 {
-  const safetyMargin = 4;
-  const maxR = Math.max(5, radius - safetyMargin);
-  const r = 5 + Math.random() * (maxR - 5);
-  const a = Math.random() * Math.PI * 2;
+  const [x, z] = getSharedSpawnPos(radius, 4);
   // Hitbox stays grounded at 0.5; Float will offset the visual mesh only
-  return new THREE.Vector3(Math.cos(a) * r, 0.5, Math.sin(a) * r);
+  return new THREE.Vector3(x, 0.5, z);
 }
 
 export const PowerUp = () => {
