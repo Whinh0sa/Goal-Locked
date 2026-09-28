@@ -28,7 +28,7 @@ export const Ball = () => {
         collisionFilterGroup: 2,
     });
 
-    body.addEventListener('collide', (e: any) => {
+    body.addEventListener('collide', (e: { body: CANNON.Body & { userData?: { id?: number } } }) => {
       const colliderId = e.body.userData?.id;
       // If the ball hits a player or a bot (ignore walls/floors)
       if (colliderId !== undefined) {
