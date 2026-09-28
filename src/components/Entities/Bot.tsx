@@ -15,6 +15,17 @@ type BotState = 'ATTACK' | 'DEFEND' | 'REPOSITION' | 'SLAM' | 'SHOOT';
 
 const BOT_NAMES = ['Bot_Apex', 'Bot_Nova', 'Bot_Onyx', 'Bot_Flux', 'Bot_Rift', 'Bot_Echo', 'Bot_Vex', 'Bot_Zero'];
 
+// --- Pre-allocated objects for useFrame (avoids GC pressure) ---
+const _botPos = new THREE.Vector3();
+const _ballPos = new THREE.Vector3();
+const _goalPos2D = new THREE.Vector3();
+const _direction = new THREE.Vector3();
+const _interceptPos = new THREE.Vector3();
+const _targetGoal = new THREE.Vector3();
+const _facingVec = new THREE.Vector3();
+const _shootDir = new THREE.Vector3();
+const _scaledDir = new THREE.Vector3();
+
 export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3; key?: React.Key }) => {
   const { world } = usePhysics();
   const isEliminated = useGameStore(state => state.eliminated[id]);
@@ -138,13 +149,14 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3; key?:
       body.updateMassProperties();
     }
 
-    const botPos = new THREE.Vector3(body.position.x, 0, body.position.z);
-    const ballPos = new THREE.Vector3(ballPos3[0], 0, ballPos3[2]);
-    const goalPos2D = new THREE.Vector3(goalPos.x, 0, goalPos.z);
+    _botPos.set(body.position.x, 0, body.position.z);
+    _ballPos.set(ballPos3[0], 0, ballPos3[2]);
+    _goalPos2D.set(goalPos.x, 0, goalPos.z);
 
-    const ballToGoalDist = ballPos.distanceTo(goalPos2D);
-    const botToBallDist = botPos.distanceTo(ballPos);
-    const hasPossession = botToBallDist < POSSESSION_RADIUS;
+    // Use distanceToSquared for performance
+    const ballToGoalDistSq = _ballPos.distanceToSquared(_goalPos2D);
+    const botToBallDistSq = _botPos.distanceToSquared(_ballPos);
+    const hasPossession = botToBallDistSq < (POSSESSION_RADIUS * POSSESSION_RADIUS);
 
     // Self-immunity from freeze if I was the collector
     const isFrozen = now < freezeBotsUntil && lastStriker !== id;
@@ -159,15 +171,15 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3; key?:
     }
 
     // ── FSM Transition ─────────────────────────────────────────────────
-    const ballInBotHalf = ballToGoalDist < currentRadius * 0.55;
+    const ballInBotHalf = ballToGoalDistSq < (currentRadius * 0.55) * (currentRadius * 0.55);
 
     if (stateRef.current !== 'REPOSITION' && stateRef.current !== 'SHOOT') {
-      if (botToBallDist < 3.0) {
+      if (botToBallDistSq < 9.0) { // 3.0 squared
         stateRef.current = 'SLAM';
       } else if (ballInBotHalf) {
         stateRef.current = 'DEFEND';
       } else {
-        if (botPos.length() < 2 && Math.random() < 0.005) {
+        if (_botPos.lengthSq() < 4 && Math.random() < 0.005) { // 2.0 squared
           stateRef.current = 'REPOSITION';
           repositionTimer.current = 0.6;
         } else {
@@ -180,7 +192,7 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3; key?:
     const shouldUpdate = frameCount.current % 5 === 0;
 
     if (shouldUpdate) {
-      let targetGoal = goalPos2D; // fallback
+      _targetGoal.copy(_goalPos2D); // fallback
       const stateStore = useGameStore.getState();
       const { eliminated } = stateStore;
       const playerAlive = !eliminated[0];
@@ -192,20 +204,20 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3; key?:
 
       if (activeOrbs.length > 0 && !hasBuff) {
         let closestOrb = null;
-        let minDistToOrb = Infinity;
+        let minDistSqToOrb = Infinity;
 
         activeOrbs.forEach(orb => {
           const orbX = orb.position[0];
           const orbZ = orb.position[2];
-          const d = Math.sqrt((orbX - botPos.x)**2 + (orbZ - botPos.z)**2);
-          if (d < minDistToOrb) {
-            minDistToOrb = d;
+          const dSq = (orbX - _botPos.x)**2 + (orbZ - _botPos.z)**2;
+          if (dSq < minDistSqToOrb) {
+            minDistSqToOrb = dSq;
             closestOrb = { x: orbX, z: orbZ };
           }
         });
 
-        if (closestOrb && minDistToOrb < 15 && minDistToOrb < botToBallDist) {
-          targetGoal = new THREE.Vector3(closestOrb.x, 0, closestOrb.z);
+        if (closestOrb && minDistSqToOrb < 225 && minDistSqToOrb < botToBallDistSq) { // 15 squared
+          _targetGoal.set(closestOrb.x, 0, closestOrb.z);
           huntingPowerUp = true;
         }
       }
@@ -213,7 +225,7 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3; key?:
       if (!huntingPowerUp) {
         // Normal AI Targeting
         if (playerAlive && profile.prefersPlayer) {
-          targetGoal = playerGoalPos;
+          _targetGoal.copy(playerGoalPos);
         } else {
           // Target a random alive bot's goal
           const aliveIndices = eliminated
@@ -223,49 +235,48 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3; key?:
           if (aliveIndices.length > 0) {
             const randomIndex = aliveIndices[Math.floor(Math.random() * aliveIndices.length)];
             const angle = (randomIndex / 8) * Math.PI * 2;
-            targetGoal = new THREE.Vector3(Math.cos(angle) * ARENA_RADIUS, 0, Math.sin(angle) * ARENA_RADIUS);
+            _targetGoal.set(Math.cos(angle) * ARENA_RADIUS, 0, Math.sin(angle) * ARENA_RADIUS);
           }
         }
       }
 
-      let direction = new THREE.Vector3();
       let speed = BASE_SPEED;
       // Smooth difficulty curve: 70% at Tier 1 → 100% at Tier 4 → hyper at Tier 5+
       const tierMult = 0.6 + (tier * 0.1);
 
       if (stateRef.current === 'SLAM') {
-        direction.subVectors(ballPos, botPos);
+        _direction.subVectors(_ballPos, _botPos);
         speed = BASE_SPEED * 2.0 * profile.aggression * tierMult;
       } else if (stateRef.current === 'ATTACK') {
-        const chaseTarget = hasPossession ? targetGoal : ballPos;
-        direction.subVectors(chaseTarget, botPos);
+        const chaseTarget = hasPossession ? _targetGoal : _ballPos;
+        _direction.subVectors(chaseTarget, _botPos);
         speed = BASE_SPEED * profile.aggression * tierMult;
       } else if (stateRef.current === 'DEFEND') {
-        const interceptPos = new THREE.Vector3((ballPos.x + goalPos2D.x) / 2, 0, (ballPos.z + goalPos2D.z) / 2);
-        direction.subVectors(interceptPos, botPos);
+        _interceptPos.set((_ballPos.x + _goalPos2D.x) / 2, 0, (_ballPos.z + _goalPos2D.z) / 2);
+        _direction.subVectors(_interceptPos, _botPos);
         speed = BASE_SPEED * profile.aggression * tierMult;
       } else if (stateRef.current === 'SHOOT') {
-        direction.subVectors(targetGoal, botPos);
+        _direction.subVectors(_targetGoal, _botPos);
         speed = BASE_SPEED * 0.5;
       } else {
-        direction.subVectors(goalPos2D, botPos);
+        _direction.subVectors(_goalPos2D, _botPos);
         speed = BASE_SPEED * 0.7;
         repositionTimer.current -= delta * 5; // adjusted for throttle
         if (repositionTimer.current <= 0) stateRef.current = 'ATTACK';
       }
 
-      direction.y = 0;
-      if (direction.lengthSq() > 0.0001) {
-        direction.normalize();
-        direction.x += profile.noiseX;
-        direction.z += profile.noiseZ;
-        direction.normalize();
+      _direction.y = 0;
+      if (_direction.lengthSq() > 0.0001) {
+        _direction.normalize();
+        _direction.x += profile.noiseX;
+        _direction.z += profile.noiseZ;
+        _direction.normalize();
       } else {
-        direction.set(0, 0, 0);
+        _direction.set(0, 0, 0);
       }
 
       // ── Proximity Slowdown (Relaxed for aggression) ──
-      if (botToBallDist < 1.5 && stateRef.current !== 'SLAM') {
+      if (botToBallDistSq < 2.25 && stateRef.current !== 'SLAM') { // 1.5 squared
         speed = 0;
       }
 
@@ -273,24 +284,25 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3; key?:
       speed *= speedMultiplier;
       if (isEMPed) speed *= 0.3;
 
-      const { x: vx, z: vz } = direction.clone().multiplyScalar(speed);
-      body.velocity.set(vx, body.velocity.y, vz);
+      _scaledDir.copy(_direction).multiplyScalar(speed);
+      body.velocity.set(_scaledDir.x, body.velocity.y, _scaledDir.z);
 
-      lastDirection.current.copy(direction);
+      lastDirection.current.copy(_direction);
       lastSpeed.current = speed;
 
       // ── SHOOT TRIGGER ──────────────────────────────────────────────
-      const facingTarget = direction.dot(new THREE.Vector3().subVectors(targetGoal, botPos).normalize()) > 0.8;
+      _facingVec.subVectors(_targetGoal, _botPos).normalize();
+      const facingTarget = _direction.dot(_facingVec) > 0.8;
       const canShoot = Date.now() - lastShotTime.current > 2000;
-      if (botToBallDist < 3.5 && facingTarget && canShoot) {
+      if (botToBallDistSq < 12.25 && facingTarget && canShoot) { // 3.5 squared
         stateRef.current = 'SHOOT';
         
         // Use cached O(1) ball body reference
         const ballBody = useGameStore.getState().ballBodyRef;
         if (ballBody) {
-          const shootDir = new THREE.Vector3().subVectors(targetGoal, ballPos).normalize();
+          _shootDir.subVectors(_targetGoal, _ballPos).normalize();
           ballBody.applyImpulse(
-            new CANNON.Vec3(shootDir.x * 300, 0, shootDir.z * 300),
+            new CANNON.Vec3(_shootDir.x * 300, 0, _shootDir.z * 300),
             ballBody.position
           );
           setLastStriker(id);
