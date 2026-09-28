@@ -10,6 +10,12 @@ import { ARENA_RADIUS } from '../../constants';
 const SPEED = 25;
 const MAX_SHIELDS = 3;
 
+// ── Pre-allocated vectors for useFrame to avoid GC pressure ──
+const dashImpulse = new CANNON.Vec3();
+const dribbleImpulse = new CANNON.Vec3();
+const pulseVector = new CANNON.Vec3();
+const pulseImpulse = new CANNON.Vec3();
+
 export const Player = () => {
   const { world } = usePhysics();
   const bodyRef   = useRef<CANNON.Body | null>(null);
@@ -151,7 +157,8 @@ export const Player = () => {
       // Default to "forward" (-Z) when standing still instead of drifting right
       const dx = x !== 0 || z !== 0 ? x : 0;
       const dz = x !== 0 || z !== 0 ? z : -1;
-      bodyRef.current.applyImpulse(new CANNON.Vec3(dx * 800, 0, dz * 800), bodyRef.current.position);
+      dashImpulse.set(dx * 800, 0, dz * 800);
+      bodyRef.current.applyImpulse(dashImpulse, bodyRef.current.position);
     }
 
     // Publish player position
@@ -179,10 +186,8 @@ export const Player = () => {
           // Instead of overriding velocity, we apply a gentle impulse toward the player
           // to create a "sticky" but physically honest dribbling feel.
           const pullStrength = 1.2;
-          ballBody.applyImpulse(
-            new CANNON.Vec3(-dx2 * pullStrength, 0, -dz2 * pullStrength),
-            ballBody.position
-          );
+          dribbleImpulse.set(-dx2 * pullStrength, 0, -dz2 * pullStrength);
+          ballBody.applyImpulse(dribbleImpulse, ballBody.position);
         }
       }
     }
@@ -191,10 +196,12 @@ export const Player = () => {
     if (pulseTrigger) {
       const ballBodyP = useGameStore.getState().ballBodyRef;
       if (ballBodyP) {
-        const dp   = ballBodyP.position.vsub(body.position);
-        const dist = dp.length();
-        if (dist < 5) {
-          ballBodyP.applyImpulse(dp.scale(250 / Math.max(dist, 0.1)), ballBodyP.position);
+        ballBodyP.position.vsub(body.position, pulseVector);
+        const distSq = pulseVector.lengthSquared();
+        if (distSq < 25) {
+          const dist = Math.sqrt(distSq);
+          pulseVector.scale(250 / Math.max(dist, 0.1), pulseImpulse);
+          ballBodyP.applyImpulse(pulseImpulse, ballBodyP.position);
           setLastStriker(0); // Player legally claims possession via Shockwave
         }
       }
