@@ -94,6 +94,14 @@ describe('useGameStore - triggerPowerUp', () => {
     // Speed should be 8000ms from the OLD time (which is Date.now() - 1000 + 8000)
     expect(state.botBuffs[1]?.speedUntil).toBe(Date.now() - 1000 + 8000);
   });
+
+  it('should not mutate state if an unknown power-up type is triggered', () => {
+    const initialState = useGameStore.getState();
+    // @ts-ignore - Intentionally passing an invalid type
+    useGameStore.getState().triggerPowerUp('unknown', 0);
+    const newState = useGameStore.getState();
+    expect(newState).toBe(initialState);
+  });
 });
 
 describe('useGameStore - registerGoal', () => {
