@@ -1,0 +1,84 @@
+--- src/components/CameraManager.tsx
++++ src/components/CameraManager.tsx
+@@ -15,12 +15,6 @@
+ const FOV_TACTICAL   = 50;
+ const FOV_ACTION     = 30;
+
+-// Reusable vectors for performance to avoid allocations in useFrame
+-const tempVictoryTarget = new THREE.Vector3();
+-const tempVictoryCamPos = new THREE.Vector3();
+-const tempTargetPosition = new THREE.Vector3();
+-const tempTargetLookAt = new THREE.Vector3();
+-
+ export const CameraManager = () => {
+   const { world }    = usePhysics();
+   const victory      = useGameStore(s => s.victory);
+@@ -42,11 +36,10 @@
+       const ORBIT_Y = 12;
+       const cx = playerPos[0] + Math.cos(orbitAngle.current) * ORBIT_R;
+       const cz = playerPos[2] + Math.sin(orbitAngle.current) * ORBIT_R;
+-      tempVictoryTarget.set(playerPos[0], playerPos[1], playerPos[2]);
+-      tempVictoryCamPos.set(cx, ORBIT_Y, cz);
++      const target = new THREE.Vector3(playerPos[0], playerPos[1], playerPos[2]);
+
+-      state.camera.position.lerp(tempVictoryCamPos, 0.04);
+-      camTarget.current.lerp(tempVictoryTarget, 0.06);
++      state.camera.position.lerp(new THREE.Vector3(cx, ORBIT_Y, cz), 0.04);
++      camTarget.current.lerp(target, 0.06);
+       state.camera.lookAt(camTarget.current);
+
+       if (pCam.fov !== undefined) {
+@@ -63,6 +56,8 @@
+     const livePlayerPos = stateStore.playerPosition;
+     const isPortrait = window.innerHeight > window.innerWidth;
+
++    let targetPosition = new THREE.Vector3();
++    let targetLookAt = new THREE.Vector3();
+     let targetFov = FOV_ACTION;
+
+     // 1. Global Midpoint Tracking
+@@ -80,8 +75,8 @@
+       // High-altitude top-down overview
+       const height = 75 + zoomOffset; // Apply Zoom globally
+       // Fixed offset to avoid gimbal lock, looking slightly South
+-      tempTargetPosition.set(anchorX, height, anchorZ + 0.01);
+-      tempTargetLookAt.set(anchorX, 0, anchorZ);
++      targetPosition.set(anchorX, height, anchorZ + 0.01);
++      targetLookAt.set(anchorX, 0, anchorZ);
+       // Force "North" to be "Up" on the screen to prevent compass flip
+       pCam.up.set(0, 0, -1);
+       targetFov = isPortrait ? 60 : 50;
+@@ -94,12 +89,12 @@
+       orbitAngle.current += delta * 0.2;
+       const radius = 35;
+       const height = 25;
+-      tempTargetPosition.set(
++      targetPosition.set(
+         orbitTarget[0] + Math.cos(orbitAngle.current) * radius,
+         height,
+         orbitTarget[2] + Math.sin(orbitAngle.current) * radius
+       );
+-      tempTargetLookAt.set(orbitTarget[0], 0, orbitTarget[2]);
++      targetLookAt.set(orbitTarget[0], 0, orbitTarget[2]);
+       targetFov = 40;
+     }
+     else {
+@@ -112,14 +107,14 @@
+       const targetYVal = baseHeight + zoomOffset;
+       const targetZVal = anchorZ + (isPortrait ? 60 : 40) + (zoomOffset * 0.8);
+
+-      tempTargetPosition.set(anchorX, targetYVal, targetZVal);
+-      tempTargetLookAt.set(anchorX, 0, anchorZ);
++      targetPosition.set(anchorX, targetYVal, targetZVal);
++      targetLookAt.set(anchorX, 0, anchorZ);
+       targetFov = isPortrait ? 40 : 35;
+     }
+
+     // Smooth Lerp transitions
+-    state.camera.position.lerp(tempTargetPosition, 0.06);
+-    camTarget.current.lerp(tempTargetLookAt, 0.08);
++    state.camera.position.lerp(targetPosition, 0.06);
++    camTarget.current.lerp(targetLookAt, 0.08);
+     state.camera.lookAt(camTarget.current);
+
+     if (pCam.fov !== undefined) {
