@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useGameStore } from '../../store/useGameStore';
 import { useShallow } from 'zustand/react/shallow';
+import { useVirtualJoystick } from '../../hooks/useVirtualJoystick';
 
 export const MobileControls = () => {
     const { setMoveDirection, triggerPulse, triggerDash, gameStarted } = useGameStore(useShallow(state => ({
@@ -10,7 +11,8 @@ export const MobileControls = () => {
         triggerDash: state.triggerDash,
         gameStarted: state.gameStarted
     })));
-    const [knobPos, setKnobPos] = useState({ x: 0, y: 0 });
+
+    const { knobPos, handleJoystickMove, handleJoystickEnd } = useVirtualJoystick({ onMove: setMoveDirection });
     const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 1024);
 
     React.useEffect(() => {
@@ -21,40 +23,6 @@ export const MobileControls = () => {
 
     // Only render on mobile/tablet — keyboard controls are used on desktop
     if (!gameStarted || !isMobile) return null;
-
-
-    const handleJoystickMove = (e: React.TouchEvent | React.MouseEvent) => {
-        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-
-        let clientX: number, clientY: number;
-        if ('touches' in e) {
-            clientX = e.touches[0].clientX;
-            clientY = e.touches[0].clientY;
-        } else {
-            clientX = e.clientX;
-            clientY = e.clientY;
-        }
-
-        let dx = clientX - centerX;
-        let dy = clientY - centerY;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        const maxRadius = rect.width / 2;
-
-        if (distance > maxRadius) {
-            dx = (dx / distance) * maxRadius;
-            dy = (dy / distance) * maxRadius;
-        }
-
-        setKnobPos({ x: dx, y: dy });
-        setMoveDirection([dx / maxRadius, dy / maxRadius]);
-    };
-
-    const handleJoystickEnd = () => {
-        setKnobPos({ x: 0, y: 0 });
-        setMoveDirection([0, 0]);
-    };
 
     return (
         <div
