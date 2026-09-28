@@ -90,6 +90,7 @@ const BoundarySegment = ({
     key?: React.Key;
     index: number;
     sharedRadius: React.MutableRefObject<number>;
+    key?: React.Key;
 }) => {
     const { world } = usePhysics();
     const isEliminated = useGameStore(state => state.eliminated[index]);
