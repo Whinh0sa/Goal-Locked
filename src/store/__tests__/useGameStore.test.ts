@@ -11,6 +11,74 @@ vi.mock('../../hooks/useStats', () => ({
   }
 }));
 
+describe('useGameStore - initial state, startGame, and resetGame', () => {
+  beforeEach(() => {
+    // Reset the store state before each test using standard initial values
+    useGameStore.setState(useGameStore.getInitialState ? useGameStore.getInitialState() : {
+      gameStarted: false,
+      eliminated: new Array(8).fill(false),
+      score: 0,
+      tier: 1,
+    });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('should have correct initial state', () => {
+    const state = useGameStore.getState();
+    expect(state.gameStarted).toBe(false);
+    expect(state.eliminated).toHaveLength(8);
+    expect(state.eliminated.every(e => e === false)).toBe(true);
+    expect(state.score).toBe(0);
+    expect(state.tier).toBe(1);
+  });
+
+  it('should start the game and set correct initial values', () => {
+    vi.useFakeTimers();
+    const now = 1000000;
+    vi.setSystemTime(now);
+
+    useGameStore.setState({ score: 100, gameStarted: false });
+
+    useGameStore.getState().startGame();
+
+    const newState = useGameStore.getState();
+    expect(newState.gameStarted).toBe(true);
+    expect(newState.gameStartTime).toBe(now);
+    expect(newState.score).toBe(0);
+    expect(newState.playerKills).toBe(0);
+    expect(newState.lastStriker).toBeNull();
+    expect(newState.eliminationLog).toEqual([]);
+    expect(newState.remainingPlayers).toBe(8);
+    expect(newState.victory).toBe(false);
+    expect(newState.gameOver).toBe(false);
+    expect(newState.eliminated.every(e => e === false)).toBe(true);
+  });
+
+  it('should reset the game correctly', () => {
+    // Modify state as if a game was played
+    useGameStore.setState({
+      gameStarted: true,
+      score: 50,
+      tier: 3,
+      eliminated: [false, true, true, false, false, false, false, false],
+      gameOver: true
+    });
+
+    useGameStore.getState().resetGame();
+
+    const state = useGameStore.getState();
+    expect(state.gameStarted).toBe(false);
+    expect(state.score).toBe(0);
+    expect(state.tier).toBe(1);
+    expect(state.eliminated.every(e => e === false)).toBe(true);
+    expect(state.gameOver).toBe(false);
+    expect(state.remainingPlayers).toBe(8);
+  });
+});
+
 describe('useGameStore - triggerPowerUp', () => {
   beforeEach(() => {
     // Reset store state before each test
