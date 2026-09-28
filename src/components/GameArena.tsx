@@ -498,9 +498,9 @@ function KeyboardBridge() {
     };
 
     const onUp = (e: KeyboardEvent) => {
-      if (!useGameStore.getState().gameStarted) return; // Bug 5 fix: ignore pre-game input
       const key = e.key.toLowerCase();
       keys[key] = false;
+      if (!useGameStore.getState().gameStarted) return; // Bug 5 fix: ignore pre-game input
       updateDirection(); // recalculate — axis resets to 0 on key release
     };
 
