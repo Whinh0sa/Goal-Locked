@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { Float, Text } from '@react-three/drei';
 import * as THREE from 'three';
 import { useGameStore } from '../../store/useGameStore';
+import { isSafeRedirectUrl } from '../../utils/security';
 
 interface ExitPortalProps {
     angle?: number;
@@ -45,8 +46,12 @@ export const ExitPortal = ({
 
             if (dist < PORTAL_TRIGGER_RADIUS) {
                 triggered.current = true;
-                console.log('PORTAL TRIGGERED — EXITING TO VIBEVERSE');
-                window.location.href = destinationUrl;
+                if (isSafeRedirectUrl(destinationUrl)) {
+                    console.log('PORTAL TRIGGERED — EXITING TO VIBEVERSE');
+                    window.location.href = destinationUrl;
+                } else {
+                    console.error('PORTAL TRIGGERED — BLOCKED UNSAFE URL:', destinationUrl);
+                }
             }
         }
     });
