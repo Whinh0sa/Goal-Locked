@@ -197,3 +197,74 @@ describe('useGameStore - registerGoal', () => {
     expect(Stats.recordScore).toHaveBeenCalled();
   });
 });
+
+describe('useGameStore - resetGame', () => {
+  beforeEach(() => {
+    // Start with a clean state
+    useGameStore.setState(useGameStore.getInitialState ? useGameStore.getInitialState() : {});
+  });
+
+  it('should reset game state to initial values', () => {
+    // Set up a modified state to simulate an ongoing or finished game
+    useGameStore.setState({
+      gameStarted: true,
+      score: 1500,
+      tier: 5,
+      eliminated: [true, false, true, false, true, false, true, false],
+      lastGoal: 3,
+      victory: true,
+      gameOver: true,
+      remainingPlayers: 4,
+      moveDirection: [1, -1] as [number, number],
+      pulseTrigger: true,
+      impactPosition: [10, 5, 2],
+      impactColor: '#FF0000',
+      impactVelocity: 20,
+      impactStrength: 5,
+      eliminationLog: [{ id: 1, message: 'test', timestamp: Date.now() }],
+      currentRadius: 50,
+      playerShields: 0,
+      playerSpeedUntil: 999999,
+      playerGhostUntil: 999999,
+      playerJuggernautUntil: 999999,
+      freezeBotsUntil: 999999,
+      empUntil: 999999,
+      gameStartTime: 123456789,
+      playerKills: 10,
+      lastStriker: 2,
+      botBuffs: { 1: { speedUntil: 9999, juggernautUntil: 0, ghostUntil: 0 } },
+      activePowerUps: { 'test-id': { position: [0,0,0], type: 'speed' } },
+    });
+
+    const store = useGameStore.getState();
+    store.resetGame();
+
+    const state = useGameStore.getState();
+    expect(state.gameStarted).toBe(false);
+    expect(state.score).toBe(0);
+    expect(state.tier).toBe(1);
+    expect(state.eliminated).toEqual(new Array(8).fill(false)); // Assuming GOAL_COUNT is 8
+    expect(state.lastGoal).toBeNull();
+    expect(state.victory).toBe(false);
+    expect(state.gameOver).toBe(false);
+    expect(state.remainingPlayers).toBe(8); // Assuming GOAL_COUNT is 8
+    expect(state.moveDirection).toEqual([0, 0]);
+    expect(state.pulseTrigger).toBe(false);
+    expect(state.impactPosition).toBeNull();
+    expect(state.impactColor).toBe('#FFBF00');
+    expect(state.impactVelocity).toBe(0);
+    expect(state.impactStrength).toBe(0);
+    expect(state.eliminationLog).toEqual([]);
+    expect(state.playerShields).toBe(3);
+    expect(state.playerSpeedUntil).toBe(0);
+    expect(state.playerGhostUntil).toBe(0);
+    expect(state.playerJuggernautUntil).toBe(0);
+    expect(state.freezeBotsUntil).toBe(0);
+    expect(state.empUntil).toBe(0);
+    expect(state.gameStartTime).toBe(0);
+    expect(state.playerKills).toBe(0);
+    expect(state.lastStriker).toBeNull();
+    expect(state.botBuffs).toEqual({});
+    expect(state.activePowerUps).toEqual({});
+  });
+});
