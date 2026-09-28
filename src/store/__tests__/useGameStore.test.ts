@@ -96,6 +96,86 @@ describe('useGameStore - triggerPowerUp', () => {
   });
 });
 
+describe('useGameStore - resetGame', () => {
+  const initialState = useGameStore.getState();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    useGameStore.setState(initialState, true);
+  });
+
+  it('should reset game state to defaults', () => {
+    // Set a non-default state
+    useGameStore.setState({
+      gameStarted: true,
+      score: 50,
+      tier: 3,
+      eliminated: [true, false, true, false, true, false, true, false],
+      lastGoal: 2,
+      victory: true,
+      gameOver: true,
+      remainingPlayers: 3,
+      moveDirection: [1, -1],
+      pulseTrigger: true,
+      impactPosition: [10, 0, 10],
+      impactColor: '#FF0000',
+      impactVelocity: 25,
+      impactStrength: 10,
+      eliminationLog: [{ id: 1, timestamp: 123, message: 'Test' }],
+      currentRadius: 100,
+      playerShields: 0,
+      playerSpeedUntil: 1000,
+      playerGhostUntil: 1000,
+      playerJuggernautUntil: 1000,
+      freezeBotsUntil: 1000,
+      empUntil: 1000,
+      gameStartTime: 500,
+      playerKills: 5,
+      lastStriker: 1,
+      botBuffs: { 1: { speedUntil: 2000, juggernautUntil: 0, ghostUntil: 0 } },
+      activePowerUps: { 'test': { type: 'speed', position: [0, 0, 0] } }
+    });
+
+    // Invoke resetGame
+    useGameStore.getState().resetGame();
+
+    const state = useGameStore.getState();
+
+    // Verify properties are reset
+    expect(state.gameStarted).toBe(false);
+    expect(state.score).toBe(0);
+    expect(state.tier).toBe(1);
+    expect(state.eliminated).toEqual(new Array(8).fill(false));
+    expect(state.lastGoal).toBeNull();
+    expect(state.victory).toBe(false);
+    expect(state.gameOver).toBe(false);
+    expect(state.remainingPlayers).toBe(8);
+    expect(state.moveDirection).toEqual([0, 0]);
+    expect(state.pulseTrigger).toBe(false);
+    expect(state.impactPosition).toBeNull();
+    expect(state.impactColor).toBe('#FFBF00');
+    expect(state.impactVelocity).toBe(0);
+    expect(state.impactStrength).toBe(0);
+    expect(state.eliminationLog).toEqual([]);
+    expect(state.currentRadius).toBe(45); // ARENA_RADIUS
+    expect(state.playerShields).toBe(3);
+    expect(state.playerSpeedUntil).toBe(0);
+    expect(state.playerGhostUntil).toBe(0);
+    expect(state.playerJuggernautUntil).toBe(0);
+    expect(state.freezeBotsUntil).toBe(0);
+    expect(state.empUntil).toBe(0);
+    expect(state.gameStartTime).toBe(0);
+    expect(state.playerKills).toBe(0);
+    expect(state.lastStriker).toBeNull();
+    expect(state.botBuffs).toEqual({});
+    expect(state.activePowerUps).toEqual({});
+
+    // resetPositions() is called, but checking specific positions might be brittle.
+    // We check that at least ballPosition is reset.
+    expect(state.ballPosition).toEqual([0, 5, 0]);
+  });
+});
+
 describe('useGameStore - registerGoal', () => {
   const initialState = useGameStore.getState();
 
