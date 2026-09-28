@@ -1,36 +1,31 @@
-import { useRef, useEffect, useMemo } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
-import { Float } from '@react-three/drei';
-import { usePhysics } from '../../hooks/usePhysics';
-import { useGameStore } from '../../store/useGameStore';
-import { ARENA_RADIUS } from '../../constants';
+import { useFrame } from '@react-three/fiber';
+import { usePhysics } from '../../../hooks/usePhysics';
+import { useGameStore } from '../../../store/useGameStore';
+import { ARENA_RADIUS } from '../../../constants';
+import { SPEED } from './constants';
 
-const SPEED = 25;
-const MAX_SHIELDS = 3;
-
-export const Player = () => {
+export const usePlayerController = (
+  groupRef: React.RefObject<THREE.Group | null>,
+  ghostRef: React.RefObject<THREE.Group | null>
+) => {
   const { world } = usePhysics();
-  const bodyRef   = useRef<CANNON.Body | null>(null);
-  const groupRef  = useRef<THREE.Group>(null!);
-  const ghostRef  = useRef<THREE.Group>(null!);
+  const bodyRef = useRef<CANNON.Body | null>(null);
 
-  const playerShields    = useGameStore(state => state.playerShields);
-  const playerSpeedUntil = useGameStore(state => state.playerSpeedUntil);
-  const updatePlayerPos  = useGameStore(state => state.updatePlayerPosition);
-  const isEliminated     = useGameStore(state => state.eliminated[0]);
-  const playerColor      = useGameStore(state => state.playerRingColor) || '#32CD32';
+  const isEliminated = useGameStore(state => state.eliminated[0]);
   const playerJuggernautUntil = useGameStore(s => s.playerJuggernautUntil);
-  const playerGhostUntil = useGameStore(s => s.playerGhostUntil);
-  const setLastStriker   = useGameStore(state => state.setLastStriker);
+  const playerSpeedUntil = useGameStore(state => state.playerSpeedUntil);
+  const updatePlayerPos = useGameStore(state => state.updatePlayerPosition);
+  const setLastStriker = useGameStore(state => state.setLastStriker);
 
   // Track previous cooldown to detect the exact frame a dash was triggered
   const prevDashCooldown = useRef(0);
   // Snapshot last known position for the ghost
   const lastPos = useRef(new THREE.Vector3(ARENA_RADIUS - 6, 1, 0));
-  const playerPosition = useGameStore(state => state.playerPosition);
   const gameStartTime = useGameStore(state => state.gameStartTime);
+  const currentRadius = useGameStore(state => state.currentRadius);
 
   // ── Physics Body Lifecycle ──────────────────────────────────
   useEffect(() => {
@@ -70,8 +65,6 @@ export const Player = () => {
     };
   }, [world, isEliminated]);
 
-  const currentRadius = useGameStore(state => state.currentRadius);
-  
   // Cinematic "Attract Mode" formation
   const cinematicPos = useMemo(() => new CANNON.Vec3(0, 1.0, currentRadius * 0.4), [currentRadius]);
 
@@ -105,9 +98,10 @@ export const Player = () => {
 
   useFrame(() => {
     if (useGameStore.getState().isPaused) return;
+
     // ── ELIMINATED: freeze ghost at last known position ───────────────
     if (isEliminated) {
-      groupRef.current.visible = false;
+      if (groupRef.current) groupRef.current.visible = false;
       if (ghostRef.current) {
         ghostRef.current.visible = true;
         ghostRef.current.position.copy(lastPos.current);
@@ -151,7 +145,7 @@ export const Player = () => {
       // Default to "forward" (-Z) when standing still instead of drifting right
       const dx = x !== 0 || z !== 0 ? x : 0;
       const dz = x !== 0 || z !== 0 ? z : -1;
-      bodyRef.current.applyImpulse(new CANNON.Vec3(dx * 800, 0, dz * 800), bodyRef.current.position);
+      bodyRef.current!.applyImpulse(new CANNON.Vec3(dx * 800, 0, dz * 800), bodyRef.current!.position);
     }
 
     // Publish player position
@@ -201,94 +195,14 @@ export const Player = () => {
     }
 
     // Sync group position
-    groupRef.current.position.set(pos.x, pos.y, pos.z);
-    groupRef.current.visible = true;
-    if (ghostRef.current) ghostRef.current.visible = false;
+    if (groupRef.current) {
+      groupRef.current.position.set(pos.x, pos.y, pos.z);
+      groupRef.current.visible = true;
+    }
+    if (ghostRef.current) {
+      ghostRef.current.visible = false;
+    }
   });
 
-  return (
-    <>
-      {/* ── Active player mesh ── */}
-      <group ref={groupRef}>
-        {/* Shield indicator dots */}
-        <group position={[0, 3.2, 0]}>
-          {Array.from({ length: MAX_SHIELDS }).map((_, i) => {
-            const active = i < playerShields;
-            const offsetX = (i - (MAX_SHIELDS - 1) / 2) * 0.5;
-            return (
-              <mesh key={i} position={[offsetX, 0, 0]}>
-                <sphereGeometry args={[0.12, 8, 8]} />
-                <meshStandardMaterial
-                  color={active ? playerColor : '#1a1a1a'}
-                  emissive={active ? playerColor : '#000'}
-                  emissiveIntensity={active ? 4 : 0}
-                  toneMapped={false}
-                />
-              </mesh>
-            );
-          })}
-        </group>
-
-        <Float speed={4} rotationIntensity={2} floatIntensity={0.5}>
-          <mesh castShadow>
-            <sphereGeometry args={[1, 32, 32]} />
-            <meshStandardMaterial color="#0B0B0B" metalness={0.9} roughness={0.1} />
-          </mesh>
-
-          {/* Juggernaut Golden Aura */}
-          {Date.now() < playerJuggernautUntil && (
-            <mesh>
-              <sphereGeometry args={[1.2, 32, 32]} />
-              <meshStandardMaterial 
-                color="#FFD700" 
-                emissive="#FFD700" 
-                emissiveIntensity={10} 
-                transparent 
-                opacity={0.3} 
-                toneMapped={false} 
-              />
-            </mesh>
-          )}
-
-          <mesh rotation-x={Math.PI / 2}>
-            <torusGeometry args={[1.5, 0.1, 16, 80]} />
-            <meshStandardMaterial color={playerColor} emissive={playerColor} emissiveIntensity={4} toneMapped={false} />
-          </mesh>
-          <mesh rotation-x={Math.PI / 3}>
-            <torusGeometry args={[1.5, 0.04, 8, 48]} />
-            <meshStandardMaterial color={playerColor} emissive={playerColor} emissiveIntensity={2} toneMapped={false} />
-          </mesh>
-          <pointLight color={playerColor} intensity={3} distance={6} />
-        </Float>
-      </group>
-
-      {/* ── Ghost / spectator mode (shown when eliminated) ── */}
-      <group ref={ghostRef} visible={false}>
-        <mesh>
-          <sphereGeometry args={[1, 16, 16]} />
-          <meshStandardMaterial
-            color={playerColor}
-            emissive={playerColor}
-            emissiveIntensity={0.5}
-            transparent
-            opacity={0.22}
-            depthWrite={false}
-          />
-        </mesh>
-        {/* Faint ring so ghost is identifiable */}
-        <mesh rotation-x={Math.PI / 2}>
-          <torusGeometry args={[1.5, 0.05, 8, 48]} />
-          <meshStandardMaterial
-            color={playerColor}
-            emissive={playerColor}
-            emissiveIntensity={1}
-            transparent
-            opacity={0.35}
-            depthWrite={false}
-            toneMapped={false}
-          />
-        </mesh>
-      </group>
-    </>
-  );
+  return { isEliminated, playerJuggernautUntil };
 };
