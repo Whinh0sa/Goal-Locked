@@ -9,19 +9,12 @@ import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { usePhysics } from '../../hooks/usePhysics';
 import { useGameStore } from '../../store/useGameStore';
+import { randomArenaPos } from '../../utils';
 
 const PULL_FORCE = 400; // Force multiplier
 const EFFECT_RADIUS = 15; // Max distance for attraction
 const CYCLE_DURATION = 6000; // How long it stays active
 const RESPAWN_DELAY = 12000; // Delay between appearances
-
-function randomArenaPos(radius: number): [number, number] {
-  const safetyBuffer = 8;
-  const maxR = Math.max(5, radius - safetyBuffer);
-  const r = maxR * Math.sqrt(Math.random());
-  const a = Math.random() * Math.PI * 2;
-  return [Math.cos(a) * r, Math.sin(a) * r];
-}
 
 
 // Pre-allocate vectors outside the component to prevent GC in high-frequency loops
@@ -52,7 +45,7 @@ export const GravityWell = () => {
     const initialDelay = 5000 + Math.random() * 10000;
 
     const run = () => {
-      setPos(randomArenaPos(useGameStore.getState().currentRadius));
+      setPos(randomArenaPos(useGameStore.getState().currentRadius, 8, 5));
       setActive(true);
       setTimeout(() => setActive(false), CYCLE_DURATION);
     };
