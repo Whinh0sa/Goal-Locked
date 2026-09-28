@@ -15,6 +15,11 @@ type BotState = 'ATTACK' | 'DEFEND' | 'REPOSITION' | 'SLAM' | 'SHOOT';
 
 const BOT_NAMES = ['Bot_Apex', 'Bot_Nova', 'Bot_Onyx', 'Bot_Flux', 'Bot_Rift', 'Bot_Echo', 'Bot_Vex', 'Bot_Zero'];
 
+// Reusable module-scoped vectors for performance optimization inside useFrame
+const _facingDir = new THREE.Vector3();
+const _shootDir = new THREE.Vector3();
+const _shootImpulse = new CANNON.Vec3();
+
 export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3; key?: React.Key }) => {
   const { world } = usePhysics();
   const isEliminated = useGameStore(state => state.eliminated[id]);
@@ -280,7 +285,7 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3; key?:
       lastSpeed.current = speed;
 
       // ── SHOOT TRIGGER ──────────────────────────────────────────────
-      const facingTarget = direction.dot(new THREE.Vector3().subVectors(targetGoal, botPos).normalize()) > 0.8;
+      const facingTarget = direction.dot(_facingDir.subVectors(targetGoal, botPos).normalize()) > 0.8;
       const canShoot = Date.now() - lastShotTime.current > 2000;
       if (botToBallDist < 3.5 && facingTarget && canShoot) {
         stateRef.current = 'SHOOT';
@@ -288,9 +293,10 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3; key?:
         // Use cached O(1) ball body reference
         const ballBody = useGameStore.getState().ballBodyRef;
         if (ballBody) {
-          const shootDir = new THREE.Vector3().subVectors(targetGoal, ballPos).normalize();
+          _shootDir.subVectors(targetGoal, ballPos).normalize();
+          _shootImpulse.set(_shootDir.x * 300, 0, _shootDir.z * 300);
           ballBody.applyImpulse(
-            new CANNON.Vec3(shootDir.x * 300, 0, shootDir.z * 300),
+            _shootImpulse,
             ballBody.position
           );
           setLastStriker(id);
