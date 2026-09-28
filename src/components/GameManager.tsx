@@ -5,6 +5,7 @@ import * as CANNON from 'cannon-es';
 import { usePhysics } from '../hooks/usePhysics';
 import { useGameStore } from '../store/useGameStore';
 import { ARENA_RADIUS, GOALS, SLOW_MO_DIST } from '../constants';
+import { randomArenaPos as getSharedArenaPos } from '../utils/position';
 import { triggerShake } from '../hooks/useCameraShake';
 
 export const GameManager = () => {
@@ -153,14 +154,8 @@ export const GameManager = () => {
 
             // Re-centre ball after freeze
             setTimeout(() => {
-                function randomArenaPos(): [number, number] {
-                  const currentRadius = useGameStore.getState().currentRadius;
-                  const maxR = Math.max(0, currentRadius - 5);
-                  const r = maxR * Math.sqrt(Math.random());
-                  const a = Math.random() * Math.PI * 2;
-                  return [Math.cos(a) * r, Math.sin(a) * r];
-                }
-                const [rx, rz] = randomArenaPos();
+                const currentRadius = useGameStore.getState().currentRadius;
+                const [rx, rz] = getSharedArenaPos(currentRadius, 5, 0);
                 ballBody.position.set(rx, 5, rz);
                 ballBody.velocity.set(0, 0, 0);
                 ballBody.angularVelocity.set(0, 0, 0);
