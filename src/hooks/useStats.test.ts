@@ -33,4 +33,23 @@ describe('Stats.formatTime', () => {
     expect(Stats.formatTime(125400)).toBe('2m 5.4s');
     expect(Stats.formatTime(3600000)).toBe('60m 0.0s'); // 1 hour
   });
+
+  it('handles fractional (decimal) inputs gracefully', () => {
+    expect(Stats.formatTime(1500.5)).toBe('1.5s');
+    expect(Stats.formatTime(61500.99)).toBe('1m 1.5s');
+  });
+
+  it('handles negative numbers gracefully', () => {
+    expect(Stats.formatTime(-1000)).toBe('0.0s');
+    expect(Stats.formatTime(-1)).toBe('0.0s');
+  });
+
+  it('handles NaN gracefully', () => {
+    expect(Stats.formatTime(NaN)).toBe('0.0s');
+  });
+
+  it('handles Infinity gracefully', () => {
+    expect(Stats.formatTime(Infinity)).toBe('0.0s');
+    expect(Stats.formatTime(-Infinity)).toBe('0.0s');
+  });
 });
