@@ -5,6 +5,7 @@ import { Sky, Stars, Environment, ContactShadows, Html } from '@react-three/drei
 import { EffectComposer, Bloom, ChromaticAberration, Noise, Vignette } from '@react-three/postprocessing';
 import { PhysicsProvider } from '../hooks/usePhysics';
 import { useGameStore } from '../store/useGameStore';
+import { useShallow } from 'zustand/react/shallow';
 import { Crucible } from './Crucible';
 import { Ball } from './Entities/Ball';
 import { Player } from './Entities/Player';
@@ -337,7 +338,18 @@ function WorldSpaceHUD() {
 // --- Crucible Scene (Inner R3F Context) ---
 
 function CrucibleScene() {
-  const { gameStarted, startGame, victory, gameOver, resetGame, advanceToNextTier, tier, eliminated, score, graphicsMode } = useGameStore();
+  const { gameStarted, startGame, victory, gameOver, resetGame, advanceToNextTier, tier, eliminated, score, graphicsMode } = useGameStore(useShallow(state => ({
+    gameStarted: state.gameStarted,
+    startGame: state.startGame,
+    victory: state.victory,
+    gameOver: state.gameOver,
+    resetGame: state.resetGame,
+    advanceToNextTier: state.advanceToNextTier,
+    tier: state.tier,
+    eliminated: state.eliminated,
+    score: state.score,
+    graphicsMode: state.graphicsMode
+  })));
   const timer = useMemo(() => new THREE.Timer(), []);
   const worldConf = getWorldConfig(tier);
   const isQuality = graphicsMode === 'QUALITY';
@@ -648,7 +660,13 @@ function CanvasFallback({ error, resetErrorBoundary }: { error: Error; resetErro
 }
 
 function HUDToggleButton() {
-  const { isHudOpen, isPaused, toggleHud, togglePause, gameStarted } = useGameStore();
+  const { isHudOpen, isPaused, toggleHud, togglePause, gameStarted } = useGameStore(useShallow(state => ({
+    isHudOpen: state.isHudOpen,
+    isPaused: state.isPaused,
+    toggleHud: state.toggleHud,
+    togglePause: state.togglePause,
+    gameStarted: state.gameStarted
+  })));
   const [isMobile, setIsMobile] = React.useState(typeof window !== 'undefined' && window.innerWidth < 1024);
   const autoCollapseTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -800,7 +818,21 @@ function TierBanner() {
 // --- Main Arena Container ---
 
 export default function GameArena() {
-  const { gameStarted, startGame, resetGame, victory, gameOver, score, highScore, tier, setPlayerRingColor, triggerEntryPortal, eliminated, advanceToNextTier, isHudOpen } = useGameStore();
+  const { gameStarted, startGame, resetGame, victory, gameOver, score, highScore, tier, setPlayerRingColor, triggerEntryPortal, eliminated, advanceToNextTier, isHudOpen } = useGameStore(useShallow(state => ({
+    gameStarted: state.gameStarted,
+    startGame: state.startGame,
+    resetGame: state.resetGame,
+    victory: state.victory,
+    gameOver: state.gameOver,
+    score: state.score,
+    highScore: state.highScore,
+    tier: state.tier,
+    setPlayerRingColor: state.setPlayerRingColor,
+    triggerEntryPortal: state.triggerEntryPortal,
+    eliminated: state.eliminated,
+    advanceToNextTier: state.advanceToNextTier,
+    isHudOpen: state.isHudOpen
+  })));
   const worldConf = getWorldConfig(tier);
 
   // Portal auto-start logic
