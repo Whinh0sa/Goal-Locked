@@ -135,6 +135,51 @@ describe('useGameStore - registerGoal', () => {
     expect(lastEntry.message).toContain("GAME OVER");
   });
 
+  it('should preserve previous elimination logs when a shield is hit', () => {
+    const prevLog = [{ id: 1, message: 'BOT 2 was eliminated', timestamp: 12345 }];
+    useGameStore.setState({ playerShields: 3, eliminationLog: prevLog });
+
+    useGameStore.getState().registerGoal(0);
+
+    const state = useGameStore.getState();
+    expect(state.eliminationLog.length).toBe(2);
+    expect(state.eliminationLog[0].message).toBe('BOT 2 was eliminated');
+    expect(state.eliminationLog[1].message).toContain('Shield hit — 2 left');
+  });
+
+  it('should correctly format elimination log when bot eliminates player', () => {
+    useGameStore.setState({
+      playerShields: 1,
+      eliminated: new Array(8).fill(false),
+      eliminationLog: [],
+      lastStriker: 2,
+      botNames: ['', '', 'Charlie']
+    });
+
+    useGameStore.getState().registerGoal(0);
+
+    const state = useGameStore.getState();
+    expect(state.eliminated[0]).toBe(true);
+    const lastEntry = state.eliminationLog[state.eliminationLog.length - 1];
+    expect(lastEntry.message).toContain("Charlie eliminated PLAYER");
+  });
+
+  it('should correctly format elimination log when player eliminates themselves (striker null)', () => {
+    useGameStore.setState({
+      playerShields: 1,
+      eliminated: new Array(8).fill(false),
+      eliminationLog: [],
+      lastStriker: null
+    });
+
+    useGameStore.getState().registerGoal(0);
+
+    const state = useGameStore.getState();
+    expect(state.eliminated[0]).toBe(true);
+    const lastEntry = state.eliminationLog[state.eliminationLog.length - 1];
+    expect(lastEntry.message).toContain("GAME OVER — You've been eliminated");
+  });
+
   it('should eliminate a bot and update score when killed by player', () => {
     useGameStore.setState({
       eliminated: new Array(8).fill(false),
