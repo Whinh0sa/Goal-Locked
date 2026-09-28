@@ -11,6 +11,40 @@ vi.mock('../../hooks/useStats', () => ({
   }
 }));
 
+describe('useGameStore - triggerDash', () => {
+  const initialState = useGameStore.getState();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    useGameStore.setState(initialState, true);
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2024-01-01T00:00:00Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('should set dashCooldownUntil to now + 3000 when triggered and not on cooldown', () => {
+    useGameStore.setState({ dashCooldownUntil: 0 });
+
+    useGameStore.getState().triggerDash();
+
+    const state = useGameStore.getState();
+    expect(state.dashCooldownUntil).toBe(Date.now() + 3000);
+  });
+
+  it('should not update dashCooldownUntil when still on cooldown', () => {
+    const futureTime = Date.now() + 1000;
+    useGameStore.setState({ dashCooldownUntil: futureTime });
+
+    useGameStore.getState().triggerDash();
+
+    const state = useGameStore.getState();
+    expect(state.dashCooldownUntil).toBe(futureTime);
+  });
+});
+
 describe('useGameStore - triggerPowerUp', () => {
   beforeEach(() => {
     // Reset store state before each test
