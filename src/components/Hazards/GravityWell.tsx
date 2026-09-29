@@ -120,6 +120,7 @@ export const GravityWell = () => {
 
   if (!active || !gameStarted) return null;
 
+
   return (
     <group position={[pos[0], 1.5, pos[1]]}>
       <Float speed={4} rotationIntensity={2} floatIntensity={1}>
