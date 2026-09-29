@@ -118,4 +118,26 @@ describe('AudioManager', () => {
       expect(mockedHowl.rate).toHaveBeenCalledWith(1.6, 123);
     });
   });
+
+  describe('stopAmbient', () => {
+    it('does not crash if no background music is playing', () => {
+      expect(() => AudioManager.stopAmbient()).not.toThrow();
+    });
+
+    it('calls stop and unload on the current background music', () => {
+      AudioManager.startAmbient();
+
+      const mockedHowl = (global as any).__currentHowlMock;
+      vi.clearAllMocks();
+
+      AudioManager.stopAmbient();
+
+      expect(mockedHowl.stop).toHaveBeenCalled();
+      expect(mockedHowl.unload).toHaveBeenCalled();
+
+      // Internal state should be reset
+      expect((AudioManager as any).currentBgm).toBeNull();
+      expect((AudioManager as any).currentId).toBeNull();
+    });
+  });
 });

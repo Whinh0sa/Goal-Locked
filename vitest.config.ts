@@ -7,6 +7,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     pool: 'threads',
+    // @ts-expect-error Type mismatch in Vitest
     threads: {
       singleThread: true,
     },
