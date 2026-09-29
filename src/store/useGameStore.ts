@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import * as CANNON from 'cannon-es';
 import { Stats } from '../hooks/useStats';
 import { ARENA_RADIUS } from '../constants';
 
@@ -50,7 +49,7 @@ interface GameState {
   zoomOffset: number;
   isHudOpen: boolean;
   isPaused: boolean;
-  ballBodyRef: CANNON.Body | null;
+  ballBodyRef: any;
   showLifeBanner: boolean;
   graphicsMode: 'QUALITY' | 'PERFORMANCE';
 
@@ -84,7 +83,7 @@ interface GameState {
   toggleHud: () => void;
   togglePause: () => void;
   toggleGraphics: () => void;
-  setBallBodyRef: (body: CANNON.Body | null) => void;
+  setBallBodyRef: (body: any) => void;
 }
 
 const GOAL_COUNT = 8;

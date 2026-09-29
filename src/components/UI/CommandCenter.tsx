@@ -1,21 +1,14 @@
 import React from 'react';
 import { useGameStore } from '../../store/useGameStore';
 import { LeaderboardUI } from './LeaderboardUI';
-import { useShallow } from 'zustand/react/shallow';
 
 function CameraModeUI() {
-  const { cameraMode, cycleCameraMode, gameStarted } = useGameStore(useShallow(state => ({
-    cameraMode: state.cameraMode,
-    cycleCameraMode: state.cycleCameraMode,
-    gameStarted: state.gameStarted
-  })));
+  const { cameraMode, cycleCameraMode, gameStarted } = useGameStore();
 
   if (!gameStarted) return null;
 
   return (
-    <button
-      type="button"
-      aria-label="Toggle camera mode"
+    <div
       onClick={cycleCameraMode}
       style={{
         padding: '12px 24px',
@@ -49,20 +42,10 @@ function CameraModeUI() {
         e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
         e.currentTarget.style.transform = 'scale(1)';
       }}
-      onFocus={(e) => {
-        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
-        e.currentTarget.style.transform = 'scale(1.05)';
-        e.currentTarget.style.outline = '2px solid #00eeff';
-      }}
-      onBlur={(e) => {
-        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-        e.currentTarget.style.transform = 'scale(1)';
-        e.currentTarget.style.outline = 'none';
-      }}
     >
       <span style={{ opacity: 0.5, fontSize: '0.65rem' }}>VIEW:</span>
       <span style={{ color: '#00eeff' }}>{cameraMode}</span>
-    </button>
+    </div>
   );
 }
 
@@ -99,17 +82,16 @@ function ZoomSliderHUD() {
         width: '100%',
         boxSizing: 'border-box'
       }}>
-        <label htmlFor="zoom-slider" style={{
+        <span style={{
           fontSize: '0.65rem',
           fontFamily: '"Poppins", sans-serif',
           fontWeight: 700,
           letterSpacing: '0.12em',
           color: 'rgba(0,238,255,0.7)',
           textTransform: 'uppercase',
-        }}>ZOOM</label>
+        }}>ZOOM</span>
 
         <input
-          id="zoom-slider"
           type="range"
           min={0}
           max={50}
@@ -129,15 +111,7 @@ function ZoomSliderHUD() {
 }
 
 export function CommandCenter() {
-  const { isHudOpen, isPaused, togglePause, toggleHud, gameStarted, graphicsMode, toggleGraphics } = useGameStore(useShallow(state => ({
-    isHudOpen: state.isHudOpen,
-    isPaused: state.isPaused,
-    togglePause: state.togglePause,
-    toggleHud: state.toggleHud,
-    gameStarted: state.gameStarted,
-    graphicsMode: state.graphicsMode,
-    toggleGraphics: state.toggleGraphics
-  })));
+  const { isHudOpen, isPaused, togglePause, toggleHud, gameStarted, graphicsMode, toggleGraphics } = useGameStore();
   const [isMobile, setIsMobile] = React.useState(typeof window !== 'undefined' && window.innerWidth < 1024);
   const [isShort, setIsShort] = React.useState(typeof window !== 'undefined' && window.innerHeight < 550);
 
@@ -190,9 +164,7 @@ export function CommandCenter() {
   };
 
   const GraphicsButton = () => (
-    <button
-      type="button"
-      aria-label="Toggle graphics mode"
+    <div
       onClick={toggleGraphics}
       style={{
         padding: '12px 24px',
@@ -218,28 +190,10 @@ export function CommandCenter() {
         width: '100%',
         boxSizing: 'border-box'
       }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
-        e.currentTarget.style.transform = 'scale(1.05)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-        e.currentTarget.style.transform = 'scale(1)';
-      }}
-      onFocus={(e) => {
-        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
-        e.currentTarget.style.transform = 'scale(1.05)';
-        e.currentTarget.style.outline = '2px solid #00eeff';
-      }}
-      onBlur={(e) => {
-        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-        e.currentTarget.style.transform = 'scale(1)';
-        e.currentTarget.style.outline = 'none';
-      }}
     >
       <span style={{ opacity: 0.5, fontSize: '0.65rem' }}>GRAPHICS:</span>
       <span style={{ color: graphicsMode === 'QUALITY' ? '#00eeff' : '#32CD32' }}>{graphicsMode}</span>
-    </button>
+    </div>
   );
 
   return (

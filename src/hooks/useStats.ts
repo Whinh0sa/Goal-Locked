@@ -19,25 +19,7 @@ export interface PlayerStats {
 function load(): PlayerStats {
   try {
     const raw = localStorage.getItem(LS_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-        const stats = defaultStats();
-        if (typeof parsed.fastestSurvival === 'number' || parsed.fastestSurvival === null) {
-          stats.fastestSurvival = parsed.fastestSurvival;
-        }
-        if (typeof parsed.totalBotsDeleted === 'number') {
-          stats.totalBotsDeleted = parsed.totalBotsDeleted;
-        }
-        if (typeof parsed.highestTier === 'number') {
-          stats.highestTier = parsed.highestTier;
-        }
-        if (typeof parsed.highestScore === 'number') {
-          stats.highestScore = parsed.highestScore;
-        }
-        return stats;
-      }
-    }
+    if (raw) return { ...defaultStats(), ...JSON.parse(raw) };
   } catch (_) {}
   return defaultStats();
 }

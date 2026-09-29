@@ -105,6 +105,7 @@ export const GameManager = () => {
     const slowMoDistSq = SLOW_MO_DIST * SLOW_MO_DIST;
     goalPositions.forEach((g, i) => {
         if (eliminated[i]) return;
+        // Optimization: use squared distance to avoid expensive Math.sqrt()
         if (ballPos.distanceToSquared(g) < slowMoDistSq) nearGoal = true;
     });
 
