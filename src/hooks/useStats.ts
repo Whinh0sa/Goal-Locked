@@ -84,6 +84,9 @@ export const Stats = {
 
   /** Format ms as M:SS.s */
   formatTime(ms: number): string {
+    if (!Number.isFinite(ms) || ms < 0) {
+      return '0.0s';
+    }
     const total = Math.floor(ms / 1000);
     const m = Math.floor(total / 60);
     const s = total % 60;
