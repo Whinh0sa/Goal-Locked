@@ -6,7 +6,9 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    setupFiles: ['./test_setup.ts'],
     pool: 'threads',
+    // @ts-expect-error type mismatch with threads option
     threads: {
       singleThread: true,
     },
