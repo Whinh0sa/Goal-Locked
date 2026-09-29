@@ -33,4 +33,16 @@ describe('Stats.formatTime', () => {
     expect(Stats.formatTime(125400)).toBe('2m 5.4s');
     expect(Stats.formatTime(3600000)).toBe('60m 0.0s'); // 1 hour
   });
+  it('formats edge cases correctly', () => {
+    expect(Stats.formatTime(-500)).toBe('0.0s');
+    expect(Stats.formatTime(-60000)).toBe('0.0s');
+    expect(Stats.formatTime(NaN)).toBe('0.0s');
+    expect(Stats.formatTime(Infinity)).toBe('0.0s');
+    expect(Stats.formatTime(-Infinity)).toBe('0.0s');
+  });
+
+  it('formats fractional milliseconds correctly', () => {
+    expect(Stats.formatTime(1500.5)).toBe('1.5s');
+    expect(Stats.formatTime(1999.9)).toBe('1.9s');
+  });
 });
