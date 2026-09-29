@@ -94,6 +94,18 @@ describe('useGameStore - triggerPowerUp', () => {
     // Speed should be 8000ms from the OLD time (which is Date.now() - 1000 + 8000)
     expect(state.botBuffs[1]?.speedUntil).toBe(Date.now() - 1000 + 8000);
   });
+
+  it('should return unmodified state for unknown power-up type', () => {
+    const initialState = useGameStore.getState();
+    // @ts-expect-error - intentionally testing invalid type fallback
+    useGameStore.getState().triggerPowerUp('unknown_type', 0);
+    const newState = useGameStore.getState();
+
+    // Check that state reference didn't change for relevant fields
+    expect(newState.playerSpeedUntil).toBe(initialState.playerSpeedUntil);
+    expect(newState.botBuffs).toEqual(initialState.botBuffs);
+    expect(newState.freezeBotsUntil).toBe(initialState.freezeBotsUntil);
+  });
 });
 
 describe('useGameStore - registerGoal', () => {

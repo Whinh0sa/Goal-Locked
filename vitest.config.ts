@@ -7,6 +7,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     pool: 'threads',
+    // @ts-expect-error - vitest types are mismatched with this configuration in current lockfile
     threads: {
       singleThread: true,
     },
