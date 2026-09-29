@@ -57,7 +57,8 @@ export const AudioController = () => {
     if (impactPosition && impactStrength !== undefined && impactStrength > 5) {
       AudioManager.playBounce(impactStrength);
     }
-  }, [impactPosition, impactStrength]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [impactPosition]);
 
   // Elimination / shield-break sounds
   useEffect(() => {
