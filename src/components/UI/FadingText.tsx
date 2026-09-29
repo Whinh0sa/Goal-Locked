@@ -6,7 +6,7 @@ import * as THREE from 'three';
 
 type TextProps = ComponentProps<typeof Text>;
 
-interface FadingTextProps extends Omit<TextProps, 'children'> {
+interface FadingTextProps extends TextProps {
   /** Milliseconds before the text starts fading out. Default: 10000 (10s) */
   fadeDelay?: number;
   children?: React.ReactNode;
