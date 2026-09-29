@@ -7,6 +7,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     pool: 'threads',
+    // @ts-expect-error - Known typescript issue in vitest config
     threads: {
       singleThread: true,
     },
