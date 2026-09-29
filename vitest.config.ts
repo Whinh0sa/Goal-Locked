@@ -7,6 +7,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     pool: 'threads',
+    // @ts-expect-error threads is deprecated but we keep it for now as per memory guidelines
     threads: {
       singleThread: true,
     },
