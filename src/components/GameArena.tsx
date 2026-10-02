@@ -502,9 +502,17 @@ function HUDToggleButton() {
   };
 
   return (
-    <div
+    <button
+      type="button"
+      aria-label="Toggle HUD"
       onClick={handleClick}
       style={isMobile ? mobileStyle : desktopStyle}
+      onFocus={(e) => {
+        e.currentTarget.style.outline = isMobile ? '2px solid #32CD32' : '2px solid #00eeff';
+      }}
+      onBlur={(e) => {
+        e.currentTarget.style.outline = 'none';
+      }}
     >
       {isMobile ? (
         <span>⏸</span>
@@ -514,7 +522,7 @@ function HUDToggleButton() {
           HUD
         </>
       )}
-    </div>
+    </button>
   );
 }
 
