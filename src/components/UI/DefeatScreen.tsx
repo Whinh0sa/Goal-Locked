@@ -28,6 +28,18 @@ export function DefeatScreen({ onReset, score }: { onReset: () => void; score: n
                         cursor: 'pointer',
                         backdropFilter: 'blur(10px)',
                         touchAction: 'manipulation',
+                        transition: 'transform 0.1s, box-shadow 0.2s',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                    onFocus={e => {
+                        e.currentTarget.style.outline = '2px solid #00eeff';
+                        e.currentTarget.style.outlineOffset = '2px';
+                        e.currentTarget.style.transform = 'scale(1.05)';
+                    }}
+                    onBlur={e => {
+                        e.currentTarget.style.outline = 'none';
+                        e.currentTarget.style.transform = 'scale(1)';
                     }}
                 >
                     Try Again

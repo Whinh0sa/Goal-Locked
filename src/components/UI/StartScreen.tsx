@@ -158,6 +158,15 @@ export function StartScreen({ onStart, tier }: { onStart: () => void; tier: numb
                     }}
                     onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; }}
                     onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                    onFocus={e => {
+                        e.currentTarget.style.outline = '2px solid #00eeff';
+                        e.currentTarget.style.outlineOffset = '2px';
+                        e.currentTarget.style.transform = 'scale(1.05)';
+                    }}
+                    onBlur={e => {
+                        e.currentTarget.style.outline = 'none';
+                        e.currentTarget.style.transform = 'scale(1)';
+                    }}
                 >
                     {tier > 1 ? `⚔️ Tier ${tier}` : 'Play Now'}
                 </button>
