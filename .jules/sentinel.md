@@ -7,3 +7,7 @@
 **Vulnerability:** URL query parameters (like `?color=`) were being read via `URLSearchParams` and passed directly to global state without any validation. While used safely in this context (as a CSS color in Three.js/React bindings), passing unvalidated user input directly into application state is a dangerous pattern that can lead to CSS Injection or XSS if the value is ever rendered directly in the DOM.
 **Learning:** Even if the framework (React/Three.js) sanitizes the final output, accepting malformed data (like `?color=123%22%3E%3Cscript%3Ealert(1)%3C/script%3E`) pollutes the application state and violates the principle of "fail securely" and input validation.
 **Prevention:** Always validate and sanitize external inputs (like URL parameters) at the boundary before they enter the application state. Use strict regex (e.g., `/^[0-9A-Fa-f]{3,8}$/`) for specific formats like hex colors.
+## 2025-03-08 - [URL Redirection DOM XSS Risk]
+**Vulnerability:** window.location.href being set to an unvalidated URL parameter could lead to XSS via javascript: URIs.
+**Learning:** Even internal props should be validated before use in sensitive sinks like location.href.
+**Prevention:** Always ensure redirect URLs start with safe protocols like http or https.
