@@ -502,19 +502,36 @@ function HUDToggleButton() {
   };
 
   return (
-    <div
+    <button
+      type="button"
       onClick={handleClick}
+      aria-label={isMobile ? "Pause Game" : "Toggle HUD"}
       style={isMobile ? mobileStyle : desktopStyle}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'scale(1.05)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'scale(1)';
+      }}
+      onFocus={(e) => {
+        e.currentTarget.style.transform = 'scale(1.05)';
+        e.currentTarget.style.outline = isMobile ? '2px solid rgba(50, 205, 50, 0.8)' : '2px solid rgba(0, 238, 255, 0.8)';
+        e.currentTarget.style.outlineOffset = '2px';
+      }}
+      onBlur={(e) => {
+        e.currentTarget.style.transform = 'scale(1)';
+        e.currentTarget.style.outline = 'none';
+      }}
     >
       {isMobile ? (
-        <span>⏸</span>
+        <span aria-hidden="true">⏸</span>
       ) : (
         <>
-          <span style={{ fontSize: '0.8rem' }}>☰</span>
+          <span aria-hidden="true" style={{ fontSize: '0.8rem' }}>☰</span>
           HUD
         </>
       )}
-    </div>
+    </button>
   );
 }
 
