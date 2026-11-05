@@ -196,4 +196,17 @@ describe('useGameStore - registerGoal', () => {
     expect(Stats.recordVictory).toHaveBeenCalled();
     expect(Stats.recordScore).toHaveBeenCalled();
   });
+
+  it('should support toggling characterModel between SOLDIER and SPHERES', () => {
+    // Initial model should default to SOLDIER
+    expect(useGameStore.getState().characterModel).toBe('SOLDIER');
+
+    // Toggle to SPHERES
+    useGameStore.getState().toggleCharacterModel();
+    expect(useGameStore.getState().characterModel).toBe('SPHERES');
+
+    // Toggle back to SOLDIER
+    useGameStore.getState().toggleCharacterModel();
+    expect(useGameStore.getState().characterModel).toBe('SOLDIER');
+  });
 });

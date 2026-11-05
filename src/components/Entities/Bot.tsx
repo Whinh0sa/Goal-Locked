@@ -6,6 +6,7 @@ import { Float } from '@react-three/drei';
 import { usePhysics } from '../../hooks/usePhysics';
 import { useGameStore } from '../../store/useGameStore';
 import { ARENA_RADIUS, GOALS } from '../../constants';
+import { HumanoidCharacter } from './HumanoidCharacter';
 
 const BASE_SPEED = 16;       // increased for responsiveness
 const POSSESSION_RADIUS = 2.5; // larger radius to "have" the ball
@@ -18,6 +19,7 @@ const BOT_NAMES = ['Bot_Apex', 'Bot_Nova', 'Bot_Onyx', 'Bot_Flux', 'Bot_Rift', '
 export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3; key?: React.Key }) => {
   const { world } = usePhysics();
   const isEliminated = useGameStore(state => state.eliminated[id]);
+  const characterModel = useGameStore(state => state.characterModel);
   const tier = useGameStore(state => state.tier);
   const setBotName = useGameStore(state => state.setBotName);
   const setLastStriker = useGameStore(state => state.setLastStriker);
@@ -346,37 +348,67 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3; key?:
   return (
     <group ref={groupRef}>
       {/* Mesh component grounded with Float only on the visual parts */}
-      <Float speed={4} rotationIntensity={2} floatIntensity={0.2}>
-        <mesh castShadow>
-          <sphereGeometry args={[1, 24, 24]} />
-          <meshStandardMaterial color="#1a0000" metalness={0.9} roughness={0.2} />
-        </mesh>
-
-        {/* Juggernaut Golden Aura */}
-        {Date.now() < (botBuffs[id]?.juggernautUntil || 0) && (
-          <mesh>
-            <sphereGeometry args={[1.2, 24, 24]} />
-            <meshStandardMaterial 
-              color="#FFD700" 
-              emissive="#FFD700" 
-              emissiveIntensity={10} 
-              transparent 
-              opacity={0.3} 
-              toneMapped={false} 
-            />
+      {characterModel === 'SOLDIER' ? (
+        <>
+          <HumanoidCharacter
+            color="#FF0033"
+            velocityRef={velocityRef}
+            scale={1.05}
+            isJuggernaut={Date.now() < (botBuffs[id]?.juggernautUntil || 0)}
+          />
+          {/* Tactical Ground Ring & Accent Light */}
+          <mesh position={[0, -0.9, 0]} rotation-x={-Math.PI / 2}>
+            <ringGeometry args={[0.9, 1.05, 32]} />
+            <meshBasicMaterial color="#FF0033" transparent opacity={0.5} side={THREE.DoubleSide} />
           </mesh>
-        )}
+          {Date.now() < (botBuffs[id]?.juggernautUntil || 0) && (
+            <mesh position={[0, 0.2, 0]}>
+              <sphereGeometry args={[1.2, 16, 16]} />
+              <meshStandardMaterial
+                color="#FFD700"
+                emissive="#FFD700"
+                emissiveIntensity={6}
+                transparent
+                opacity={0.25}
+                toneMapped={false}
+              />
+            </mesh>
+          )}
+          <pointLight ref={lightRef} color="#FF0033" intensity={2} distance={5} />
+        </>
+      ) : (
+        <Float speed={4} rotationIntensity={2} floatIntensity={0.2}>
+          <mesh castShadow>
+            <sphereGeometry args={[1, 24, 24]} />
+            <meshStandardMaterial color="#1a0000" metalness={0.9} roughness={0.2} />
+          </mesh>
 
-        <mesh rotation-x={Math.PI / 2}>
-          <torusGeometry args={[1.5, 0.1, 12, 64]} />
-          <meshStandardMaterial ref={matRef1} color="#FF0033" emissive="#FF0033" emissiveIntensity={4} toneMapped={false} />
-        </mesh>
-        <mesh rotation-x={Math.PI / 3}>
-          <torusGeometry args={[1.5, 0.04, 8, 48]} />
-          <meshStandardMaterial ref={matRef2} color="#FF0033" emissive="#FF0033" emissiveIntensity={2} toneMapped={false} />
-        </mesh>
-        <pointLight ref={lightRef} color="#FF0033" intensity={2} distance={5} />
-      </Float>
+          {/* Juggernaut Golden Aura */}
+          {Date.now() < (botBuffs[id]?.juggernautUntil || 0) && (
+            <mesh>
+              <sphereGeometry args={[1.2, 24, 24]} />
+              <meshStandardMaterial
+                color="#FFD700"
+                emissive="#FFD700"
+                emissiveIntensity={10}
+                transparent
+                opacity={0.3}
+                toneMapped={false}
+              />
+            </mesh>
+          )}
+
+          <mesh rotation-x={Math.PI / 2}>
+            <torusGeometry args={[1.5, 0.1, 12, 64]} />
+            <meshStandardMaterial ref={matRef1} color="#FF0033" emissive="#FF0033" emissiveIntensity={4} toneMapped={false} />
+          </mesh>
+          <mesh rotation-x={Math.PI / 3}>
+            <torusGeometry args={[1.5, 0.04, 8, 48]} />
+            <meshStandardMaterial ref={matRef2} color="#FF0033" emissive="#FF0033" emissiveIntensity={2} toneMapped={false} />
+          </mesh>
+          <pointLight ref={lightRef} color="#FF0033" intensity={2} distance={5} />
+        </Float>
+      )}
     </group>
   );
 };

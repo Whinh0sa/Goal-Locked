@@ -129,14 +129,16 @@ function ZoomSliderHUD() {
 }
 
 export function CommandCenter() {
-  const { isHudOpen, isPaused, togglePause, toggleHud, gameStarted, graphicsMode, toggleGraphics } = useGameStore(useShallow(state => ({
+  const { isHudOpen, isPaused, togglePause, toggleHud, gameStarted, graphicsMode, toggleGraphics, characterModel, toggleCharacterModel } = useGameStore(useShallow(state => ({
     isHudOpen: state.isHudOpen,
     isPaused: state.isPaused,
     togglePause: state.togglePause,
     toggleHud: state.toggleHud,
     gameStarted: state.gameStarted,
     graphicsMode: state.graphicsMode,
-    toggleGraphics: state.toggleGraphics
+    toggleGraphics: state.toggleGraphics,
+    characterModel: state.characterModel,
+    toggleCharacterModel: state.toggleCharacterModel,
   })));
   const [isMobile, setIsMobile] = React.useState(typeof window !== 'undefined' && window.innerWidth < 1024);
   const [isShort, setIsShort] = React.useState(typeof window !== 'undefined' && window.innerHeight < 550);
@@ -188,6 +190,61 @@ export function CommandCenter() {
     boxSizing: 'border-box',
     padding: '24px',
   };
+
+  const CharacterModelButton = () => (
+    <button
+      type="button"
+      aria-label="Toggle character model"
+      onClick={toggleCharacterModel}
+      style={{
+        padding: '12px 24px',
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        borderRadius: '16px',
+        color: '#fff',
+        fontFamily: '"Poppins", sans-serif',
+        fontSize: '0.75rem',
+        fontWeight: 700,
+        letterSpacing: '0.1em',
+        cursor: 'pointer',
+        pointerEvents: 'auto',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '10px',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        userSelect: 'none',
+        boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+        width: '100%',
+        boxSizing: 'border-box'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+        e.currentTarget.style.transform = 'scale(1.05)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+        e.currentTarget.style.transform = 'scale(1)';
+      }}
+      onFocus={(e) => {
+        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+        e.currentTarget.style.transform = 'scale(1.05)';
+        e.currentTarget.style.outline = '2px solid #00eeff';
+      }}
+      onBlur={(e) => {
+        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+        e.currentTarget.style.transform = 'scale(1)';
+        e.currentTarget.style.outline = 'none';
+      }}
+    >
+      <span style={{ opacity: 0.5, fontSize: '0.65rem' }}>MODEL:</span>
+      <span style={{ color: characterModel === 'SOLDIER' ? '#00ff88' : '#ffbf00' }}>
+        {characterModel === 'SOLDIER' ? 'SOLDIER (AAA)' : 'SPHERES'}
+      </span>
+    </button>
+  );
 
   const GraphicsButton = () => (
     <button
@@ -272,6 +329,7 @@ export function CommandCenter() {
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.8rem', alignItems: 'flex-end' }}> 
                 {/* Right: Zoom/Camera Toggles */}
                 <CameraModeUI />
+                <CharacterModelButton />
                 <GraphicsButton />
                 <ZoomSliderHUD />
             </div>
@@ -311,6 +369,9 @@ export function CommandCenter() {
           </div>
           <div style={{ width: '100%' }}>
             <CameraModeUI />
+          </div>
+          <div style={{ width: '100%' }}>
+            <CharacterModelButton />
           </div>
           <div style={{ width: '100%' }}>
             <GraphicsButton />
