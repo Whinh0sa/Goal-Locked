@@ -53,6 +53,7 @@ interface GameState {
   ballBodyRef: CANNON.Body | null;
   showLifeBanner: boolean;
   graphicsMode: 'QUALITY' | 'PERFORMANCE';
+  characterModel: 'SPHERES' | 'SOLDIER';
 
   // Actions
   startGame: () => void;
@@ -84,6 +85,7 @@ interface GameState {
   toggleHud: () => void;
   togglePause: () => void;
   toggleGraphics: () => void;
+  toggleCharacterModel: () => void;
   setBallBodyRef: (body: CANNON.Body | null) => void;
 }
 
@@ -119,6 +121,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   ballBodyRef: null,
   showLifeBanner: false,
   graphicsMode: 'QUALITY',
+  characterModel: 'SOLDIER',
   lastGoal: null,
   victory: false,
   gameOver: false,
@@ -414,5 +417,6 @@ export const useGameStore = create<GameState>((set, get) => ({
   toggleHud: () => set(state => ({ isHudOpen: !state.isHudOpen })),
   togglePause: () => set(state => ({ isPaused: !state.isPaused })),
   toggleGraphics: () => set(state => ({ graphicsMode: state.graphicsMode === 'QUALITY' ? 'PERFORMANCE' : 'QUALITY' })),
+  toggleCharacterModel: () => set(state => ({ characterModel: state.characterModel === 'SPHERES' ? 'SOLDIER' : 'SPHERES' })),
   setBallBodyRef: (body) => set({ ballBodyRef: body }),
 }));

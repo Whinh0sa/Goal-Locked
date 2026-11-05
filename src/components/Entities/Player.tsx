@@ -6,6 +6,7 @@ import { Float } from '@react-three/drei';
 import { usePhysics } from '../../hooks/usePhysics';
 import { useGameStore } from '../../store/useGameStore';
 import { ARENA_RADIUS } from '../../constants';
+import { HumanoidCharacter } from './HumanoidCharacter';
 
 const SPEED = 25;
 const MAX_SHIELDS = 3;
@@ -22,6 +23,7 @@ export const Player = () => {
   const isEliminated     = useGameStore(state => state.eliminated[0]);
   const playerColor      = useGameStore(state => state.playerRingColor) || '#32CD32';
   const playerJuggernautUntil = useGameStore(s => s.playerJuggernautUntil);
+  const characterModel   = useGameStore(state => state.characterModel);
   const playerGhostUntil = useGameStore(s => s.playerGhostUntil);
   const setLastStriker   = useGameStore(state => state.setLastStriker);
 
@@ -229,37 +231,67 @@ export const Player = () => {
           })}
         </group>
 
-        <Float speed={4} rotationIntensity={2} floatIntensity={0.5}>
-          <mesh castShadow>
-            <sphereGeometry args={[1, 32, 32]} />
-            <meshStandardMaterial color="#0B0B0B" metalness={0.9} roughness={0.1} />
-          </mesh>
-
-          {/* Juggernaut Golden Aura */}
-          {Date.now() < playerJuggernautUntil && (
-            <mesh>
-              <sphereGeometry args={[1.2, 32, 32]} />
-              <meshStandardMaterial 
-                color="#FFD700" 
-                emissive="#FFD700" 
-                emissiveIntensity={10} 
-                transparent 
-                opacity={0.3} 
-                toneMapped={false} 
-              />
+        {characterModel === 'SOLDIER' ? (
+          <>
+            <HumanoidCharacter
+              color={playerColor}
+              velocityRef={velocityRef}
+              scale={1.1}
+              isJuggernaut={Date.now() < playerJuggernautUntil}
+            />
+            {/* Tactical Ground Ring & Accent Light */}
+            <mesh position={[0, -0.9, 0]} rotation-x={-Math.PI / 2}>
+              <ringGeometry args={[1.0, 1.15, 32]} />
+              <meshBasicMaterial color={playerColor} transparent opacity={0.6} side={THREE.DoubleSide} />
             </mesh>
-          )}
+            {Date.now() < playerJuggernautUntil && (
+              <mesh position={[0, 0.2, 0]}>
+                <sphereGeometry args={[1.3, 16, 16]} />
+                <meshStandardMaterial
+                  color="#FFD700"
+                  emissive="#FFD700"
+                  emissiveIntensity={6}
+                  transparent
+                  opacity={0.25}
+                  toneMapped={false}
+                />
+              </mesh>
+            )}
+            <pointLight position={[0, 1, 0]} color={playerColor} intensity={2} distance={5} />
+          </>
+        ) : (
+          <Float speed={4} rotationIntensity={2} floatIntensity={0.5}>
+            <mesh castShadow>
+              <sphereGeometry args={[1, 32, 32]} />
+              <meshStandardMaterial color="#0B0B0B" metalness={0.9} roughness={0.1} />
+            </mesh>
 
-          <mesh rotation-x={Math.PI / 2}>
-            <torusGeometry args={[1.5, 0.1, 16, 80]} />
-            <meshStandardMaterial color={playerColor} emissive={playerColor} emissiveIntensity={4} toneMapped={false} />
-          </mesh>
-          <mesh rotation-x={Math.PI / 3}>
-            <torusGeometry args={[1.5, 0.04, 8, 48]} />
-            <meshStandardMaterial color={playerColor} emissive={playerColor} emissiveIntensity={2} toneMapped={false} />
-          </mesh>
-          <pointLight color={playerColor} intensity={3} distance={6} />
-        </Float>
+            {/* Juggernaut Golden Aura */}
+            {Date.now() < playerJuggernautUntil && (
+              <mesh>
+                <sphereGeometry args={[1.2, 32, 32]} />
+                <meshStandardMaterial
+                  color="#FFD700"
+                  emissive="#FFD700"
+                  emissiveIntensity={10}
+                  transparent
+                  opacity={0.3}
+                  toneMapped={false}
+                />
+              </mesh>
+            )}
+
+            <mesh rotation-x={Math.PI / 2}>
+              <torusGeometry args={[1.5, 0.1, 16, 80]} />
+              <meshStandardMaterial color={playerColor} emissive={playerColor} emissiveIntensity={4} toneMapped={false} />
+            </mesh>
+            <mesh rotation-x={Math.PI / 3}>
+              <torusGeometry args={[1.5, 0.04, 8, 48]} />
+              <meshStandardMaterial color={playerColor} emissive={playerColor} emissiveIntensity={2} toneMapped={false} />
+            </mesh>
+            <pointLight color={playerColor} intensity={3} distance={6} />
+          </Float>
+        )}
       </group>
 
       {/* ── Ghost / spectator mode (shown when eliminated) ── */}
