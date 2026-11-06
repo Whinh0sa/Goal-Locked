@@ -47,6 +47,7 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3; key?:
   const frameCount = useRef(Math.floor(Math.random() * 5)); // offset starts so they don't all sync
   const lastDirection = useRef(new THREE.Vector3());
   const lastSpeed = useRef(BASE_SPEED);
+  const velocityRef = useRef<[number, number, number]>([0, 0, 0]);
   const lastShotTime = useRef(0);
 
   // Player goal position (index 0, angle = 0)
@@ -314,6 +315,11 @@ export const Bot = ({ id, goalPos }: { id: number; goalPos: THREE.Vector3; key?:
             bodyRef.current.velocity.y, // Maintain natural gravity
             lastDirection.current.z * lastSpeed.current
         );
+        velocityRef.current = [
+            bodyRef.current.velocity.x,
+            bodyRef.current.velocity.y,
+            bodyRef.current.velocity.z
+        ];
     }
 
     groupRef.current.position.set(body.position.x, body.position.y, body.position.z);

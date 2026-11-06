@@ -31,6 +31,7 @@ export const Player = () => {
   const prevDashCooldown = useRef(0);
   // Snapshot last known position for the ghost
   const lastPos = useRef(new THREE.Vector3(ARENA_RADIUS - 6, 1, 0));
+  const velocityRef = useRef<[number, number, number]>([0, 0, 0]);
   const playerPosition = useGameStore(state => state.playerPosition);
   const gameStartTime = useGameStore(state => state.gameStartTime);
 
@@ -134,6 +135,7 @@ export const Player = () => {
     else if (isJuggernaut) currentSpeedMult = 1.4;
 
     body.velocity.set(x * SPEED * currentSpeedMult, body.velocity.y, z * SPEED * currentSpeedMult);
+    velocityRef.current = [body.velocity.x, body.velocity.y, body.velocity.z];
 
     if (body.position.y > 1.5) {
       body.velocity.y = -20;
